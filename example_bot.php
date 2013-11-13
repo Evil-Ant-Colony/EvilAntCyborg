@@ -57,6 +57,12 @@ while(true)
                         $from = "";
                     $bot->say($cmd->channel,"Hello $from!!!");
                     break;
+                case 'bye':
+                    if ( !is_array($cmd->channel) )
+                        $cmd->channel = array($cmd->channel);
+                    foreach($cmd->channel as $chan )
+                        $bot->say($chan,"We'll miss you {$cmd->from}!");
+                    break;
                 default: 
                     $bot->say($cmd->channel,"What?");
             }

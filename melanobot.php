@@ -49,6 +49,8 @@ class MelanoBot
     public $server, $port, $real_name, $nick, $password;
     public $channels, $blacklist;
     private $v_connected = 0;
+    private $names = array();
+    
     
     function MelanoBot($server, $port, $real_name, $nick, $password, 
                  $channels, $blacklist=array())
@@ -61,6 +63,39 @@ class MelanoBot
         $this->password = $password;
         $this->blacklist = $blacklist;
         $this->channels = $channels;
+    }
+    
+    private function add_name($chan,$name)
+    {
+        $this->names[$chan][]= $name;
+        echo "Updated names for $chan (+$name)\n";
+        print_r($this->names[$chan]);
+    }
+    
+    private function remove_name($chan,$name)
+    {
+        if (($key = array_search($name, $this->names[$chan])) !== false) 
+        {
+            echo "Updated names for $chan (-$name)\n";
+            array_splice($this->names[$chan],$key,1);
+            print_r($this->names[$chan]);
+        }
+        else
+        {
+            echo "Not removing $name from $chan\n";
+        }
+    }
+    
+    private function change_name($name_old,$name_new)
+    {
+        foreach($this->names as $chan => &$names )
+        {
+            foreach($names as &$name)
+                if ( $name == $name_old )
+                    $name = $name_new;
+        }
+        echo "Updated names ($name_old->$name_new)\n";
+        print_r($this->names);
     }
     
     function login()
@@ -120,6 +155,7 @@ class MelanoBot
         echo "=======data=========\n$data========end========\n";
         
         $inarr = explode(' ',trim($data));
+        $insize = count($inarr);
         if ( $inarr[0] == 'PING' )
         {
             $this->command('PONG',$inarr[1]);
@@ -138,17 +174,50 @@ class MelanoBot
             $this->join($this->channels);
         }
         
+        if ( $insize > 5 && $inarr[1] == 353 )
+        {
+            $chan = $inarr[4];
+            $this->names[$chan] = array();
+            for ( $i = 5; $i < $insize; $i++ )
+                 $this->names[$chan] []= trim($inarr[$i],"\n\r:+@");
+            echo "Updated names for $chan\n";
+            print_r($this->names[$chan]);
+                
+        }
+
         $from = substr(strstr($inarr[0],"!",true),1);
-        $insize = count($inarr);
         if ( in_array($from,$this->blacklist) )
         {
             echo "Blacklist message from $from\n";
         }
         else if ( $insize > 2 && $inarr[1] == "JOIN" )
         {
-            
-            return new MelanoBotCommand("greet", array($from), $from, $inarr[2], $data);
-
+            $chan = $inarr[2];
+            $this->add_name($chan,$from);
+            return new MelanoBotCommand("greet", array($from), $from, $chan, $data);
+        }
+        else if (  $insize > 2 && $inarr[1] == "PART" )
+        {
+            $chan = $inarr[2];
+            $this->remove_name($chan,$from);
+            return new MelanoBotCommand("bye", array($from), $from, $chan, $data);
+        }
+        else if ( $insize > 2 && $inarr[1] == "NICK" )
+        {
+            $this->change_name($from, trim($inarr[2],"\n\r!:"));
+        }
+        else if ( $insize > 1 && $inarr[1] == "QUIT" )
+        {
+            $chans = array();
+            foreach($this->names as $chan => $names)
+            {
+                if ( in_array($from,$names) )
+                {
+                    $chans[] = $chan;
+                    $this->remove_name($chan,$from);
+                }
+            }
+            return new MelanoBotCommand("bye", array($from), $from, $chans, $data);
         }
         else if ( $this->fully_connected() && $insize > 3 )
         {
