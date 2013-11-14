@@ -6,8 +6,9 @@ $bot = new MelanoBot('irc.example.org',6667,'ExampleBot',null,
                         array("OtherBot","AnnoyingUser"));
  
 
-$daddy = 'BotOwnerNick';
-$whitelist = array ( 'Admin1Nick', 'Admin2Nick' );
+$owners = array( 'BotOwnerNick' => 'BotOwnerNick.users.quakenet.org' );
+$whitelist = array ( 'Admin1Nick'=>null, 
+                     'Admin2Nick'=>'example.com' );
 
 
 

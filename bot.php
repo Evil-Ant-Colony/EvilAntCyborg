@@ -5,18 +5,30 @@ require("melanobot.php");
 require("setup-bot.php");
 
 
-function is_admin($user)
+/*function is_admin($user)
 {
-    global $daddy, $whitelist;
+    global $whitelist;
     return is_owner($user) || in_array($user, $whitelist);
-}
+}*/
 
 function is_owner($user)
 {
-    global $daddy;
-    return $user == $daddy;
+    global $owners;
+    return isset($owners[$user]);
 }
 
+function check_owner($cmd)
+{
+    global $owners;
+    return $cmd->check($owners);
+}
+
+
+function check_admin($cmd)
+{
+    global $whitelist, $owners;
+    return $cmd->check($owners) || $cmd->check($whitelist);
+}
 
 $bot->login();
 
@@ -32,7 +44,7 @@ while(true)
     if ( $cmd != null )
     {
         print_r($cmd);
-        if ( $cmd->chanhax && !is_admin($cmd->from)  )
+        if ( $cmd->chanhax && !check_admin($cmd)  )
         {
             $bot->say($cmd->from,"Sorry ".$cmd->from." but only evil ants can do this hax" );
         }
@@ -42,19 +54,19 @@ while(true)
             {
                 case 'shut': 
                 case 'quit': 
-                    if ( is_owner($cmd->from) )
+                    if ( check_owner($cmd) )
                         $bot->quit(); 
                     else
                         $bot->say($cmd->channel,"Shut up ".$cmd->from);
                     break;
                 case 'join': 
-                    if ( is_owner($cmd->from) && isset($cmd->params[0]))
+                    if ( check_owner($cmd) && isset($cmd->params[0]))
                         $bot->join($cmd->params[0]);
                     else
                         $bot->say($cmd->channel,"No!");
                     break;
                 case 'nick':
-                    if ( is_owner($cmd->from) && isset($cmd->params[0]))
+                    if ( check_owner($cmd) && isset($cmd->params[0]))
                         $bot->set_nick($cmd->params[0]);
                     else
                         $bot->say($cmd->channel,"No!");
@@ -91,7 +103,7 @@ while(true)
                         $bot->say($chan,"We'll miss you {$cmd->from}!");
                     break;
                 case 'cmd':
-                    if ( is_owner($cmd->from) )
+                    if ( check_owner($cmd) )
                     {
                         $command = array_shift($cmd->params);
                         $bot->command($command, implode(' ',$cmd->params)); 
@@ -101,7 +113,7 @@ while(true)
                     break;
                     
                 case 'whitelist':
-                    if ( is_admin($cmd->from) )
+                    if ( check_admin($cmd) )
                     {
                         $who = isset($cmd->params[0]) ? trim($cmd->params[0]) : "";
                         if ( $who == "" )
@@ -110,8 +122,8 @@ while(true)
                             $bot->say($cmd->channel,"Who, me?");
                         else
                         {
-                            $whitelist []= $who;
-                            $whitelist = array_unique($whitelist);
+                            $host = isset($cmd->params[1]) ? $cmd->params[1] : null;
+                            $whitelist [$who]= $host;
                             $bot->say($cmd->channel,"OK, $who is in whitelist");
                         }
                     }
@@ -121,16 +133,16 @@ while(true)
                     }
                     break;
                 case 'nowhitelist':
-                    if ( is_admin($cmd->from) )
+                    if ( check_admin($cmd) )
                     {
                         $who = isset($cmd->params[0]) ? trim($cmd->params[0]) : "";
                         if ( $who == "" )
                             $bot->say($cmd->channel,"Who?");
                         else if ( is_owner($who) )
                             $bot->say($cmd->channel,"But $who is my daddy!");
-                        else if (($key = array_search($who,$whitelist)) !== false) 
+                        else if ( array_key_exists($who,$whitelist) ) 
                         {
-                            array_splice($whitelist,$key,1);
+                            unset($whitelist[$who]);
                             $bot->say($cmd->channel,"OK, $who is no longer in whitelist");
                         }
                         else
@@ -144,7 +156,7 @@ while(true)
                     }
                     break;
                 case 'do':
-                    if ( is_admin($cmd->from) )
+                    if ( check_admin($cmd) )
                     {
                         $bot->say($cmd->channel,"\x01ACTION {$cmd->param_string}\x01");
                     }
@@ -200,7 +212,7 @@ while(true)
                         $bot->say($cmd->channel, "You don't have any message");
                     break;
                 case null:
-                    if ( strpos($cmd->raw,"http://www.youtube.com/watch?v=") !== false )
+                    if ( strpos($cmd->raw,"www.youtube.com/watch?v=") !== false )
                         $bot->say($cmd->channel,"Ha Ha! Nice vid {$cmd->from}!");
                     break;
                 default: 
