@@ -48,7 +48,7 @@ class MelanoBot
     private $socket;
     public $server, $port, $real_name, $nick, $password;
     public $channels, $blacklist, $listen_to;
-    public $modes = array();
+    public $mode = null;
     private $v_connected = 0;
     private $names = array();
     
@@ -65,6 +65,20 @@ class MelanoBot
         $this->blacklist = $blacklist;
         $this->channels = $channels;
         $this->listen_to = "$nick:";
+    }
+    
+    /**
+     * \brief find if $name is available
+     * \return 0 if not found, 1 if found, 2 if found in $chan
+     */
+    function find_name($name,$chan)
+    {
+        if ( isset($this->names[$chan]) && in_array($name, $this->names[$chan]) )
+            return 2;
+        foreach($this->names as $ch => $names)
+            if (  in_array($name, $names) )
+                return 1;
+        return 0;
     }
     
     private function add_name($chan,$name)
@@ -117,8 +131,8 @@ class MelanoBot
         if ( !is_null($this->password) )
         {
             $this->command('AUTH', $this->nick." ".$this->password);
-            if ( isset($this->modes[0]) )
-                $this->command('MODE', $this->nick." +".$this->modes[0]);
+            if ( strlen($this->modes) > 0 )
+                $this->command('MODE', $this->nick." +".$this->modes);
         }
     }
     
@@ -205,8 +219,6 @@ class MelanoBot
             {
                 case 'JOIN':
                     $this->add_name($chan,$from);
-                    /*if ( $from == $this->nick && isset($this->modes[$chan]) )
-                        $this->command('MODE', "$chan +".$this->modes[$chan]." {$this->nick}");*/
                     return new MelanoBotCommand("greet", array($from), $from, $chan, $data);
                 case 'PART':
                     $this->remove_name($chan,$from);

@@ -8,3 +8,10 @@ $bot = new MelanoBot('irc.example.org',6667,'ExampleBot',null,
 
 $daddy = 'BotOwnerNick';
 $whitelist = array ( 'Admin1Nick', 'Admin2Nick' );
+
+
+
+function extra_commands($cmd,$bot)
+{
+    return false;
+}
