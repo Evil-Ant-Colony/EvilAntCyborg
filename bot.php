@@ -89,23 +89,17 @@ while(true)
                     break;
                     
                 case 'greet':
-                    if ( $cmd->from == $bot->nick )
-                    {
-                        $bot->say($cmd->channel,"Hello!!!");
-                    }
-                    else
-                    {
-                        $bot->say($cmd->channel,"\x01ACTION welcomes {$cmd->from} with a huge slap\x01");
-                        
-                        if ( isset($messages[$cmd->from]) && !$messages[$cmd->from]["notified"] )
-                        {
-                            $messages[$cmd->from]["notified"] = true;
-                            $bot->say($cmd->from,"You have ".count($messages[$cmd->from]["queue"])." messages");
-                        }
-                    }
-                    break;
                 case 'hello': 
-                    $bot->say($cmd->channel,"Hello {$cmd->from}!!!");
+                    $from=" {$cmd->from}";
+                    if ( $cmd->from == $bot->nick )
+                        $from = "";
+                    $bot->say($cmd->channel,"Hello$from!!!");
+                    
+                    if ( isset($messages[$cmd->from]) && !$messages[$cmd->from]["notified"] )
+                    {
+                        $messages[$cmd->from]["notified"] = true;
+                        $bot->say($cmd->from,"You have ".count($messages[$cmd->from]["queue"])." messages");
+                    }
                     break;
                 case 'bye':
                     if ( !is_array($cmd->channel) )
