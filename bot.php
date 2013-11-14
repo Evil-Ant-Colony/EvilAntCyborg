@@ -161,7 +161,10 @@ while(true)
                         if ( $found == 2 )
                             $bot->say($cmd->channel, "$who is right here, you can talk to them right now...");
                         else if ( $found == 1 )
-                            $bot->say($who,$text);
+                        {
+                            $bot->say($who,"<{$cmd->from}> $text");
+                            $bot->say($cmd->channel, "Done!");
+                        }
                         else
                         {
                             if ( !isset($messages[$who]) )
