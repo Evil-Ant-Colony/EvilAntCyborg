@@ -1,0 +1,10 @@
+<?php
+
+
+$bot = new MelanoBot('irc.example.org',6667,'ExampleBot',null,
+                        array('#example','#channel'),
+                        array("OtherBot","AnnoyingUser"));
+ 
+
+$daddy = 'BotOwnerNick';
+$whitelist = array ( 'Admin1Nick', 'Admin2Nick' );

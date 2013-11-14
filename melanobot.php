@@ -47,22 +47,23 @@ class MelanoBot
 {
     private $socket;
     public $server, $port, $real_name, $nick, $password;
-    public $channels, $blacklist;
+    public $channels, $blacklist, $listen_to;
     private $v_connected = 0;
     private $names = array();
     
     
-    function MelanoBot($server, $port, $real_name, $nick, $password, 
+    function MelanoBot($server, $port, $nick, $password, 
                  $channels, $blacklist=array())
     {
         $this->socket = fsockopen($server,$port);
         $this->server = $server;
         $this->port = $port;
-        $this->real_name = $real_name;
+        $this->real_name = $nick;
         $this->nick = $nick;
         $this->password = $password;
         $this->blacklist = $blacklist;
         $this->channels = $channels;
+        $this->listen_to = "$nick:";
     }
     
     private function add_name($chan,$name)
@@ -227,9 +228,9 @@ class MelanoBot
                 
             if ( $from == $this->nick )
             {
-                echo "ERROR: got a message from myself\n";
+                echo "Got a message from myself\n";
             }
-            else if ( $from != "" && ( $private || trim($inarr[3]) == ":".$this->nick.":" ) )
+            else if ( $from != "" && ( $private || trim($inarr[3]) == ":".$this->listen_to ) )
             {
                 return MelanoBotCommand::create_from_raw($data, $inarr, $private);
             }
