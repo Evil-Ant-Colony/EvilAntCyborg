@@ -48,6 +48,7 @@ class MelanoBot
     private $socket;
     public $server, $port, $real_name, $nick, $password;
     public $channels, $blacklist, $listen_to;
+    public $modes = array();
     private $v_connected = 0;
     private $names = array();
     
@@ -114,7 +115,11 @@ class MelanoBot
     function auth()
     {
         if ( !is_null($this->password) )
+        {
             $this->command('AUTH', $this->nick." ".$this->password);
+            if ( isset($this->modes[0]) )
+                $this->command('MODE', $this->nick." +".$this->modes[0]);
+        }
     }
     
     function command($command, $data)
@@ -200,6 +205,8 @@ class MelanoBot
             {
                 case 'JOIN':
                     $this->add_name($chan,$from);
+                    /*if ( $from == $this->nick && isset($this->modes[$chan]) )
+                        $this->command('MODE', "$chan +".$this->modes[$chan]." {$this->nick}");*/
                     return new MelanoBotCommand("greet", array($from), $from, $chan, $data);
                 case 'PART':
                     $this->remove_name($chan,$from);

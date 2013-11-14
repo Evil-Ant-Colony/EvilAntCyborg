@@ -77,7 +77,7 @@ while(true)
                     if ( is_owner($cmd->from) )
                     {
                         $command = array_shift($cmd->params);
-                        $bot->command($command, implode($cmd->params)); 
+                        $bot->command($command, implode(' ',$cmd->params)); 
                     }
                     else
                         $bot->say($cmd->channel,"Shut up ".$cmd->from);
