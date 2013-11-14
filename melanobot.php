@@ -191,50 +191,52 @@ class MelanoBot
         {
             echo "Blacklist message from $from\n";
         }
-        else if ( $insize > 2 && $inarr[1] == "JOIN" )
+        else if ( $insize > 1 )
         {
-            $chan = $inarr[2];
-            $this->add_name($chan,$from);
-            return new MelanoBotCommand("greet", array($from), $from, $chan, $data);
-        }
-        else if (  $insize > 2 && $inarr[1] == "PART" )
-        {
-            $chan = $inarr[2];
-            $this->remove_name($chan,$from);
-            return new MelanoBotCommand("bye", array($from), $from, $chan, $data);
-        }
-        else if ( $insize > 2 && $inarr[1] == "NICK" )
-        {
-            $this->change_name($from, trim($inarr[2],"\n\r!:"));
-        }
-        else if ( $insize > 1 && $inarr[1] == "QUIT" )
-        {
-            $chans = array();
-            foreach($this->names as $chan => $names)
-            {
-                if ( in_array($from,$names) )
-                {
-                    $chans[] = $chan;
-                    $this->remove_name($chan,$from);
-                }
-            }
-            return new MelanoBotCommand("bye", array($from), $from, $chans, $data);
-        }
-        else if ( $this->fully_connected() && $insize > 3 )
-        {
-            $private = false;
-            if ( trim($inarr[2]) == $this->nick )
-                $private = true;
-                
-            if ( $from == $this->nick )
-            {
-                echo "Got a message from myself\n";
-            }
-            else if ( $from != "" && ( $private || trim($inarr[3]) == ":".$this->listen_to ) )
-            {
-                return MelanoBotCommand::create_from_raw($data, $inarr, $private);
-            }
+            $irc_cmd = $inarr[1];
+            $chan = $insize > 2 ? $inarr[2] : null;
             
+            switch($irc_cmd)
+            {
+                case 'JOIN':
+                    $this->add_name($chan,$from);
+                    return new MelanoBotCommand("greet", array($from), $from, $chan, $data);
+                case 'PART':
+                    $this->remove_name($chan,$from);
+                    return new MelanoBotCommand("bye", array($from), $from, $chan, $data);
+                case 'NICK':
+                    $this->change_name($from, trim($inarr[2],"\n\r!:"));
+                    break;
+                case 'QUIT':
+                    $chans = array();
+                    foreach($this->names as $chan => $names)
+                    {
+                        if ( in_array($from,$names) )
+                        {
+                            $chans[] = $chan;
+                            $this->remove_name($chan,$from);
+                        }
+                    }
+                    return new MelanoBotCommand("bye", array($from), $from, $chans, $data);
+                case 'PRIVMSG':
+                    if ( $insize > 3 )
+                    {
+                        $private = false;
+                        if ( $chan == $this->nick )
+                            $private = true;
+                            
+                        if ( $from == $this->nick )
+                        {
+                            echo "Got a message from myself\n";
+                        }
+                        else if ( $from != "" && ( $private || trim($inarr[3]) == ":".$this->listen_to ) )
+                        {
+                            return MelanoBotCommand::create_from_raw($data, $inarr, $private);
+                        }
+                    }
+                    return new MelanoBotCommand(null,array(),$from,$chan,$data);
+                    
+            }
         }
         
         

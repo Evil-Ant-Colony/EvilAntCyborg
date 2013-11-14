@@ -136,6 +136,10 @@ while(true)
                         $bot->say($cmd->channel,"Won't do!");
                     }
                     break;
+                case null:
+                    if ( strpos($cmd->raw,"http://www.youtube.com/watch?v=") !== false )
+                        $bot->say($cmd->channel,"Ha Ha! Nice vid {$cmd->from}!");
+                    break;
                 default: 
                     $bot->say($cmd->channel,"What?");
             }
