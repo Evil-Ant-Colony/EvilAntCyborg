@@ -3,14 +3,15 @@
 
 $bot = new MelanoBot('irc.example.org',6667,'ExampleBot',null,
                         array('#example','#channel'),
-                        array("OtherBot","AnnoyingUser"));
+                        array("OtherBot")); // nicks blacklisted here will be completely ignored
  
 
 $owners = array( 'BotOwnerNick' => 'BotOwnerNick.users.quakenet.org' );
 $whitelist = array ( 'Admin1Nick'=>null, 
                      'Admin2Nick'=>'example.com' );
 
-
+// nicks blacklisted here can generate internal changes but will be filtered
+$soft_blacklist = array("AnnoyingUser");
 
 function extra_commands($cmd,$bot)
 {
@@ -29,10 +30,13 @@ function extra_raw_commands($cmd,$bot)
 
 function filter($cmd,$bot)
 {
+    global $soft_blacklist;
     if ( $cmd->chanhax && !check_admin($cmd)  )
     {
         $bot->say($cmd->from,"Sorry ".$cmd->from." but only admins can use this hax" );
         return false;
     }
+    else if ( in_array($cmd->from,$soft_blacklist) )
+        return false;
     return true;
 }

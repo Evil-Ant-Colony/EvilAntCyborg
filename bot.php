@@ -104,8 +104,11 @@ while(true)
                 case 'bye':
                     if ( !is_array($cmd->channel) )
                         $cmd->channel = array($cmd->channel);
+                    $message = "We'll miss you {$cmd->from}!";
+                    if ( $cmd->irc_cmd == 'KICK' )
+                        $message = "We won't miss {$cmd->from}!";
                     foreach($cmd->channel as $chan )
-                        $bot->say($chan,"We'll miss you {$cmd->from}!");
+                        $bot->say($chan,$message);
                     break;
                 case 'cmd':
                     if ( check_owner($cmd) )
@@ -172,8 +175,8 @@ while(true)
                             $bot->say($cmd->channel,"But $who is my daddy!");
                         else
                         {
-                            $bot->blacklist []= $who;
-                            $bot->blacklist = array_unique($bot->blacklist);
+                            $soft_blacklist []= $who;
+                            $soft_blacklist = array_unique($soft_blacklist);
                             $bot->say($cmd->channel,"OK, $who is in blacklist");
                         }
                     }
@@ -183,14 +186,14 @@ while(true)
                     }
                     break;
                 case 'noblacklist':
-                    if ( check_owner($cmd) )
+                    if ( check_admin($cmd) )
                     {
                         $who = isset($cmd->params[0]) ? trim($cmd->params[0]) : "";
                         if ( $who == "" )
                             $bot->say($cmd->channel,"Who?");
-                        else if (($key = array_search($who,$bot->blacklist)) !== false)
+                        else if (($key = array_search($who,$soft_blacklist)) !== false)
                         {
-                            array_splice($bot->blacklist,$key,1);
+                            array_splice($soft_blacklist,$key,1);
                             $bot->say($cmd->channel,"OK, $who is no longer in blacklist");
                         }
                         else

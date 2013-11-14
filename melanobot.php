@@ -2,9 +2,9 @@
 
 class MelanoBotCommand
 {
-    public $cmd, $params, $from, $host, $channel, $raw, $chanhax, $param_string;
+    public $cmd, $params, $from, $host, $channel, $raw, $chanhax, $param_string, $irc_cmd;
     
-    function MelanoBotCommand($cmd, $params, $from, $host, $channel, $raw, $chanhax=false)
+    function MelanoBotCommand($cmd, $params, $from, $host, $channel, $raw, $irc_cmd, $chanhax=false)
     {
         $this->cmd = $cmd; 
         $this->params = $params; 
@@ -14,10 +14,11 @@ class MelanoBotCommand
         $this->raw = $raw; 
         $this->chanhax = $chanhax;
         $this->param_string = implode(' ',$params);
+        $this->irc_cmd = $irc_cmd;
     }
     
     
-    static function create_from_raw($data, $inarr, $private)
+    static function create_from_raw($data, $inarr, $private, $irc_cmd)
     {
         $from = substr(strstr($inarr[0],"!",true),1);
         $host = substr(strstr($inarr[0],"@"),1);
@@ -41,7 +42,7 @@ class MelanoBotCommand
         }
                 
                     
-        return new MelanoBotCommand($command, $params, $from, $host, $channel, $data, $chanhax);
+        return new MelanoBotCommand($command, $params, $from, $host, $channel, $data, $irc_cmd, $chanhax);
     }
     
     /**
@@ -248,10 +249,12 @@ class MelanoBot
             {
                 case 'JOIN':
                     $this->add_name($chan,$from);
-                    return new MelanoBotCommand("greet", array($from), $from, $from_host, $chan, $data);
+                    return new MelanoBotCommand("greet", array($from), $from, $from_host, $chan, $data, $irc_cmd);
+                case 'KICK':
+                    if ( $insize > 3 ) $from = $inarr[3];
                 case 'PART':
                     $this->remove_name($chan,$from);
-                    return new MelanoBotCommand("bye", array($from), $from, $from_host, $chan, $data);
+                    return new MelanoBotCommand("bye", array($from), $from, $from_host, $chan, $data, $irc_cmd);
                 case 'NICK':
                     $nick = trim($inarr[2],"\n\r!:");
                     if ( $from == $this->nick )
@@ -272,7 +275,7 @@ class MelanoBot
                             $this->remove_name($chan,$from);
                         }
                     }
-                    return new MelanoBotCommand("bye", array($from), $from, $from_host, $chans, $data);
+                    return new MelanoBotCommand("bye", array($from), $from, $from_host, $chans, $data, $irc_cmd);
                 case 'PRIVMSG':
                     if ( $insize > 3 )
                     {
@@ -286,10 +289,10 @@ class MelanoBot
                         }
                         else if ( $from != "" && ( $private || trim($inarr[3]) == ":".$this->listen_to ) )
                         {
-                            return MelanoBotCommand::create_from_raw($data, $inarr, $private);
+                            return MelanoBotCommand::create_from_raw($data, $inarr, $private, $irc_cmd);
                         }
                     }
-                    return new MelanoBotCommand(null,array_slice($inarr,3),$from,$from_host,$chan,$data);
+                    return new MelanoBotCommand(null,array_slice($inarr,3),$from,$from_host,$chan,$data, $irc_cmd);
                     
             }
         }
