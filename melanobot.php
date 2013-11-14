@@ -184,7 +184,7 @@ class MelanoBot
     
     function quit($message="bye!")
     {
-        $this->command('QUIT',$message);
+        $this->command('QUIT',":$message");
         $this->v_connected = 0;
     }
     

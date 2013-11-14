@@ -59,6 +59,15 @@ while(true)
                     else
                         $bot->say($cmd->channel,"Shut up ".$cmd->from);
                     break;
+                case 'restart':
+                    if ( check_owner($cmd) )
+                    {
+                        $bot->quit("See y'all in a sec");
+                        touch(".restartbot");
+                    }
+                    else
+                        $bot->say($cmd->channel,"Shut up ".$cmd->from);
+                    break;
                 case 'join': 
                     if ( check_owner($cmd) && isset($cmd->params[0]))
                         $bot->join($cmd->params[0]);
