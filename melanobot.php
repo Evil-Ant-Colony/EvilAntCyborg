@@ -289,7 +289,7 @@ class MelanoBot
                             return MelanoBotCommand::create_from_raw($data, $inarr, $private);
                         }
                     }
-                    return new MelanoBotCommand(null,array(),$from,$from_host,$chan,$data);
+                    return new MelanoBotCommand(null,array_slice($inarr,3),$from,$from_host,$chan,$data);
                     
             }
         }

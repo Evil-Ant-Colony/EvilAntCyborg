@@ -214,6 +214,8 @@ while(true)
                 case null:
                     if ( strpos($cmd->raw,"www.youtube.com/watch?v=") !== false )
                         $bot->say($cmd->channel,"Ha Ha! Nice vid {$cmd->from}!");
+                    else
+                        extra_raw_commands($cmd,$bot);
                     break;
                 default: 
                     if ( !extra_commands($cmd,$bot) )

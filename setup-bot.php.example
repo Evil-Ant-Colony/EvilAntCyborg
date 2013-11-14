@@ -16,3 +16,8 @@ function extra_commands($cmd,$bot)
 {
     return false;
 }
+
+function extra_raw_commands($cmd,$bot)
+{
+    return false;
+}
