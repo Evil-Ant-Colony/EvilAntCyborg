@@ -69,10 +69,8 @@ class MelanoBot
     
     function set_nick($nick)
     {
-        $this->nick = $nick;
-        $this->listen_to = "$nick:";
         $this->command('NICK',$nick);
-        echo "Nick changed to $nick\n";
+        echo "Nick chang request: $nick\n";
     }
     
     /**
@@ -232,7 +230,14 @@ class MelanoBot
                     $this->remove_name($chan,$from);
                     return new MelanoBotCommand("bye", array($from), $from, $chan, $data);
                 case 'NICK':
-                    $this->change_name($from, trim($inarr[2],"\n\r!:"));
+                    $nick = trim($inarr[2],"\n\r!:");
+                    if ( $from == $this->nick )
+                    {
+                        $this->nick = $nick;
+                        $this->listen_to = "$nick:";
+                        echo "Nick changed to $nick\n";
+                    }
+                    $this->change_name($from, $nick);
                     break;
                 case 'QUIT':
                     $chans = array();
