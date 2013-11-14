@@ -19,5 +19,20 @@ function extra_commands($cmd,$bot)
 
 function extra_raw_commands($cmd,$bot)
 {
+    if ( strpos($cmd->raw,"www.youtube.com/watch?v=") !== false )
+    {
+        $bot->say($cmd->channel,"Ha Ha! Nice vid {$cmd->from}!");
+        return true;
+    }
     return false;
+}
+
+function filter($cmd,$bot)
+{
+    if ( $cmd->chanhax && !check_admin($cmd)  )
+    {
+        $bot->say($cmd->from,"Sorry ".$cmd->from." but only admins can use this hax" );
+        return false;
+    }
+    return true;
 }

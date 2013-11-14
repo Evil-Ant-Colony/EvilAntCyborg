@@ -44,11 +44,7 @@ while(true)
     if ( $cmd != null )
     {
         print_r($cmd);
-        if ( $cmd->chanhax && !check_admin($cmd)  )
-        {
-            $bot->say($cmd->from,"Sorry ".$cmd->from." but only evil ants can do this hax" );
-        }
-        else
+        if ( filter($cmd,$bot) )
         {
             switch($cmd->cmd)
             {
@@ -270,10 +266,7 @@ while(true)
                         $bot->say($cmd->channel, "You don't have any message");
                     break;
                 case null:
-                    if ( strpos($cmd->raw,"www.youtube.com/watch?v=") !== false )
-                        $bot->say($cmd->channel,"Ha Ha! Nice vid {$cmd->from}!");
-                    else
-                        extra_raw_commands($cmd,$bot);
+                    extra_raw_commands($cmd,$bot);
                     break;
                 default: 
                     if ( !extra_commands($cmd,$bot) )
