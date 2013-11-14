@@ -52,6 +52,7 @@ while(true)
         {
             switch($cmd->cmd)
             {
+                case 'ragequit': 
                 case 'shut': 
                 case 'quit': 
                     if ( check_owner($cmd) )
@@ -92,18 +93,23 @@ while(true)
                     break;
                     
                 case 'greet':
-                case 'hello': 
-                    $from = " {$cmd->from}";
                     if ( $cmd->from == $bot->nick )
-                        $from = "";
-                    $bot->say($cmd->channel,"Hello$from!!!");
-                    
-                    if ( isset($messages[$cmd->from]) && !$messages[$cmd->from]["notified"] )
                     {
-                        $messages[$cmd->from]["notified"] = true;
-                        $bot->say($cmd->from,"You have ".count($messages[$cmd->from]["queue"])." messages");
+                        $bot->say($cmd->channel,"Hello!!!");
                     }
-                    
+                    else
+                    {
+                        $bot->say($cmd->channel,"\x01ACTION welcomes {$cmd->from} with a huge slap\x01");
+                        
+                        if ( isset($messages[$cmd->from]) && !$messages[$cmd->from]["notified"] )
+                        {
+                            $messages[$cmd->from]["notified"] = true;
+                            $bot->say($cmd->from,"You have ".count($messages[$cmd->from]["queue"])." messages");
+                        }
+                    }
+                    break;
+                case 'hello': 
+                    $bot->say($cmd->channel,"Hello {$cmd->from}!!!");
                     break;
                 case 'bye':
                     if ( !is_array($cmd->channel) )
@@ -153,6 +159,49 @@ while(true)
                         {
                             unset($whitelist[$who]);
                             $bot->say($cmd->channel,"OK, $who is no longer in whitelist");
+                        }
+                        else
+                        {
+                            $bot->say($cmd->channel,"But...");
+                        }
+                    }
+                    else
+                    {
+                        $bot->say($cmd->channel,"No!");
+                    }
+                    break;
+                case 'blacklist':
+                    if ( check_admin($cmd) )
+                    {
+                        $who = isset($cmd->params[0]) ? trim($cmd->params[0]) : "";
+                        if ( $who == "" )
+                            $bot->say($cmd->channel,"Who?");
+                        else if ( $who == $bot->nick )
+                            $bot->say($cmd->channel,"Who, me?");
+                        else if ( is_owner($who) ) 
+                            $bot->say($cmd->channel,"But $who is my daddy!");
+                        else
+                        {
+                            $bot->blacklist []= $who;
+                            $bot->blacklist = array_unique($bot->blacklist);
+                            $bot->say($cmd->channel,"OK, $who is in blacklist");
+                        }
+                    }
+                    else
+                    {
+                        $bot->say($cmd->channel,"No!");
+                    }
+                    break;
+                case 'noblacklist':
+                    if ( check_owner($cmd) )
+                    {
+                        $who = isset($cmd->params[0]) ? trim($cmd->params[0]) : "";
+                        if ( $who == "" )
+                            $bot->say($cmd->channel,"Who?");
+                        else if (($key = array_search($who,$bot->blacklist)) !== false)
+                        {
+                            array_splice($bot->blacklist,$key,1);
+                            $bot->say($cmd->channel,"OK, $who is no longer in blacklist");
                         }
                         else
                         {
