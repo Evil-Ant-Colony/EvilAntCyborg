@@ -40,15 +40,7 @@ while(true)
         {
             switch($cmd->cmd)
             {
-                case 'say':
-                    $bot->say($cmd->channel,$cmd->param_string);
-                    break;
-                case 'slap':
-                    $who = $cmd->from;
-                    if ( strlen(trim($cmd->param_string)) > 0 )
-                        $who = $cmd->param_string;
-                    $bot->say($cmd->channel,"\x01ACTION slaps $who\x01");
-                    break;
+                case 'shut': 
                 case 'quit': 
                     if ( is_owner($cmd->from) )
                         $bot->quit(); 
@@ -60,6 +52,22 @@ while(true)
                         $bot->join($cmd->params[0]);
                     else
                         $bot->say($cmd->channel,"No!");
+                    break;
+                case 'nick':
+                    if ( is_owner($cmd->from) && isset($cmd->params[0]))
+                        $bot->set_nick($cmd->params[0]);
+                    else
+                        $bot->say($cmd->channel,"No!");
+                    break;
+                    
+                case 'say':
+                    $bot->say($cmd->channel,$cmd->param_string);
+                    break;
+                case 'slap':
+                    $who = $cmd->from;
+                    if ( strlen(trim($cmd->param_string)) > 0 )
+                        $who = $cmd->param_string;
+                    $bot->say($cmd->channel,"\x01ACTION slaps $who\x01");
                     break;
                     
                 case 'greet':

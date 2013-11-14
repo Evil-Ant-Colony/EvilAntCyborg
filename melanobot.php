@@ -67,6 +67,14 @@ class MelanoBot
         $this->listen_to = "$nick:";
     }
     
+    function set_nick($nick)
+    {
+        $this->nick = $nick;
+        $this->listen_to = "$nick:";
+        $this->command('NICK',$nick);
+        echo "Nick changed to $nick\n";
+    }
+    
     /**
      * \brief find if $name is available
      * \return 0 if not found, 1 if found, 2 if found in $chan
