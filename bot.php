@@ -30,6 +30,25 @@ function check_admin($cmd)
     return $cmd->check($owners) || $cmd->check($whitelist);
 }
 
+function helpcheck($help_cmd,$cmd)
+{
+    global $help;
+    if ( !is_array($help_cmd) )
+    {
+        if ( !isset($help[$help_cmd]) )
+            return false;
+        $help_cmd = $help[$help_cmd];
+    }
+    
+    switch ( $help_cmd['auth'] )
+    {
+        case ANYONE: return true;
+        case ADMIN: return check_admin($cmd);
+        case OWNER: return check_owner($cmd);
+        default: return false;
+    }
+}
+
 $bot->login();
 
 $messages = array();
@@ -256,11 +275,44 @@ while(true)
                     {
                         $messages[$cmd->from]["notified"] = true;
                         $msg = array_shift($messages[$cmd->from]["queue"]);
-                        $bot->say($cmd->channel,"<{$msg[from]}> {$msg[msg]}");
+                        $bot->say($cmd->channel,"<{$msg['from']}> {$msg['msg']}");
                         $bot->say($cmd->channel,"You have other ".count($messages[$cmd->from]["queue"])." messages");
                     }
                     else
                         $bot->say($cmd->channel, "You don't have any message");
+                    break;
+                case 'help':
+                    if ( count($cmd->params) > 0 )
+                    {
+                        $i = 0;
+                        foreach ( $cmd->params as $hc )
+                        {
+                            $hc = strtolower($hc);
+                            if ( helpcheck($hc,$cmd) )
+                            {
+                                $help_item=$help[$hc];
+                                $bot->say($cmd->channel,"\x0304$hc\x03: \x0314{$help_item['synopsis']}\x03");
+                                $bot->say($cmd->channel,"\x0302{$help_item['desc']}\x03");
+                            }
+                            else
+                                $bot->say($cmd->channel,"You can't do $hc");
+                            $i++;
+                            sleep(1+$i/5);
+                        }
+                        if ( count($cmd->params) > 1 )
+                            $bot->say($cmd->channel,"(End of help list)");
+                    }
+                    else
+                    {
+                        $list = array();
+                        foreach ( array_keys($help) as $hc )
+                        {
+                            if ( helpcheck($hc,$cmd) )
+                                $list[]=$hc;
+                        }
+                        $bot->say($cmd->channel, implode(' ',$list));
+                    }
+                    
                     break;
                 case null:
                     extra_raw_commands($cmd,$bot);
