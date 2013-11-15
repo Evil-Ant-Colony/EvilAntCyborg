@@ -24,30 +24,43 @@ $fake_answers = array(
     'Of course',
     'Most likely',
     'Sure!',
-    
+
     'Maybe',
-    
+
     'Concentrate and ask again',
     'Better not tell you now',
     'Cannot predict now',
     'Ask again later',
     "I don't know",
-    
+
     'Maybe not',
-    
+
     'My reply is no',
     'My sources say no',
     'Very doubtful',
-    "Don't count on it", 
+    "Don't count on it",
     "I don't think so",
     "Nope",
     "No way!",
     "No",
-    
+
 );
 
+// You should set the User-Agent if you use the Wikipedia API 
+// See; https://www.mediawiki.org/wiki/API:Quick_start_guide#Identifying_your_client
+require('wikipedia.php');
 function extra_commands($cmd,$bot)
 {    
+    if ( $cmd->cmd == 'describe' )
+    {
+        $text = wikipedia_describe($cmd->param_string);
+        if ( $text == "" )
+            $bot->say($cmd->channel, "I don't know anything about {$cmd->param_string}");
+        else
+            $bot->say($cmd->channel, elide_string($text,400));
+            
+        return true;
+    }
     if ( substr(trim($cmd->raw),-1) == '?' )
     {
         global $fake_answers;
