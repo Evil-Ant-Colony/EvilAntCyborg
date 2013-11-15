@@ -3,6 +3,7 @@
 
 require("melanobot.php");
 require("help.php");
+require("inflector.php");
 require("setup-bot.php");
 
 
@@ -241,9 +242,13 @@ while(true)
                     }
                     break;
                 case 'please':
-                    if ( check_admin($cmd) )
+                    if ( check_admin($cmd) && count($cmd->params)>0 )
                     {
-                        $bot->say($cmd->channel,"\x01ACTION {$cmd->param_string}\x01");
+                        $ps = new PronounSwapper($cmd->from);
+                        $action = $english_verb->inflect(array_shift($cmd->params));
+                        foreach($cmd->params as $word)
+                            $action .= " ".$ps->inflect($word);
+                        $bot->say($cmd->channel,"\x01ACTION $action\x01");
                     }
                     else
                     {
