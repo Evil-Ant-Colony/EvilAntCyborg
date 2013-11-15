@@ -41,10 +41,11 @@ class MelanoBot
 {
     private $socket;
     public $server, $port, $real_name, $nick, $password;
-    public $channels, $blacklist, $listen_to;
+    public $blacklist, $listen_to;
     public $mode = null;
     private $v_connected = 0;
     private $names = array();
+    private $join_list = array();
     
     
     function MelanoBot($server, $port, $nick, $password, 
@@ -57,7 +58,7 @@ class MelanoBot
         $this->nick = $nick;
         $this->password = $password;
         $this->blacklist = $blacklist;
-        $this->channels = $channels;
+        $this->join_list = $channels;
         $this->listen_to = "$nick:";
     }
     
@@ -150,9 +151,14 @@ class MelanoBot
         if ( !is_array($channels) )
             $channels = array($channels);
         
-        $this->channels = array_unique(array_merge($this->channels,$channels));
+            
+        //$this->channels = array_unique(array_merge($this->channels,$channels));
         foreach($channels as $channel)
+        {
+            if (($key = array_search($channel,$this->join_list)) !== false)
+                array_splice($this->join_list,$key,1);
             $this->command('JOIN',$channel);
+        }
     }
     
     function quit($message="bye!")
@@ -191,7 +197,12 @@ class MelanoBot
         {
             $this->v_connected++;
             $this->auth();
-            $this->join($this->channels);
+        }
+        
+        if ( $this->v_connected > 3 && !empty($this->join_list) )
+        {
+            echo "Join\n";
+            $this->join($this->join_list);
         }
         
         if ( $insize > 5 && $inarr[1] == 353 )
@@ -224,6 +235,8 @@ class MelanoBot
                     return new MelanoBotCommand("greet", array($from), $from, $from, $from_host, $chan, $data, $irc_cmd);
                 case 'KICK':
                     if ( $insize > 3 ) $from = $inarr[3];
+                    if ( $from == $this->nick )
+                        $this->join_list []= $chan;
                 case 'PART':
                     $this->remove_name($chan,$from);
                     return new MelanoBotCommand("bye", array($from), $from, $from, $from_host, $chan, $data, $irc_cmd);

@@ -85,6 +85,11 @@ $help = array(
         'synopsis'=>'join #Channel',
         'desc'=>'Make the bot join a channel',
     ),
+    'part'=>array(
+        'auth'=>OWNER,
+        'synopsis'=>'part [#Channel]',
+        'desc'=>'Make the bot part the current channel or the one specified',
+    ),
     'restart'=>array(
         'auth'=>OWNER,
         'synopsis'=>'restart',

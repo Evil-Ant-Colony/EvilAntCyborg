@@ -91,6 +91,15 @@ while(true)
                     else
                         $bot->say($cmd->channel,"No!");
                     break;
+                case 'part': 
+                    if ( check_owner($cmd) )
+                    {
+                        $chan = isset($cmd->params[0]) ? $cmd->params[0] : $cmd->channel;
+                        $bot->command('PART',$chan);
+                    }
+                    else
+                        $bot->say($cmd->channel,"No!");
+                    break;
                 case 'nick':
                     if ( check_owner($cmd) && isset($cmd->params[0]))
                         $bot->set_nick($cmd->params[0]);
@@ -126,7 +135,12 @@ while(true)
                         $cmd->channel = array($cmd->channel);
                     $message = "We'll miss you {$cmd->from}!";
                     if ( $cmd->irc_cmd == 'KICK' )
-                        $message = "We won't miss {$cmd->from}!";
+                    {
+                        if ( $cmd->from == $bot->nick )
+                            $message = "Why??";
+                        else
+                            $message = "We won't miss {$cmd->from}!";
+                    }
                     foreach($cmd->channel as $chan )
                         $bot->say($chan,$message);
                     break;
