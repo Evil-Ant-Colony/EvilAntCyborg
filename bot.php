@@ -240,7 +240,7 @@ while(true)
                         $bot->say($cmd->channel,"No!");
                     }
                     break;
-                case 'do':
+                case 'please':
                     if ( check_admin($cmd) )
                     {
                         $bot->say($cmd->channel,"\x01ACTION {$cmd->param_string}\x01");

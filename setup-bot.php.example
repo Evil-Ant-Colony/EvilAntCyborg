@@ -13,8 +13,47 @@ $whitelist = array ( 'Admin1Nick'=>null,
 // nicks blacklisted here can generate internal changes but will be filtered
 $soft_blacklist = array("AnnoyingUser");
 
+
+$fake_answers = array(
+    'Signs point to yes',
+    'Yes',
+    'Without a doubt',
+    'As I see it, yes',
+    'It is decidedly so',
+    'Of course',
+    'Most likely',
+    
+    'Maybe',
+    
+    'Reply hazy, try again',
+    'Concentrate and ask again',
+    'Better not tell you now',
+    'Cannot predict now',
+    'Ask again later',
+    'My reply is no',
+    "I don't know",
+    
+    'Maybe not',
+    
+    'My sources say no',
+    'Outlook not so good',
+    'Very doubtful',
+    "Don't count on it", 
+    "I don't think so",
+    "Nope",
+    "No way!"
+    
+);
+
 function extra_commands($cmd,$bot)
-{
+{    
+    if ( substr(trim($cmd->raw),-1) == '?' )
+    {
+        global $fake_answers;
+        $bot->say($cmd->channel, $fake_answers[rand(0,count($fake_answers)-1)]);
+        return true;
+    }
+    
     return false;
 }
 

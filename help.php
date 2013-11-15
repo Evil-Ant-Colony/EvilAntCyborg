@@ -20,9 +20,9 @@ $help = array(
         'synopsis'=>'tell User Message...',
         'desc'=>'Store a message for User',
     ),
-    'do'=>array(
+    'please'=>array(
         'auth'=>ADMIN,
-        'synopsis'=>'do Action...',
+        'synopsis'=>'please Action...',
         'desc'=>'Make the bot perform a chat action (Roleplaying)',
     ),
     'noblacklist'=>array(
