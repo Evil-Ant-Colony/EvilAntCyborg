@@ -2,6 +2,7 @@
 <?php
 
 require("melanobot.php");
+require("help.php");
 require("setup-bot.php");
 
 
