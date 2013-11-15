@@ -47,10 +47,11 @@ class PronounSwapper extends Inflector
         global $english_genitive;
         $my = $english_genitive->inflect($me);
         parent::__construct(array(
-            'you' => 'me',
-            'your' => 'my',
-            'yours' => 'mine',
-            'yourself' => 'myself',
+            'you' => 'it',
+            'your' => 'its',
+            'yours' => 'its',
+            'yourself' => 'itself',
+            'I' => $me,
             'me' => $me,
             'my' => $my,
             'mine' => $my,
