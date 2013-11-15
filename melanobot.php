@@ -299,10 +299,11 @@ class MelanoBot
                             $n_params=count($query_params);
                             if ( $n_params > 2 && $query_params[$n_params-2] == 'chanhax' )
                             {
-                                $channel = array_pop($query_params);
+                                $chan = array_pop($query_params);
                                 $chanhax = true;
                                 array_pop($query_params); // remove chanhax
                             }
+                            $query = implode(' ',$query_params);
                                  
                             return new MelanoBotCommand($command,$query_params,$query,$from,$from_host,$chan,$data, $irc_cmd, $chanhax);
                         }
