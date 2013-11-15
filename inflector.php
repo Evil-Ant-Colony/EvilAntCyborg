@@ -29,7 +29,7 @@ $english_verb = new Inflector( array(
         'say'=>'says',
         '(.*[bcdfghjklmnpqrstvwxyz]o)'=>'\1es',
         '(.*(z|s|ch|sh|j|zh))' =>'\1es',
-        '(.*y)' =>'\1ies',
+        '(.*)y' =>'\1ies',
         '(.*)' => '\1s',
     )
 );
