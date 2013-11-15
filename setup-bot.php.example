@@ -49,6 +49,13 @@ $fake_answers = array(
 // You should set the User-Agent if you use the Wikipedia API 
 // See; https://www.mediawiki.org/wiki/API:Quick_start_guide#Identifying_your_client
 require('wikipedia.php');
+
+$help['describe'] = array(
+        'auth'=>ANYONE,
+        'synopsis'=>'describe Term...',
+        'desc'=>'Make the bot explain you what Term means',
+    );
+    
 function extra_commands($cmd,$bot)
 {    
     if ( $cmd->cmd == 'describe' )

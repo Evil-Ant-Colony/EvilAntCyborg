@@ -65,6 +65,11 @@ function parse_wikitext_link(&$wikiarr)
                 array_shift($wikiarr);
                 return $text;
             }
+            else if ( $text == 'File:' )
+            {
+                parse_wikitext_skip_template($wikiarr,2,'[',']');
+                return "";
+            }
             else
                 $text .= $c;
         }
@@ -97,15 +102,14 @@ function parse_wikitext_link(&$wikiarr)
     return $text;
 }
 
-function parse_wikitext_skip_template(&$wikiarr)
+function parse_wikitext_skip_template(&$wikiarr,$n=1,$open='{',$close='}')
 {
-    $n = 1;
     while($n > 0 && count($wikiarr)>0)
     {
         $c = array_shift($wikiarr);
-        if ( $c == '{' )
+        if ( $c == $open )
             $n++;
-        else if ( $c == '}' )
+        else if ( $c == $close )
             $n--;
     }
 }
@@ -125,6 +129,7 @@ function wikipedia_describe($title)
     $wikitext = preg_replace("(<([a-z]+)[^>]*/>)is","",$wikitext);
     $wikitext = preg_replace("(<([a-z]+)[^>]*>.*?</\\1>)is","",$wikitext);
     $wikitext = preg_replace("(\\s+)"," ",$wikitext);
+    $wikitext = strip_tags($wikitext);
     $wikitext = parse_wikitext($wikitext);
     
     return $wikitext;
