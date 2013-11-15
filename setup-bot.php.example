@@ -15,6 +15,7 @@ $soft_blacklist = array("AnnoyingUser");
 
 
 $fake_answers = array(
+
     'Signs point to yes',
     'Yes',
     'Without a doubt',
@@ -22,26 +23,26 @@ $fake_answers = array(
     'It is decidedly so',
     'Of course',
     'Most likely',
+    'Sure!',
     
     'Maybe',
     
-    'Reply hazy, try again',
     'Concentrate and ask again',
     'Better not tell you now',
     'Cannot predict now',
     'Ask again later',
-    'My reply is no',
     "I don't know",
     
     'Maybe not',
     
+    'My reply is no',
     'My sources say no',
-    'Outlook not so good',
     'Very doubtful',
     "Don't count on it", 
     "I don't think so",
     "Nope",
-    "No way!"
+    "No way!",
+    "No",
     
 );
 
