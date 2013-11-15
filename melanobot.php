@@ -40,7 +40,7 @@ class MelanoBotCommand
 class MelanoBot
 {
     private $socket;
-    public $server, $port, $real_name, $nick, $password;
+    public $server, $port, $real_name, $nick, $auth_nick, $password;
     public $blacklist, $listen_to;
     public $mode = null;
     private $v_connected = 0;
@@ -55,6 +55,7 @@ class MelanoBot
         $this->server = $server;
         $this->port = $port;
         $this->real_name = $nick;
+        $this->auth_nick = $nick;
         $this->nick = $nick;
         $this->password = $password;
         $this->blacklist = $blacklist;
@@ -62,10 +63,19 @@ class MelanoBot
         $this->listen_to = "$nick:";
     }
     
+    /// send a request to change the nick
     function set_nick($nick)
     {
         $this->command('NICK',$nick);
         echo "Nick chang request: $nick\n";
+    }
+    /// Apply the new nick (after the server has accepted it)
+    private function apply_nick($nick)
+    {
+        $this->change_name($this->nick, $nick);
+        $this->nick = $nick;
+        $this->listen_to = "$nick:";
+        echo "Nick changed to $nick\n";
     }
     
     /**
@@ -129,9 +139,9 @@ class MelanoBot
     
     function auth()
     {
-        if ( !is_null($this->password) )
+        if ( !is_null($this->password) && !is_null($this->auth_nick) )
         {
-            $this->command('AUTH', $this->nick." ".$this->password);
+            $this->command('AUTH', $this->auth_nick." ".$this->password);
             if ( strlen($this->modes) > 0 )
                 $this->command('MODE', $this->nick." +".$this->modes);
         }
@@ -188,7 +198,7 @@ class MelanoBot
             $this->v_connected++;
         }
         
-        if ( strpos($data,"MODE ".$this->nick." +i") )
+        if ( $insize > 1 && $inarr[1] == 221  )
         {
             $this->v_connected++;
         }
@@ -214,6 +224,12 @@ class MelanoBot
             echo "Updated names for $chan\n";
             print_r($this->names[$chan]);
                 
+        }
+        else if ( $insize > 1 && $inarr[1] == 433 )
+        {
+            $newnick = "{$this->nick}_";
+            $this->set_nick($newnick);
+            $this->apply_nick($newnick);
         }
 
         $from = substr(strstr($inarr[0],"!",true),1);
@@ -243,12 +259,9 @@ class MelanoBot
                 case 'NICK':
                     $nick = trim($inarr[2],"\n\r!:");
                     if ( $from == $this->nick )
-                    {
-                        $this->nick = $nick;
-                        $this->listen_to = "$nick:";
-                        echo "Nick changed to $nick\n";
-                    }
-                    $this->change_name($from, $nick);
+                        $this->apply_nick($nick);
+                    else
+                        $this->change_name($from, $nick);
                     break;
                 case 'QUIT':
                     $chans = array();
