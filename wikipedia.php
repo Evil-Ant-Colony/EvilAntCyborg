@@ -130,6 +130,7 @@ function wikipedia_describe($title)
     $wikitext = preg_replace("(<([a-z]+)[^>]*>.*?</\\1>)is","",$wikitext);
     $wikitext = preg_replace("(\\s+)"," ",$wikitext);
     $wikitext = strip_tags($wikitext);
+    $wikitext = html_entity_decode($wikitext);
     $wikitext = parse_wikitext($wikitext);
     
     return $wikitext;
