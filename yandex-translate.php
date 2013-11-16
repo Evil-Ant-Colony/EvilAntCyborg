@@ -38,3 +38,59 @@ class YandexAPI
         return $transl["text"][0];
     }
 }
+
+function translate_command($yandex,$cmd,$bot)
+{
+    if ( count($cmd->params) > 2 )
+    {
+        $lang_from = $lang_to = 'English';
+        $lang_from_code = $lang_to_code = 'en';
+        
+        $direction = array_shift($cmd->params);
+        if ( $direction == 'from' )
+        {
+            $lang_from = ucfirst(array_shift($cmd->params));
+            if ( isset($yandex->language_codes[$lang_from]) )
+                $lang_from_code = $yandex->language_codes[$lang_from];
+            else
+            {
+                $bot->say($cmd->channel,"I'm sorry but I don't speak $lang_from");
+                return true;
+            }
+            if ( $cmd->params[0] == 'into' )
+                $direction = array_shift($cmd->params);
+        }
+        
+        if ( $direction == 'into' )
+        {
+            
+            $lang_to = ucfirst(array_shift($cmd->params));
+            if ( isset($yandex->language_codes[$lang_to]) )
+                $lang_to_code = $yandex->language_codes[$lang_to];
+            else
+            {
+                $bot->say($cmd->channel,"I'm sorry but I don't speak $lang_to");
+                return true;
+            }
+        }
+        
+        $lang_dir = "$lang_from_code-$lang_to_code";
+        
+        if ( in_array($lang_dir,$yandex->language_directions) )
+        {
+            $translation=$yandex->translate($lang_dir,implode(' ',$cmd->params));
+            if ( $translation != null )
+                $bot->say($cmd->channel,$translation);
+            else
+                $bot->say($cmd->channel,"I'm sorry but I can't translate that...");
+        }
+        else
+        {
+            $bot->say($cmd->channel,"I'm sorry but I can't translate $lang_from to $lang_to");
+            return true;
+        }
+        
+        
+        return true;
+    }
+}
