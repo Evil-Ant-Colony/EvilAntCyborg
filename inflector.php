@@ -9,8 +9,14 @@ class Inflector
         $this->rules = $rules;
     }
     
-    function inflect($v)
+    function context_sensitive_rule($word,$context_pre,$context_post)
     {
+        return $word;
+    }
+    
+    function inflect($v,$context_pre="",$context_post="")
+    {
+        $v = $this->context_sensitive_rule($v,$context_pre,$context_post);
         foreach( $this->rules as $patt => $replace )
         {
             if ( preg_match("{^$patt$}i",$v) )
@@ -42,20 +48,35 @@ $english_genitive = new Inflector( array(
 // you <-> me
 class PronounSwapper extends Inflector
 {
-    function PronounSwapper($me)
+    function PronounSwapper($me,$you)
     {
         global $english_genitive;
         $my = $english_genitive->inflect($me);
+        //$your = $english_genitive->inflect($you);
         parent::__construct(array(
-            'you' => 'it',
+            'you' => $you,
             'your' => 'its',
             'yours' => 'its',
             'yourself' => 'itself',
+            'am'=>"is",
+            'I\'m'=>"$me is",
             'I' => $me,
             'me' => $me,
             'my' => $my,
             'mine' => $my,
             'myself' => $me,
         ));
+    }
+    
+    
+    function context_sensitive_rule($word,$context_pre,$context_post) 
+    {
+        if ( strtolower($word) == 'are' && 
+                ( strtolower($context_pre) == 'you' || 
+                    strtolower($context_post) == 'you' ) 
+            )
+            return "is";
+        
+        return $word;
     }
 }

@@ -244,10 +244,15 @@ while(true)
                 case 'please':
                     if ( check_admin($cmd) && count($cmd->params)>0 )
                     {
-                        $ps = new PronounSwapper($cmd->from);
+                        $ps = new PronounSwapper($cmd->from,$bot->nick);
                         $action = $english_verb->inflect(array_shift($cmd->params));
-                        foreach($cmd->params as $word)
-                            $action .= " ".$ps->inflect($word);
+                        for($i = 0; $i < count($cmd->params); $i++)
+                        {
+                            $word = $cmd->params[$i];
+                            $context_pre = $i > 0 ? $cmd->params[$i-1] : "";
+                            $context_post = $i < count($cmd->params)-1 ? $cmd->params[$i+1] : "";
+                            $action .= " ".$ps->inflect($word,$context_pre,$context_post);
+                        }
                         $bot->say($cmd->channel,"\x01ACTION $action\x01");
                     }
                     else
