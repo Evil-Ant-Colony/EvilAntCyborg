@@ -58,15 +58,26 @@ $help['describe'] = array(
     );
 
 // Yandex
-require('yandex-translate.php');
-//$yandex = new YandexAPI("Your API Key here");
+/*require('yandex-translate.php');
+$yandex = new YandexAPI("Your API Key here");
 
 $help['translate'] = array(
         'auth'=>ANYONE,
         'synopsis'=>'translate [from Language] [into Language] Phrase...',
         'desc'=>'Make the bot translate the given Phrase (using Yandex)',
+    );*/
+    
+// Google
+$help['image'] = array(
+        'auth'=>ANYONE,
+        'synopsis'=>'image Search...',
+        'desc'=>'Post an image matching the search term (using Google Images)',
     );
-
+$help['video'] = array(
+        'auth'=>ANYONE,
+        'synopsis'=>'video Search...',
+        'desc'=>'Post a video matching the search term (using Youtube)',
+    );
 function extra_commands($cmd,$bot)
 {    
     if ( $cmd->cmd == 'describe' )
@@ -85,6 +96,30 @@ function extra_commands($cmd,$bot)
         global $yandex;
         if ( isset($yandex) && translate_command($yandex,$cmd,$bot) )
             return true;
+    }
+    else if ( $cmd->cmd == 'image' )
+    {
+        $url="https://ajax.googleapis.com/ajax/services/search/images?v=1.0&rsz=1&q=".urlencode($cmd->param_string);
+        $response = json_decode(file_get_contents($url),true);
+        if ( isset($response["responseData"]["results"][0]["unescapedUrl"]) )
+        {
+            $bot->say($cmd->channel, $response["responseData"]["results"][0]["unescapedUrl"]);
+            return true;
+        }
+        else
+            print_r($response);
+    }
+    else if ( $cmd->cmd == 'video' )
+    {
+        $url="https://gdata.youtube.com/feeds/api/videos?alt=json&max-results=1&q=".urlencode($cmd->param_string);
+        $response = json_decode(file_get_contents($url),true);
+        if ( isset($response["feed"]["entry"][0]["link"][0]["href"]) )
+        {
+            $bot->say($cmd->channel, $response["feed"]["entry"][0]["link"][0]["href"]);
+            return true;
+        }
+        else
+            print_r($response);
     } 
     
     if ( substr(trim($cmd->raw),-1) == '?' )
