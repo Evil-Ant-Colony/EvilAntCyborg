@@ -291,7 +291,7 @@ class MelanoBot
                         {
                             if ( $chan == $this->nick )
                                 $chan = $from;
-                            else
+                            if ( $inarr[3] == $this->listen_to )
                                 array_shift($query_params);
                             
                             $command = strtolower(trim(array_shift($query_params),"!"));
