@@ -247,6 +247,7 @@ class MelanoBot
             switch($irc_cmd)
             {
                 case 'JOIN':
+                    $chan = trim($chan,":");
                     $this->add_name($chan,$from);
                     return new MelanoBotCommand("greet", array($from), $from, $from, $from_host, $chan, $data, $irc_cmd);
                 case 'KICK':
