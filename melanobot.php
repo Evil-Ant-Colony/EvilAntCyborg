@@ -293,6 +293,9 @@ class MelanoBot
                                 $chan = $from;
                             if ( $inarr[3] == $this->listen_to )
                                 array_shift($query_params);
+                                
+                            while ( $query_params[0] == '' && !empty($query_params) )
+                                array_shift($query_params);
                             
                             $command = strtolower(trim(array_shift($query_params),"!"));
                             
