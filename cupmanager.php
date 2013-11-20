@@ -25,6 +25,14 @@ class MapPicker
     {
         return $this->player[$this->turn];
     }
+    
+    function is_player($player) 
+    {
+        foreach ( $this->player as $p )
+            if ( $player == $p )
+                return true;
+        return false;
+    }
 }
 
 class MatchPlayer

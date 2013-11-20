@@ -5,6 +5,9 @@ require("cuphelp.php");
 require("cupmanager.php");
 require("setup-cup.php");
 
+$map_pick = null;
+$map_pick_stage = 0;
+
 /*function is_admin($user)
 {
     global $whitelist;
@@ -64,9 +67,118 @@ function check_cup($cmd,$bot)
     return true;
 }
 
+function map_pick_show_turn($cmd,$bot)
+{
+    global $map_pick;
+    $bot->say($cmd->channel,$map_pick->current_player().", choose a map to drop");
+    $bot->say($cmd->channel,implode(', ',$map_pick->maps));
+}
+
+function commands_map_pick_setup($cmd,$bot)
+{
+    global $map_pick;
+    
+    if ( !check_admin($cmd) )
+    {
+        if ( $map_pick->is_player($cmd->from) )
+            $bot->say($cmd->channel,"{$cmd->from}: Wait until an admin starts the map picking");
+        return false;
+    }
+    
+    switch($cmd->cmd)
+    {
+        case 'start':
+            $bot->say($cmd->channel,"Starting map picking -- ".
+                                        $map_pick->player[0]." vs ".$map_pick->player[1]);
+            map_pick_show_turn($cmd,$bot);
+            return true;
+        case 'nick':
+            if ( count($cmd->params) == 2 && $map_pick->is_player($cmd->params[0]) )
+            {
+                foreach ( $map_pick->player as &$p )
+                    if ( $cmd->params[0] == $p )
+                    {
+                        $p = $cmd->params[1];
+                        break;
+                    }
+               $bot->say($cmd->channel,"Listen to {$cmd->params[1]} as map picker for {$cmd->params[0]}");
+            }
+            else
+            {
+                $bot->say($cmd->channel,"Currently listening to ".
+                                            implode(' and ',$map_pick->player));
+            }
+            return true;
+        default:
+            return false;
+    }
+}
+
+function commands_map_pick($cmd,$bot)
+{
+    global $map_pick, $map_pick_stage;
+    
+    if ( $cmd->cmd == 'stop' && check_admin($cmd) )
+    {
+        $bot->say($cmd->channel,"Map picking stopped");
+        $bot->say($cmd->channel,"Remaining maps: ".implode(', ',$map_pick->maps));
+        $map_pick = null;
+        $map_pick_stage = 0;
+        return true;
+    }
+    
+    if ( $map_pick == null )
+        return false;
+        
+    if ( !check_admin($cmd) && !$map_pick->is_player($cmd->from) )
+    {
+        $bot->say($cmd->channel,"{$cmd->from}: Map picking in progress, wait until it's over");
+        return false;
+    }
+        
+    if ( $map_pick_stage == 0 )
+        return commands_map_pick_setup($cmd,$bot);
+        
+   if ( $cmd->from == $map_pick->current_player() )
+   {
+        $map = $cmd->cmd;
+        if ( !in_array($map,$map_pick->maps) )
+        {
+            $bot->say($cmd->channel,"Map $map is not in the list");
+            map_pick_show_turn($cmd,$bot);
+        }
+        else
+        {
+            $map_pick->drop($map);
+            if ( count($map_pick->maps) == 1 )
+            {
+                $bot->say($cmd->channel,"Map picking ended");
+                $bot->say($cmd->channel,"Result: ".implode(', ',$map_pick->maps));
+                $map_pick = null;
+                $map_pick_stage = 0;
+            }
+        }
+        
+        return true;
+   }
+   else if ( $map_pick->is_player($cmd->from) )
+   {
+        $bot->say($cmd->channel,"Wait for your turn {$cmd->from}");
+        return true;
+   }
+   
+   return false;
+    
+}
+
 function commands_cup($cmd,$bot)
 {
-    global $cups, $cup, $cup_manager;
+    global $cups, $cup, $cup_manager, $map_pick, $map_pick_stage;
+    
+    if ( $map_pick )
+    {
+        return commands_map_pick($cmd,$bot);
+    }
     
     switch($cmd->cmd)
     {
@@ -201,6 +313,36 @@ function commands_cup($cmd,$bot)
             }
             return true;
             
+        case 'pick':
+            if ( check_cup($cmd,$bot) && check_admin($cmd) )
+            {
+                if ( empty($cmd->params) )
+                {
+                    $bot->say($cmd->channel,"Match ID?");
+                    break;
+                }
+                if ( empty($cup->maps) )
+                {
+                    $bot->say($cmd->channel,"No maps to pick...");
+                    break;
+                }
+                
+                $match = $cup_manager->match($cup->id,$cmd->params[0]);
+                if ( $match == null )
+                {
+                    $bot->say($cmd->channel,"Match ".$cmd->params[0]." not found");
+                    break;
+                }
+                
+                $map_pick = new MapPicker($match->team1(),$match->team2(),$cup->maps);
+                $map_pick_stage = 0;
+                
+                $bot->say($cmd->channel, "Setting up picking for {$match->id}: ".
+                                        $map_pick->player[0]." vs ".$map_pick->player[1]);
+                
+            }
+            return true;
+            
         case 'maps':
             if ( check_cup($cmd,$bot) )
             {
@@ -244,6 +386,8 @@ function commands_cup($cmd,$bot)
             return true;
             
         case 'start':
+            if ( $map_pick != null )
+                return false;
             if ( check_cup($cmd,$bot) && check_admin($cmd) )
             {
                 $cup->start();
@@ -292,6 +436,7 @@ function commands_cup($cmd,$bot)
         default:
             return false;    
     }
+    return true;
 }
 
 function commands_owner($cmd,$bot)
@@ -442,10 +587,10 @@ while(true)
         print_r($cmd);
         if ( filter($cmd,$bot)  )
         {
-               commands_cup($cmd,$bot) 
-            or commands_owner($cmd,$bot) 
-            or commands_admin($cmd,$bot) 
-            or commands_always($cmd,$bot)
+                commands_owner($cmd,$bot) 
+            or  commands_admin($cmd,$bot) 
+            or  commands_always($cmd,$bot)
+            or  commands_cup($cmd,$bot) 
             ;
         }
     }
