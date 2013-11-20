@@ -1,5 +1,32 @@
 <?php
 
+class MapPicker
+{
+    public $player, $maps, $turn;
+    
+    function MapPicker($player1, $player2, $maps)
+    {
+        $this->turn = rand(0,1);
+        $this->player = array($player1,$player2);
+        $this->maps = $maps;
+    }
+    
+    function drop($map)
+    {
+        if ( ($k = array_search($map,$this->maps)) !== false && !empty($this->maps))
+        {
+            array_splice($this->maps,$k,1);
+            return true;
+        }
+        return false;
+    }
+    
+    function current_player()
+    {
+        return $this->player[$this->turn];
+    }
+}
+
 class MatchPlayer
 {
     public $name, $id, $score;
