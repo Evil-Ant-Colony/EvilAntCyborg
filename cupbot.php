@@ -70,13 +70,15 @@ function check_cup($cmd,$bot)
 function map_pick_show_turn($cmd,$bot)
 {
     global $map_pick;
-    $bot->say($cmd->channel,$map_pick->current_player().", choose a map to drop");
+    $dp = $map_pick->is_picking() ? "\x0303Pick\x03" : "\x0304Drop\x03";
+    $bot->say($cmd->channel,$map_pick->current_player().", your turn");
+    $bot->say($cmd->channel,"$dp a map");
     $bot->say($cmd->channel,implode(', ',$map_pick->maps));
 }
 
 function commands_map_pick_setup($cmd,$bot)
 {
-    global $map_pick;
+    global $map_pick, $map_pick_stage;
     
     if ( !check_admin($cmd) )
     {
@@ -88,9 +90,11 @@ function commands_map_pick_setup($cmd,$bot)
     switch($cmd->cmd)
     {
         case 'start':
-            $bot->say($cmd->channel,"Starting map picking -- ".
-                                        $map_pick->player[0]." vs ".$map_pick->player[1]);
+            $bot->say($cmd->channel,"Starting map picking ");
+            $bot->say($cmd->channel,$map_pick->player[0]." vs ".$map_pick->player[1]);
+            $bot->say($cmd->channel,$map_pick->pick_drops());
             map_pick_show_turn($cmd,$bot);
+            $map_pick_stage = 1;
             return true;
         case 'nick':
             if ( count($cmd->params) == 2 && $map_pick->is_player($cmd->params[0]) )
@@ -109,6 +113,17 @@ function commands_map_pick_setup($cmd,$bot)
                                             implode(' and ',$map_pick->player));
             }
             return true;
+        case 'pick':
+            if ( count($cmd->params) >= 1 )
+            {
+                $map_pick->pick_num = (int)$cmd->params[0];
+                $bot->say($cmd->channel,"Map picking: ".$map_pick->pick_drops());
+            }
+            else
+            {
+                $bot->say($cmd->channel,"How many picks?");
+            }
+            return true;
         default:
             return false;
     }
@@ -121,7 +136,8 @@ function commands_map_pick($cmd,$bot)
     if ( $cmd->cmd == 'stop' && check_admin($cmd) )
     {
         $bot->say($cmd->channel,"Map picking stopped");
-        $bot->say($cmd->channel,"Remaining maps: ".implode(', ',$map_pick->maps));
+        $totmaps = array_merge($map_pick->picks,$map_pick->maps);
+        $bot->say($cmd->channel,"Remaining maps: ".implode(', ',$totmaps));
         $map_pick = null;
         $map_pick_stage = 0;
         return true;
@@ -130,10 +146,14 @@ function commands_map_pick($cmd,$bot)
     if ( $map_pick == null )
         return false;
         
+    
     if ( !check_admin($cmd) && !$map_pick->is_player($cmd->from) )
     {
-        $bot->say($cmd->channel,"{$cmd->from}: Map picking in progress, wait until it's over");
         return false;
+    }
+    else if ( $cmd->cmd == 'turn' )
+    {
+        map_pick_show_turn($cmd,$bot);
     }
         
     if ( $map_pick_stage == 0 )
@@ -141,24 +161,27 @@ function commands_map_pick($cmd,$bot)
         
    if ( $cmd->from == $map_pick->current_player() )
    {
-        $map = $cmd->cmd;
-        if ( !in_array($map,$map_pick->maps) )
+        $map = $cmd->cmd == null && !empty($cmd->params) ? $cmd->params[0] : $cmd->cmd;
+        if ( !$map_pick->has_map($map) )
         {
             $bot->say($cmd->channel,"Map $map is not in the list");
-            map_pick_show_turn($cmd,$bot);
         }
         else
         {
-            $map_pick->drop($map);
+            $map_pick->choose($map);
             if ( count($map_pick->maps) == 1 )
             {
+                $map_pick->picks []= $map_pick->maps[0];
                 $bot->say($cmd->channel,"Map picking ended");
-                $bot->say($cmd->channel,"Result: ".implode(', ',$map_pick->maps));
+                $bot->say($cmd->channel,"Result: ".implode(', ',$map_pick->picks));
                 $map_pick = null;
                 $map_pick_stage = 0;
+                return true;
             }
+            $map_pick->next_round();
         }
         
+        map_pick_show_turn($cmd,$bot);
         return true;
    }
    else if ( $map_pick->is_player($cmd->from) )
@@ -175,10 +198,8 @@ function commands_cup($cmd,$bot)
 {
     global $cups, $cup, $cup_manager, $map_pick, $map_pick_stage;
     
-    if ( $map_pick )
-    {
-        return commands_map_pick($cmd,$bot);
-    }
+    if ( $map_pick && commands_map_pick($cmd,$bot) )
+        return true; 
     
     switch($cmd->cmd)
     {
@@ -188,9 +209,9 @@ function commands_cup($cmd,$bot)
                 $num = isset($cmd->params[0]) ? (int)$cmd->params[0] : 1;
                 if ( $num > 5 && !check_admin($cmd) )
                     $num = 5;
+                $bot->say($cmd->channel,"Fetching...");
                 $matches = $cup_manager->open_matches($cup->id);
                 $num = min($num,count($matches));
-                
                 if ( count($matches) == 0 )
                 {
                     $bot->say($cmd->channel,"No matches are currently available");
@@ -386,8 +407,6 @@ function commands_cup($cmd,$bot)
             return true;
             
         case 'start':
-            if ( $map_pick != null )
-                return false;
             if ( check_cup($cmd,$bot) && check_admin($cmd) )
             {
                 $cup->start();

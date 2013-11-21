@@ -2,19 +2,65 @@
 
 class MapPicker
 {
-    public $player, $maps, $turn;
+    public $player, $maps, $turn, $pick_num = 1, $picks = array();
     
     function MapPicker($player1, $player2, $maps)
     {
         $this->turn = rand(0,1);
         $this->player = array($player1,$player2);
+        foreach($this->player as &$p)
+            $p = str_replace(' ','_',$p);
         $this->maps = $maps;
     }
     
-    function drop($map)
+    function next_round()
     {
-        if ( ($k = array_search($map,$this->maps)) !== false && !empty($this->maps))
+        $this->turn = ($this->turn+1) % count($this->player);
+    }
+    
+    function pick_drops()
+    {
+        $arr = array();
+        for ( $i = 0; $i < count($this->maps); $i++ )
         {
+            $arr []= $i >= count($this->maps) - $this->pick_num ? 'Pick' : 'Drop';
+        }
+        return implode('-',$arr);
+    }
+    
+    function is_picking()
+    {
+        return count($this->maps) <= $this->pick_num;
+    }
+    
+    private function find_map_index($map)
+    {
+        if ( strlen($map) == 0 )
+            return false;
+            
+        $lowmaps = array_map('strtolower',$this->maps);
+        $map = strtolower($map);
+        
+        for ( $i = 0; $i < count($lowmaps); $i++ )
+        {
+            if ( strncmp($lowmaps[$i], $map, strlen($map)) == 0 ) 
+                return $i;
+        }
+        
+        return false;
+    }
+    
+    function has_map($map)
+    {
+        return $this->find_map_index($map) !== false;
+    }
+    
+    function choose($map)
+    {
+        if ( ($k = $this->find_map_index($map)) !== false )
+        {
+            if ( $this->is_picking() )
+                $this->picks []= $this->maps[$k];
             array_splice($this->maps,$k,1);
             return true;
         }
