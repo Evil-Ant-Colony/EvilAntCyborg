@@ -367,20 +367,27 @@ function commands_cup($cmd,$bot)
         case 'maps':
             if ( check_cup($cmd,$bot) )
             {
-                if ( count($cmd->params) > 1 && check_admin($cmd) )
+                if ( count($cmd->params) == 1 && $cmd->params[0] == 'count' )
+                {
+                    $bot->say($cmd->channel,count($cup->maps)." maps");
+                }
+                else if ( count($cmd->params) > 1 && check_admin($cmd) )
                 {
                     $direction = array_shift($cmd->params);
                     if ( $direction == '+' || $direction == 'add' )
                     {
-                        foreach($cmd->params as $map);
+                        foreach($cmd->params as $map)
+                        {
                             $cup->add_map($map);
+                            echo "Maps + $map\n";
+                        }
                         $cup_manager->update_cup($cup);
                         
                     }
                     else if ( $direction == '-' || $direction == 'remove' )
                     {
                     
-                        foreach($cmd->params as $map);
+                        foreach($cmd->params as $map)
                             $cup->remove_map($map);
                         $cup_manager->update_cup($cup);
                     }

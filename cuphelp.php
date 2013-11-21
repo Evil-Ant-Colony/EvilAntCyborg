@@ -73,7 +73,7 @@ $help = array(
     ),
     'maps'=>array(
         'auth'=>ANYONE,
-        'synopsis'=>'maps',
+        'synopsis'=>'maps [count]',
         'desc'=>'Show the map list for the current cup',
     ),
     'description'=>array(
