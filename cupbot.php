@@ -70,10 +70,9 @@ function check_cup($cmd,$bot)
 function map_pick_show_turn($cmd,$bot)
 {
     global $map_pick;
-    $dp = $map_pick->is_picking() ? "\x0303Pick\x03" : "\x0304Drop\x03";
+    $dp = $map_pick->is_picking() ? "\x0303PICK\x03" : "\x0304DROP\x03";
     $bot->say($cmd->channel,$map_pick->current_player().", your turn");
-    $bot->say($cmd->channel,"$dp a map");
-    $bot->say($cmd->channel,implode(', ',$map_pick->maps));
+    $bot->say($cmd->channel,"$dp ".implode(', ',$map_pick->maps));
 }
 
 function commands_map_pick_setup($cmd,$bot)
