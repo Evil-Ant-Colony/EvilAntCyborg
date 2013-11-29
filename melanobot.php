@@ -152,6 +152,7 @@ class MelanoBot
     {
         if ( $this->socket !== false )
         {
+            $data = str_replace(array("\n","\r")," ",$data);
             fputs($this->socket,"$command $data\n\r");
             echo "(send) $command $data\n";
         }
