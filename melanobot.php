@@ -46,6 +46,7 @@ class MelanoBot
     private $v_connected = 0;
     private $names = array();
     private $join_list = array();
+    public $strip_colors = false;
     
     
     function MelanoBot($server, $port, $nick, $password, 
@@ -190,6 +191,9 @@ class MelanoBot
         
         echo "=======data=========\n$data========end========\n";
         
+        if ( $this->strip_colors )
+            $data = preg_replace("{\x03([0-9][0-9]?)?(,[0-9][0-9]?)?}","",$data);
+        
         $inarr = explode(' ',trim($data));
         $insize = count($inarr);
         if ( $inarr[0] == 'PING' )
@@ -292,6 +296,9 @@ class MelanoBot
                             if ( $chan == $this->nick )
                                 $chan = $from;
                             if ( $inarr[3] == $this->listen_to )
+                                array_shift($query_params);
+                                
+                            while ( $query_params[0] == '' && !empty($query_params) )
                                 array_shift($query_params);
                             
                             $command = strtolower(trim(array_shift($query_params),"!"));
