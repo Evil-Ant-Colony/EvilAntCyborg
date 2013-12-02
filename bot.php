@@ -246,6 +246,12 @@ while(true)
                     {
                         $ps = new PronounSwapper($cmd->from,$bot->nick);
                         $action = $english_verb->inflect(array_shift($cmd->params));
+                        if ( $action == "doesn't" && count($cmd->params)>0 && $cmd->params[0] == 'be' )
+                        {
+                            $action = "isn't";
+                            array_shift($cmd->params);
+                        }
+                        
                         for($i = 0; $i < count($cmd->params); $i++)
                         {
                             $word = $cmd->params[$i];
