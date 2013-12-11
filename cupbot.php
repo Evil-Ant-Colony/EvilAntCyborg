@@ -476,7 +476,7 @@ function commands_owner($cmd,$bot)
             return true;
         case 'restart':
             $bot->quit("See y'all in a sec");
-            touch(".restartbot");
+            touch(".restart_cup_bot");
             return true;
         default:
             return false;
