@@ -64,7 +64,7 @@ while(true)
     
     if ( $cmd != null )
     {
-        print_r($cmd);
+		$bot->log(print_r($cmd,true),3);
         if ( filter($cmd,$bot) )
         {
             switch($cmd->cmd)
@@ -294,7 +294,7 @@ while(true)
                             
                             $messages[$who]["notified"] = false;
                             $messages[$who]["queue"][]= array("from"=>$cmd->from,"msg"=>$text);
-                            echo "Stored a message from {$cmd->from} to $who\n";
+                            $bot->log("Stored a message from {$cmd->from} to $who\n");
                             $bot->say($cmd->channel, "Will do!");
                             
                                 

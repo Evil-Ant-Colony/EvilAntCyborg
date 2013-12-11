@@ -378,7 +378,7 @@ function commands_cup($cmd,$bot)
                         foreach($cmd->params as $map)
                         {
                             $cup->add_map($map);
-                            echo "Maps + $map\n";
+                            $bot->log("Maps + $map\n");
                         }
                         $cup_manager->update_cup($cup);
                         
@@ -609,7 +609,7 @@ while(true)
     
     if ( $cmd != null )
     {
-        print_r($cmd);
+		$bot->log(print_r($cmd,true),3);
         if ( filter($cmd,$bot)  )
         {
                 commands_owner($cmd,$bot) 

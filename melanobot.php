@@ -46,7 +46,8 @@ class MelanoBot
     private $v_connected = 0;
     private $names = array();
     private $join_list = array();
-    public $strip_colors = false;
+    public $strip_colors = false; ///< whether IRC colors should be removed before command interpretation
+    public $output_log = 1; ///< Output log verbosity: 0: no output, 1: some output, 2: a lot of output
     
     
     function MelanoBot($server, $port, $nick, $password, 
@@ -64,11 +65,17 @@ class MelanoBot
         $this->listen_to = "$nick:";
     }
     
+    function log($msg, $level=2)
+    {
+		if ( $this->output_log >= $level )
+			echo $msg;
+    }
+    
     /// send a request to change the nick
     function set_nick($nick)
     {
         $this->command('NICK',$nick);
-        echo "Nick chang request: $nick\n";
+        $this->log("Nick chang request: $nick\n");
     }
     /// Apply the new nick (after the server has accepted it)
     private function apply_nick($nick)
@@ -76,7 +83,7 @@ class MelanoBot
         $this->change_name($this->nick, $nick);
         $this->nick = $nick;
         $this->listen_to = "$nick:";
-        echo "Nick changed to $nick\n";
+        $this->log("Nick changed to $nick\n");
     }
     
     /**
@@ -96,21 +103,21 @@ class MelanoBot
     private function add_name($chan,$name)
     {
         $this->names[$chan][]= $name;
-        echo "Updated names for $chan (+$name)\n";
-        print_r($this->names[$chan]);
+        $this->log("Updated names for $chan (+$name)\n");
+        $this->log(print_r($this->names[$chan],true));
     }
     
     private function remove_name($chan,$name)
     {
         if (($key = array_search($name, $this->names[$chan])) !== false) 
         {
-            echo "Updated names for $chan (-$name)\n";
+            $this->log("Updated names for $chan (-$name)\n");
             array_splice($this->names[$chan],$key,1);
-            print_r($this->names[$chan]);
+            $this->log(print_r($this->names[$chan],true));
         }
         else
         {
-            echo "Not removing $name from $chan\n";
+            $this->log("Not removing $name from $chan\n");
         }
     }
     
@@ -122,8 +129,8 @@ class MelanoBot
                 if ( $name == $name_old )
                     $name = $name_new;
         }
-        echo "Updated names ($name_old->$name_new)\n";
-        print_r($this->names);
+        $this->log("Updated names ($name_old->$name_new)\n");
+        $this->log(print_r($this->names,true));
     }
     
     function login()
@@ -154,7 +161,7 @@ class MelanoBot
         {
             $data = str_replace(array("\n","\r")," ",$data);
             fputs($this->socket,"$command $data\n\r");
-            echo "(send) $command $data\n";
+            $this->log("<\x1b[32m$command $data\x1b[0m\n",1);
         }
     }
     
@@ -184,13 +191,13 @@ class MelanoBot
         if ( $this->socket === false || feof($this->socket) )
         {
             $this->quit();
-            echo "Network Quit\n";
+            $this->log("Network Quit\n",1);
             return null;
         }
         
         $data = fgets($this->socket,512);
         
-        echo "=======data=========\n$data========end========\n";
+		$this->log(">\x1b[33m$data\x1b[0m",1);
         
         if ( $this->strip_colors )
             $data = preg_replace("{\x03([0-9][0-9]?)?(,[0-9][0-9]?)?}","",$data);
@@ -216,7 +223,7 @@ class MelanoBot
         
         if ( $this->v_connected > 3 && !empty($this->join_list) )
         {
-            echo "Join\n";
+            $this->log("Join\n");
             $this->join($this->join_list);
         }
         
@@ -226,8 +233,8 @@ class MelanoBot
             $this->names[$chan] = array();
             for ( $i = 5; $i < $insize; $i++ )
                  $this->names[$chan] []= trim($inarr[$i],"\n\r:+@");
-            echo "Updated names for $chan\n";
-            print_r($this->names[$chan]);
+            $this->log("Updated names for $chan\n");
+            $this->log(print_r($this->names[$chan],true));
                 
         }
         else if ( $insize > 1 && $inarr[1] == 433 )
@@ -242,7 +249,7 @@ class MelanoBot
         
         if ( in_array($from,$this->blacklist) )
         {
-            echo "Blacklist message from $from\n";
+            $this->log("Blacklist message from $from\n");
         }
         else if ( $insize > 1 )
         {
@@ -290,7 +297,7 @@ class MelanoBot
                         
                         if ( $from == $this->nick )
                         {
-                            echo "Got a message from myself\n";
+                            $this->log("Got a message from myself\n");
                         }
                         else if ( $from != "" && ( $chan == $this->nick || $inarr[3] == $this->listen_to ) )
                         {
@@ -333,7 +340,7 @@ class MelanoBot
         if ( $channel != $this->nick )
             $this->command("PRIVMSG","$channel :$msg");
         else
-            echo "ERROR: trying to send a message to myself\n";
+            $this->log("ERROR: trying to send a message to myself\n",1);
     }
     
     function connected()
