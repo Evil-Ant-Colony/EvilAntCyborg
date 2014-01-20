@@ -134,9 +134,20 @@ function extra_commands($cmd,$bot)
 
 function extra_raw_commands($cmd,$bot)
 {
-    if ( strpos($cmd->raw,"www.youtube.com/watch?v=") !== false )
+    $match = array();
+    if ( preg_match("{www\.youtube\.com/watch\?v=([-_0-9a-zA-Z]+)}",$cmd->raw,$match) )
     {
-        $bot->say($cmd->channel,"Ha Ha! Nice vid {$cmd->from}!");
+        $url="http://gdata.youtube.com/feeds/api/videos/{$match[1]}?alt=json";
+        $response = json_decode(file_get_contents($url),true);
+        $title = "";
+        if ( isset($response["entry"]["title"]['$t']) )
+        {
+            $title = $response["entry"]["title"]['$t'];
+        }
+        else
+            print_r($response);
+            
+        $bot->say($cmd->channel,"Ha Ha! Nice vid {$cmd->from}! $title");
         return true;
     }
     return false;
