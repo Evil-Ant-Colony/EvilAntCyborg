@@ -73,7 +73,10 @@ while(true)
                 case 'shut': 
                 case 'quit': 
                     if ( check_owner($cmd) )
+                    {
                         $bot->quit(); 
+                        $bot->auto_restart = false;
+					}
                     else
                         $bot->say($cmd->channel,"Shut up ".$cmd->from);
                     break;
@@ -81,7 +84,7 @@ while(true)
                     if ( check_owner($cmd) )
                     {
                         $bot->quit("See y'all in a sec");
-                        touch(".restartbot");
+                        $bot->auto_restart = true;
                     }
                     else
                         $bot->say($cmd->channel,"Shut up ".$cmd->from);
@@ -358,3 +361,5 @@ while(true)
 }
 
 
+if ( $bot->auto_restart )
+	touch(".restartbot");

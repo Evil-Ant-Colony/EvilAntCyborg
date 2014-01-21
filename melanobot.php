@@ -48,7 +48,7 @@ class MelanoBot
     private $join_list = array();
     public $strip_colors = false; ///< whether IRC colors should be removed before command interpretation
     public $output_log = 1; ///< Output log verbosity: 0: no output, 1: some output, 2: a lot of output
-    
+    public $auto_restart = false;
     
     function MelanoBot($server, $port, $nick, $password, 
                  $channels, $blacklist=array())
