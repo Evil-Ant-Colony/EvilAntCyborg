@@ -12,7 +12,17 @@ class Raw_Question extends RawCommandExecutor
 	{
 		if ( $cmd->cmd == 'where' )
 		{
-			$bot->say($cmd->channel, "Here: https://maps.google.com/?q=where+".urlencode($cmd->param_string()));
+			$param_string = urlencode($cmd->param_string());
+			$ll = "";
+			$url="http://maps.googleapis.com/maps/api/geocode/json?sensor=false&address=$param_string";
+			$response = json_decode(file_get_contents($url),true);
+			$name = "I don't know";
+			if ( isset($response["results"][0]["formatted_address"]) )
+				$name = $response["results"][0]["formatted_address"];
+			if ( isset($response["results"][0]["geometry"]["location"]) )
+				$ll = "ll=".$response["results"][0]["geometry"]["location"]["lat"].",".
+					  $response["results"][0]["geometry"]["location"]["lng"];
+			$bot->say($cmd->channel, "$name: https://maps.google.com/?$ll&q=$param_string");
 		}
 		else
 			$bot->say($cmd->channel, self::$fake_answers[rand(0,count(self::$fake_answers)-1)]);
