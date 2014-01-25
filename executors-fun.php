@@ -5,7 +5,7 @@ class Raw_Question extends RawCommandExecutor
 {
 	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
 	{
-		return $cmd != null && substr(trim($cmd->raw),-1) == '?' ;
+		return $cmd->cmd != null && substr(trim($cmd->raw),-1) == '?' ;
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
