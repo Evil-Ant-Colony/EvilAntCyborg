@@ -12,7 +12,7 @@ class Raw_Question extends RawCommandExecutor
 	{
 		if ( $cmd->cmd == 'where' )
 		{
-			$param_string = urlencode($cmd->param_string());
+			$param_string = urlencode("where ".$cmd->param_string());
 			$ll = "";
 			$url="http://maps.googleapis.com/maps/api/geocode/json?sensor=false&address=$param_string";
 			$response = json_decode(file_get_contents($url),true);
