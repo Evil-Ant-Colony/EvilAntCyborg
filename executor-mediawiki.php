@@ -21,8 +21,6 @@ function parse_wikitext_start(&$wikiarr)
     }
 }
 
-
-
 function parse_wikitext_sentence(&$wikiarr)
 {
     $text = "";
@@ -114,10 +112,11 @@ function parse_wikitext_skip_template(&$wikiarr,$n=1,$open='{',$close='}')
     }
 }
 
-function wikipedia_describe($title)
+/// \note read api tos and set user agent befor calling this
+function mediawiki_describe($title,$api_url)
 {
     $title= urlencode($title);
-    $url="http://en.wikipedia.org/w/api.php?format=json&action=query&titles=$title&redirects&prop=revisions&rvprop=content&rvsection=0";
+    $url="$api_url?format=json&action=query&titles=$title&redirects&prop=revisions&rvprop=content&rvsection=0";
     $reply=json_decode(file_get_contents($url),true);
 
     //print_r($reply);
@@ -143,4 +142,27 @@ function elide_string($string,$length)
     if ( count($lines) > 1 )
         $text .= "...";
     return $text;
+}
+
+
+
+class Executor_Wiki extends CommandExecutor
+{
+	public $api_url;
+	
+	
+	function Executor_Wiki($trigger,$service,$api_url)
+	{
+		parent::__construct($trigger,null,"$trigger Term...","Search the term on $service");
+		$this->api_url = $api_url;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+        $text = mediawiki_describe($cmd->param_string(),$this->api_url);
+        if ( $text == "" )
+            $bot->say($cmd->channel, "I don't know anything about {$cmd->param_string}");
+        else
+            $bot->say($cmd->channel, elide_string($text,400));
+	}
 }

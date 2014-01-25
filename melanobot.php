@@ -1,10 +1,15 @@
 <?php
 
+function irc_action($msg)
+{
+	return "\x01ACTION $msg\x01";
+}
+
 class MelanoBotCommand
 {
-    public $cmd, $params, $from, $host, $channel, $raw, $chanhax, $param_string, $irc_cmd;
+    public $cmd, $params, $from, $host, $channel, $raw, /*$chanhax, $param_string,*/ $irc_cmd;
     
-    function MelanoBotCommand($cmd, $params, $query, $from, $host, $channel, $raw, $irc_cmd, $chanhax=false)
+    function MelanoBotCommand($cmd, $params, /*$query,*/ $from, $host, $channel, $raw, $irc_cmd/*, $chanhax=false*/)
     {
         $this->cmd = $cmd; 
         $this->params = $params; 
@@ -12,15 +17,23 @@ class MelanoBotCommand
         $this->host = $host; 
         $this->channel = $channel;
         $this->raw = $raw; 
-        $this->chanhax = $chanhax;
-        $this->param_string = $query;
+        //$this->chanhax = $chanhax;
+        //$this->param_string = $query;
         $this->irc_cmd = $irc_cmd;
+    }
+    
+    function param_string($cmd=false,$offset=0,$length=null)
+    {
+		$p = $this->params;
+		if ( $cmd )
+			array_unshift($p,$this->cmd);
+		return implode(" ",array_slice($p,$offset,$length));
     }
     
     /**
      * \brief Check that $this->from / $this->host are found in $user (nick=>host|null)
      */
-    function check($users)
+    /*function check($users)
     {
         foreach ( $users as $nick => $host )
         {
@@ -34,7 +47,7 @@ class MelanoBotCommand
         }
         
         return false;
-    }
+    }*/
 }
 
 class MelanoBot
@@ -48,7 +61,7 @@ class MelanoBot
     private $join_list = array();
     public $strip_colors = false; ///< whether IRC colors should be removed before command interpretation
     public $output_log = 1; ///< Output log verbosity: 0: no output, 1: some output, 2: a lot of output
-    
+    public $auto_restart = false;
     
     function MelanoBot($server, $port, $nick, $password, 
                  $channels, $blacklist=array())
@@ -68,7 +81,7 @@ class MelanoBot
     function log($msg, $level=2)
     {
 		if ( $this->output_log >= $level )
-			echo $msg;
+			echo "\e[30;1m".date("[H:i:s]")."\e[0m".$msg;
     }
     
     /// send a request to change the nick
@@ -197,6 +210,9 @@ class MelanoBot
         
         $data = fgets($this->socket,512);
         
+        if ( $data == "" )
+			return null;
+        
 		$this->log(">\x1b[33m$data\x1b[0m",1);
         
         if ( $this->strip_colors )
@@ -261,14 +277,14 @@ class MelanoBot
                 case 'JOIN':
                     $chan = trim($chan,":");
                     $this->add_name($chan,$from);
-                    return new MelanoBotCommand("greet", array($from), $from, $from, $from_host, $chan, $data, $irc_cmd);
+                    return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
                 case 'KICK':
                     if ( $insize > 3 ) $from = $inarr[3];
                     if ( $from == $this->nick )
                         $this->join_list []= $chan;
                 case 'PART':
                     $this->remove_name($chan,$from);
-                    return new MelanoBotCommand("bye", array($from), $from, $from, $from_host, $chan, $data, $irc_cmd);
+                    return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
                 case 'NICK':
                     $nick = trim($inarr[2],"\n\r!:");
                     if ( $from == $this->nick )
@@ -286,7 +302,7 @@ class MelanoBot
                             $this->remove_name($chan,$from);
                         }
                     }
-                    return new MelanoBotCommand("bye", array($from), $from, $from, $from_host, $chans, $data, $irc_cmd);
+                    return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chans, $data, $irc_cmd);
                 case 'PRIVMSG':
                     $query = trim(substr($data,strpos($data,':',1)+1));
                     $query_params = explode(' ',$query);
@@ -311,20 +327,20 @@ class MelanoBot
                             
                             $command = strtolower(trim(array_shift($query_params),"!"));
                             
-                            $chanhax = false;
                             $n_params=count($query_params);
+                            /*$chanhax = false;
                             if ( $n_params > 2 && $query_params[$n_params-2] == 'chanhax' )
                             {
                                 $chan = array_pop($query_params);
                                 $chanhax = true;
                                 array_pop($query_params); // remove chanhax
                             }
-                            $query = implode(' ',$query_params);
+                            $query = implode(' ',$query_params);*/
                                  
-                            return new MelanoBotCommand($command,$query_params,$query,$from,$from_host,$chan,$data, $irc_cmd, $chanhax);
+                            return new MelanoBotCommand($command,$query_params,/*$query,*/$from,$from_host,$chan,$data, $irc_cmd/*, $chanhax*/);
                         }
                     }
-                    return new MelanoBotCommand(null,$query_params,$query,$from,$from_host,$chan,$data, $irc_cmd);
+                    return new MelanoBotCommand(null,$query_params/*,$query*/,$from,$from_host,$chan,$data, $irc_cmd);
                     
             }
         }
@@ -335,10 +351,14 @@ class MelanoBot
         
     }
     
-    function say($channel,$msg)
+    function say($channel,$msg,$action=false)
     {
         if ( $channel != $this->nick )
+        {
+			if ( $action )
+				$msg = irc_action($msg);
             $this->command("PRIVMSG","$channel :$msg");
+		}
         else
             $this->log("ERROR: trying to send a message to myself\n",1);
     }
