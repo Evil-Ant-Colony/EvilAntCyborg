@@ -161,7 +161,7 @@ class Executor_Wiki extends CommandExecutor
 	{
         $text = mediawiki_describe($cmd->param_string(),$this->api_url);
         if ( $text == "" )
-            $bot->say($cmd->channel, "I don't know anything about {$cmd->param_string}");
+            $bot->say($cmd->channel, "I don't know anything about ".$cmd->param_string());
         else
             $bot->say($cmd->channel, elide_string($text,400));
 	}
