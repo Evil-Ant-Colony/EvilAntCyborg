@@ -81,7 +81,7 @@ class MelanoBot
     function log($msg, $level=2)
     {
 		if ( $this->output_log >= $level )
-			echo "\e[30;1m".date("[H:i:s]")."\e[0m".$msg;
+			echo "\x1b[30;1m".date("[H:i:s]")."\x1b[0m".$msg;
     }
     
     /// send a request to change the nick
