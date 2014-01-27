@@ -48,7 +48,10 @@ class Executor_GoogleImages extends CommandExecutor
 			$bot->say($cmd->channel, $response["responseData"]["results"][0]["unescapedUrl"]);
 		}
 		else
-			print_r($response);
+		{
+			//print_r($response);
+			$bot->say($cmd->channel, "Didn't find any image of ".$cmd->param_string());
+		}
 	}
 }
 
@@ -71,7 +74,10 @@ class Executor_Youtube extends CommandExecutor
             return true;
         }
         else
-            print_r($response);
+        {
+            //print_r($response);
+			$bot->say($cmd->channel, "http://www.youtube.com/watch?v=oHg5SJYRHA0");
+		}
 	}
 }
 
@@ -96,8 +102,8 @@ class Raw_Youtube extends RawCommandExecutor
 			{
 				$title = $response["entry"]["title"]['$t'];
 			}
-			else
-				print_r($response);
+			/*else
+				print_r($response);*/
 				
 			$bot->say($cmd->channel,"Ha Ha! Nice vid {$cmd->from}! $title");
 		}
@@ -121,9 +127,11 @@ class Executor_Dictionary extends CommandExecutor
         if ( isset($response["list"][0]["definition"]) )
         {
             $bot->say($cmd->channel, str_replace(array("\n","\r")," ",$response["list"][0]["definition"]) );
-            return true;
         }
         else
-            print_r($response);
+        {
+			$bot->say($cmd->channel, "I don't know what ".$cmd->param_string()." means");
+            //print_r($response);
+		}
 	}
 }
