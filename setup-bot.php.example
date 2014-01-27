@@ -3,7 +3,9 @@
 require_once("executors-core.php");
 require_once("executors-message.php");
 require_once("executors-misc.php");
+require_once('executors-webapi.php');
 require_once('executor-mediawiki.php');
+require_once('executors-webapi.php');
 
 date_default_timezone_set("UTC");
 
@@ -55,6 +57,7 @@ $driver->install(array(
 	new Executor_GoogleImages(),
 	new Executor_Youtube(),
 	new Executor_ReverseText(),
+	new Executor_Dictionary(),
 // non-PRIVMSG
 	new Executor_RespondKick(),
 	new Executor_GreetingSelf("Hello!!!"),
