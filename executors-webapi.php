@@ -1,4 +1,5 @@
 <?php
+require_once("bot-driver.php");
 
 /*class Helper_JSON_API
 {
@@ -111,6 +112,17 @@ class Raw_Youtube extends RawCommandExecutor
 	
 }
 
+
+function elide_string($string,$length)
+{
+    $lines = explode("\n",wordwrap($string,$length));
+    $text = $lines[0];
+    if ( count($lines) > 1 )
+        $text .= "...";
+    return $text;
+}
+
+
 class Executor_Dictionary extends CommandExecutor
 {
 	
@@ -126,7 +138,7 @@ class Executor_Dictionary extends CommandExecutor
         $response = json_decode(file_get_contents($url),true);
         if ( isset($response["list"][0]["definition"]) )
         {
-            $bot->say($cmd->channel, str_replace(array("\n","\r")," ",$response["list"][0]["definition"]) );
+            $bot->say($cmd->channel, elide_string(str_replace(array("\n","\r")," ",$response["list"][0]["definition"]),400) );
         }
         else
         {

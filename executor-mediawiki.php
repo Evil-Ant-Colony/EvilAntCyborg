@@ -1,5 +1,5 @@
 <?php
-require_once("bot-driver.php");
+require_once("executors-webapi.php");
 
 function parse_wikitext(&$wikitext)
 {
@@ -137,16 +137,6 @@ function mediawiki_describe($title,$api_url)
     return $wikitext;
 }
 
-function elide_string($string,$length)
-{
-    $lines = explode("\n",wordwrap($string,$length));
-    $text = $lines[0];
-    if ( count($lines) > 1 )
-        $text .= "...";
-    return $text;
-}
-
-
 
 class Executor_Wiki extends CommandExecutor
 {
@@ -189,8 +179,8 @@ class Executor_Wiki_Opensearch extends CommandExecutor
 			$bot->say($cmd->channel, elide_string($reply->Section->Item->Description,400));
 		else
 		{
-			echo "$url\n";
-			print_r($reply);
+			//echo "$url\n";
+			//print_r($reply);
 			$bot->say($cmd->channel, "I don't know anything about ".$cmd->param_string());
 		}
 	}
