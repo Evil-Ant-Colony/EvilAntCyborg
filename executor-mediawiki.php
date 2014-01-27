@@ -1,4 +1,5 @@
 <?php
+require_once("bot-driver.php");
 
 function parse_wikitext(&$wikitext)
 {
@@ -63,7 +64,7 @@ function parse_wikitext_link(&$wikiarr)
                 array_shift($wikiarr);
                 return $text;
             }
-            else if ( $text == 'File:' )
+            else if ( $text == 'File:' ||  $text == 'Image:' )
             {
                 parse_wikitext_skip_template($wikiarr,2,'[',']');
                 return "";
@@ -124,13 +125,14 @@ function mediawiki_describe($title,$api_url)
     $wikitext = @$p[0]["revisions"][0]["*"];
 
     $wikitext = preg_replace("(\n[*:;])","",$wikitext);
-    $wikitext = str_replace("'","",$wikitext);
+    $wikitext = preg_replace("(''+)","",$wikitext);
     $wikitext = preg_replace("(<([a-z]+)[^>]*/>)is","",$wikitext);
     $wikitext = preg_replace("(<([a-z]+)[^>]*>.*?</\\1>)is","",$wikitext);
     $wikitext = preg_replace("(\\s+)"," ",$wikitext);
     $wikitext = strip_tags($wikitext);
     $wikitext = html_entity_decode($wikitext);
     $wikitext = parse_wikitext($wikitext);
+    $wikitext = preg_replace("(^\\s+)","",$wikitext);
     
     return $wikitext;
 }
@@ -164,5 +166,32 @@ class Executor_Wiki extends CommandExecutor
             $bot->say($cmd->channel, "I don't know anything about ".$cmd->param_string());
         else
             $bot->say($cmd->channel, elide_string($text,400));
+	}
+}
+
+
+class Executor_Wiki_Opensearch extends CommandExecutor
+{
+	public $api_url;
+	
+	
+	function Executor_Wiki_Opensearch($trigger,$service,$api_url)
+	{
+		parent::__construct($trigger,null,"$trigger Term...","Search the term on $service");
+		$this->api_url = $api_url;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		$url=$this->api_url."?action=opensearch&format=xml&limit=1&search=".urlencode($cmd->param_string());
+		$reply = new SimpleXMLElement(file_get_contents($url));
+		if ( isset($reply->Section->Item->Description) )
+			$bot->say($cmd->channel, elide_string($reply->Section->Item->Description,400));
+		else
+		{
+			echo "$url\n";
+			print_r($reply);
+			$bot->say($cmd->channel, "I don't know anything about ".$cmd->param_string());
+		}
 	}
 }
