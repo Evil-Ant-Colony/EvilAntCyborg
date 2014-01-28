@@ -129,7 +129,7 @@ class Executor_Dictionary extends CommandExecutor
 	function Executor_Dictionary($trigger="define")
 	{
 		parent::__construct($trigger,null,"$trigger Term...",
-		'Find the definittion of Term (using Urmandictionary)');
+		'Find the definition of Term (using Urban Dictionary)');
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)

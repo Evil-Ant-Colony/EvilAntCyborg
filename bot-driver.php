@@ -327,7 +327,7 @@ class BotDriver
 			
 		$this->bot->login();
 		
-		while($this->loop_step());
+		while($this->bot->connected() && $this->loop_step());
 		
 		foreach ( $this->post_executors as $ex )
 			$ex->execute($this);
