@@ -345,3 +345,36 @@ class Executor_RenderPony extends CommandExecutor
 }
 
 
+
+
+class Raw_Annoy extends RawCommandExecutor
+{
+	public $terms;
+	public $toggler;
+	public $enabled;
+	
+	function Raw_Annoy($toggler)
+	{
+		$this->terms=array('LOL','ROFL','XD','><',':D','OMG','WTF');
+		$this->toggler = strtoupper($toggler);
+		$this->enabled = true;
+	}
+	
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		return ( $cmd->cmd == null && $this->enabled && count($cmd->params) == 1 
+				&& in_array(strtoupper($cmd->params[0]),$this->terms) )
+				|| strtoupper($cmd->cmd) == $this->toggler ;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		if ( strtoupper($cmd->cmd) == $this->toggler )
+			$this->enabled = !$this->enabled;
+		else
+		{
+			$bot->say($cmd->channel,$this->terms[rand()%count($this->terms)]." he said ".$cmd->params[0] );
+		}
+	}
+	
+}
