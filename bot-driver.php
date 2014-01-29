@@ -162,6 +162,8 @@ class BotDriver
 	{
 		$this->bot = $bot;
 		$this->grant_access['admin'] = array('owner');
+		$this->add_to_list('owner',':STDIN:',':STDIN:');
+		stream_set_blocking(STDIN,0);
 	}
 	
 	/// Append an executor to the list
@@ -271,9 +273,24 @@ class BotDriver
 		
 	}
 	
+	function read_stdin()
+	{
+		$data = fgets(STDIN,512);
+		if ( $data == "" )
+			return null;
+		$data_arr = explode(" ",trim($data));
+		$cmd = array_shift($data_arr);
+		return new MelanoBotCommand($cmd,$data_arr,':STDIN:',':STDIN:',"",$data,'PRIVMSG');
+	}
+	
 	function loop_step()
 	{
 		$cmd = $this->bot->loop_step();
+		if ( $cmd == null )
+			$cmd = $this->read_stdin();
+		
+		
+		
 		if ( !$this->bot->connected() )
 			return false;
 			
@@ -313,6 +330,8 @@ class BotDriver
 				}
 			}
 		}
+		/*else
+			usleep(500);*/
 		
 		return true;
 	}

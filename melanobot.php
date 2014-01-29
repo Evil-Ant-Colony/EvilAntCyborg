@@ -67,6 +67,8 @@ class MelanoBot
                  $channels, $blacklist=array())
     {
         $this->socket = fsockopen($server,$port);
+        //stream_set_blocking($this->socket,0);
+        stream_set_timeout($this->socket,1);
         $this->server = $server;
         $this->port = $port;
         $this->real_name = $nick;
