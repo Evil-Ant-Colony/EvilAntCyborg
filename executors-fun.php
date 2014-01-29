@@ -353,8 +353,9 @@ class Raw_Annoy extends RawCommandExecutor
 	public $toggler;
 	public $enabled;
 	
-	function Raw_Annoy($toggler)
+	function Raw_Annoy($toggler,$auth='admin')
 	{
+		$this->auth = $auth;
 		$this->terms=array('LOL','ROFL','XD','><',':D','OMG','WTF');
 		$this->toggler = strtoupper($toggler);
 		$this->enabled = true;
@@ -364,7 +365,8 @@ class Raw_Annoy extends RawCommandExecutor
 	{
 		return ( $cmd->cmd == null && $this->enabled && count($cmd->params) == 1 
 				&& in_array(strtoupper($cmd->params[0]),$this->terms) )
-				|| strtoupper($cmd->cmd) == $this->toggler ;
+				|| ( strtoupper($cmd->cmd) == $this->toggler && 
+				$this->check_auth($cmd->from,$cmd->host,$driver) );
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
