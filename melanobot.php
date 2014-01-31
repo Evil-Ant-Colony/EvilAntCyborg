@@ -341,7 +341,6 @@ class MelanoBot
         
         if ( $insize > 1 && $inarr[1] == 221  )
         {
-			print_r($this);
             $this->connection_status = self::PROTOCOL_CONNECTED;
             $this->auth();
             
