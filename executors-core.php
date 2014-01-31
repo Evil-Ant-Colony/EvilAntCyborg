@@ -63,6 +63,33 @@ class Executor_Quit extends CommandExecutor
 	}
 }
 
+
+class Executor_Reconnect extends CommandExecutor
+{
+	function Executor_Reconnect()
+	{
+		parent::__construct('reconnect','owner','reconnect','Reconnect to a different server');
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		$bot->reconnect("Reconnecting...");
+	}
+}
+
+class Executor_Server extends CommandExecutor
+{
+	function Executor_Server()
+	{
+		parent::__construct('server','owner','server','Show server name');
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		$bot->say($cmd->channel,$bot->current_server);
+	}
+}
+
 class Executor_Restart extends CommandExecutor
 {
 	public $massage;
@@ -96,7 +123,7 @@ class Post_Restart extends PostExecutor
 	
 	function execute( BotDriver $driver)
 	{
-		if ( !$driver->bot->connected() && $driver->bot->auto_restart )
+		if ( $driver->bot->connection_status() == MelanoBot::DISCONNECTED && $driver->bot->auto_restart )
 			touch($this->restart_file);
 	}
 }

@@ -29,48 +29,88 @@ class MelanoBotCommand
 			array_unshift($p,$this->cmd);
 		return implode(" ",array_slice($p,$offset,$length));
     }
-    
-    /**
-     * \brief Check that $this->from / $this->host are found in $user (nick=>host|null)
-     */
-    /*function check($users)
+   
+}
+
+class MelanoBotServer
+{
+	public $server, $port;
+	private $socket;
+	 
+	
+	function MelanoBotServer($server, $port=6667)
+	{
+		$this->server = $server;
+		$this->port = $port;
+		$this->socket = false;
+	}
+	
+	public function __toString()
     {
-        foreach ( $users as $nick => $host )
-        {
-            if ( $host == null )
-            {
-                if ( $nick == $this->from )
-                    return true;
-            }
-            else if ( $this->host == $host ) 
-                return true;
-        }
-        
-        return false;
-    }*/
+        return "{$this->server}:{$this->port}";
+    }
+	
+	function connect()
+	{
+		$this->socket = fsockopen($this->server,$this->port);
+		//stream_set_blocking($this->socket,0);
+		stream_set_timeout($this->socket,1);
+		return $this->socket;
+	}
+	
+	function connected()
+	{
+		return !($this->socket === false || feof($this->socket));
+	}
+	
+	function disconnect()
+	{
+		if ( $this->socket )
+		{
+			fclose($this->socket);
+			$this->socket = false;
+		}
+	}
+	
+	function write($data)
+	{
+		fputs($this->socket,$data);
+	}
+	
+	function read($len=512)
+	{
+		return fgets($this->socket,$len);
+	}
 }
 
 class MelanoBot
 {
-    private $socket;
-    public $server, $port, $real_name, $nick, $auth_nick, $password;
+
+	const DISCONNECTED = 0;
+	const SERVER_CONNECTED = 1;
+	const PROTOCOL_CONNECTING = 2;
+	const PROTOCOL_CONNECTED = 3;
+
+
+	public $current_server, $current_index;
+    public $servers, $real_name, $nick, $auth_nick, $password;
     public $blacklist, $listen_to;
     public $mode = null;
-    private $v_connected = 0;
+    private $connection_status = self::DISCONNECTED; 
     private $names = array();
     private $join_list = array();
     public $strip_colors = false; ///< whether IRC colors should be removed before command interpretation
     public $output_log = 1; ///< Output log verbosity: 0: no output, 1: some output, 2: a lot of output
     public $auto_restart = false;
+    public $channels=array(); ///< Channels the bot is currently connected to
     
-    function MelanoBot($server, $port, $nick, $password, 
+    function MelanoBot($servers, $nick, $password, 
                  $channels, $blacklist=array())
     {
-        $this->socket = fsockopen($server,$port);
-        //stream_set_blocking($this->socket,0);
-        stream_set_timeout($this->socket,1);
-        $this->server = $server;
-        $this->port = $port;
+		if ( !is_array($servers) )
+			$this->servers = array($servers);
+		else
+			$this->servers = $servers;
         $this->real_name = $nick;
         $this->auth_nick = $nick;
         $this->nick = $nick;
@@ -78,12 +118,78 @@ class MelanoBot
         $this->blacklist = $blacklist;
         $this->join_list = $channels;
         $this->listen_to = "$nick:";
+        $this->connect();
+    }
+    
+    function connect($i = 0)
+    {
+		if ( isset($this->servers[$i]) )
+		{
+			$this->servers[$i]->connect();
+			if ( $this->servers[$i]->connected() )
+			{
+				$this->connection_status = self::SERVER_CONNECTED;
+				$this->current_index = $i;
+				$this->current_server = $this->servers[$i];
+				$this->log("Connected to {$this->current_server}\n",1);
+			}
+			else
+			{
+				$this->log("Connection failed ".$this->servers[$i]."\n",1);
+			}
+		}
+    }
+    
+    function disconnect()
+    {
+		$this->channels = array();
+		$this->names = array();
+		if ( $this->current_server->connected() )
+		{
+			$this->log("Disconnecting {$this->current_server}\n",1);
+			$this->current_server->disconnect();
+		}
+		$this->connection_status = self::DISCONNECTED;
+    }
+    
+    function reconnect($message="reconnect")
+    {
+		$this->connection_status = self::DISCONNECTED;
+		$join_list = $this->channels;
+		$this->quit($message);
+		$i = $this->current_index;
+		for ( $tries = 0; $tries < count($this->current_server); $tries++ )
+		{
+			$i = ( $i + 1 ) % count($this->servers);
+			$this->connect($i);
+			if ( $this->servers[$i]->connected() )
+			{
+				$this->join_list = $join_list;
+				return;
+			}
+		}
+		$this->log("All connections failed\n",1);
+		print_r($this);
     }
     
     function log($msg, $level=2)
     {
 		if ( $this->output_log >= $level )
 			echo "\x1b[30;1m".date("[H:i:s]")."\x1b[0m".$msg;
+    }
+    
+    function add_channel($chan)
+    {
+		$this->channels []= $chan;
+		$this->channels = array_unique($this->channels);
+    }
+    
+    function remove_channel($chan)
+    {
+		if (($key = array_search($chan, $this->channels)) !== false) 
+		{
+			array_splice($this->channels,$key,1);
+		}
     }
     
     /// send a request to change the nick
@@ -150,8 +256,11 @@ class MelanoBot
     
     function login()
     {
-        $this->login_ext($this->real_name,$this->nick);
-        $this->v_connected = 1;
+        if ( $this->connection_status == self::SERVER_CONNECTED )
+        {
+			$this->login_ext($this->real_name,$this->nick);
+			$this->connection_status = self::PROTOCOL_CONNECTING;
+		}
     }
     
     function login_ext($real_name, $nick)
@@ -172,10 +281,10 @@ class MelanoBot
     
     function command($command, $data)
     {
-        if ( $this->socket !== false )
+        if ( $this->current_server->connected() )
         {
             $data = str_replace(array("\n","\r")," ",$data);
-            fputs($this->socket,"$command $data\n\r");
+            $this->current_server->write("$command $data\n\r");
             $this->log("<\x1b[32m$command $data\x1b[0m\n",1);
         }
     }
@@ -198,19 +307,22 @@ class MelanoBot
     function quit($message="bye!")
     {
         $this->command('QUIT',":$message");
-        $this->v_connected = 0;
+        if ( $this->connection_status > self::SERVER_CONNECTED )
+			$this->connection_status = self::SERVER_CONNECTED;
+        $this->disconnect();
     }
     
     function loop_step()
     {
-        if ( $this->socket === false || feof($this->socket) )
+        if ( !$this->current_server->connected() )
         {
-            $this->quit();
-            $this->log("Network Quit\n",1);
+			$this->connection_status = self::DISCONNECTED;
+            $this->log("Network Quit on {$this->current_server}\n",1);
+            $this->reconnect("Automatic Reconnection");
             return null;
         }
         
-        $data = fgets($this->socket,512);
+        $data = $this->current_server->read();
         
         if ( $data == "" )
 			return null;
@@ -225,25 +337,23 @@ class MelanoBot
         if ( $inarr[0] == 'PING' )
         {
             $this->command('PONG',$inarr[1]);
-            $this->v_connected++;
         }
         
         if ( $insize > 1 && $inarr[1] == 221  )
         {
-            $this->v_connected++;
-        }
-        
-        if ( $this->v_connected == 3 )
-        {
-            $this->v_connected++;
+			print_r($this);
+            $this->connection_status = self::PROTOCOL_CONNECTED;
             $this->auth();
+            
         }
         
-        if ( $this->v_connected > 3 && !empty($this->join_list) )
-        {
-            $this->log("Join\n");
-            $this->join($this->join_list);
-        }
+        echo $this->connection_status."\n";
+		if ( $this->connection_status >= self::PROTOCOL_CONNECTED && !empty($this->join_list) )
+		{
+			$this->log("Join\n");
+			$this->join($this->join_list);
+		}
+        
         
         if ( $insize > 5 && $inarr[1] == 353 )
         {
@@ -279,12 +389,16 @@ class MelanoBot
                 case 'JOIN':
                     $chan = trim($chan,":");
                     $this->add_name($chan,$from);
+                    if ( $from == $this->nick )
+						$this->add_channel($chan);
                     return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
                 case 'KICK':
                     if ( $insize > 3 ) $from = $inarr[3];
                     if ( $from == $this->nick )
                         $this->join_list []= $chan;
                 case 'PART':
+                    if ( $from == $this->nick )
+						$this->remove_channel($chan);
                     $this->remove_name($chan,$from);
                     return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
                 case 'NICK':
@@ -304,6 +418,8 @@ class MelanoBot
                             $this->remove_name($chan,$from);
                         }
                     }
+                    if ( $from == $this->nick )
+						$this->channels = array();
                     return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chans, $data, $irc_cmd);
                 case 'PRIVMSG':
                     $query = trim(substr($data,strpos($data,':',1)+1));
@@ -365,14 +481,17 @@ class MelanoBot
             $this->log("ERROR: trying to send a message to myself\n",1);
     }
     
-    function connected()
+    function server_connected()
     {
-        return $this->v_connected;
+		return $this->current_server && $this->current_server->connected();
     }
     
-    function fully_connected()
+    function connection_status()
     {
-        return $this->v_connected >= 3;
+		if ( !$this->server_connected() )
+			return self::DISCONNECTED;
+        return $this->connection_status;
     }
+
     
 }

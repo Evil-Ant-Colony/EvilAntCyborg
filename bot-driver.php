@@ -288,11 +288,6 @@ class BotDriver
 		$cmd = $this->bot->loop_step();
 		if ( $cmd == null )
 			$cmd = $this->read_stdin();
-		
-		
-		
-		if ( !$this->bot->connected() )
-			return false;
 			
 		if ( $cmd != null )
 		{
@@ -330,10 +325,23 @@ class BotDriver
 				}
 			}
 		}
-		/*else
-			usleep(500);*/
-		
-		return true;
+	}
+	
+	function check_status()
+	{
+		switch ( $this->bot->connection_status() )
+		{
+			case MelanoBot::DISCONNECTED:
+				return false;
+			case MelanoBot::SERVER_CONNECTED:
+				$this->bot->login();
+				return true;
+			case MelanoBot::PROTOCOL_CONNECTING:
+			case MelanoBot::PROTOCOL_CONNECTED:
+				return true;
+			default:
+				return false;
+		}
 	}
 	
 	function run()
@@ -344,9 +352,11 @@ class BotDriver
 		foreach ( $this->pre_executors as $ex )
 			$ex->execute($this);
 			
-		$this->bot->login();
 		
-		while($this->bot->connected() && $this->loop_step());
+		while($this->check_status())
+		{
+			$this->loop_step();
+		}
 		
 		foreach ( $this->post_executors as $ex )
 			$ex->execute($this);

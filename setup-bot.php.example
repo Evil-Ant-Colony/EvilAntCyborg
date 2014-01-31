@@ -1,4 +1,5 @@
 <?php
+require_once("networks.php");
 
 require_once("executors-core.php");
 require_once("executors-message.php");
@@ -34,6 +35,8 @@ $message_queue = new MessageQueue();
 
 $driver->install(array(
 // owner commands
+	new Executor_Reconnect(),
+	new Executor_Server(),
 	new Executor_Quit(),
 	new Executor_Restart(),
 	new Executor_Join(),
@@ -71,7 +74,7 @@ $driver->install(array(
 	new Raw_Youtube(),
 	new Raw_Echo("Fun!","?!",'admin'),
 	new Raw_Question(),
-	new Raw_What(),
+	new Raw_What(), /// KEEP AS LAST
 // finalizing commands
 	new Post_Restart(),
 ));
