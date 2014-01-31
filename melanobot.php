@@ -347,7 +347,6 @@ class MelanoBot
             
         }
         
-        echo $this->connection_status."\n";
 		if ( $this->connection_status >= self::PROTOCOL_CONNECTED && !empty($this->join_list) )
 		{
 			$this->log("Join\n");
