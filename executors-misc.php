@@ -119,6 +119,28 @@ class Raw_Echo extends RawCommandExecutor
 }
 
 
+class Executor_GreetingAllUsers extends CommandExecutor
+{
+	public $message;
+	function Executor_GreetingAllUsers($message)
+	{
+		parent::__construct(null,null);
+		$this->irc_cmd = 'JOIN';
+		$this->message = $message;
+	}
+	
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		return $cmd->from != $bot->nick;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		$message = str_replace('%',$cmd->from,$this->message);
+		$bot->say($cmd->channel,$message);
+	}
+}
+
 class Executor_GreetingUsers extends CommandExecutor
 {
 	public $messages;
@@ -158,5 +180,141 @@ class Executor_GreetingSelf extends CommandExecutor
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
 	{
 		$bot->say($cmd->channel,$this->message);
+	}
+}
+
+class Executor_MiscListReadonly extends CommandExecutor
+{
+	public $list_name;
+	
+	function Executor_MiscListReadonly($list_name, $auth=null)
+	{
+		parent::__construct($list_name,$auth,"$list_name",
+			"Show the values in the $list_name list");
+		$this->list_name = $list_name;
+	}
+	
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	{
+		return count($cmd->params) == 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		$list = &$driver->data[$this->list_name] ;
+		if ( count($list) == 0 )
+			$bot->say($cmd->channel,"(Empty list)");
+		else
+			$bot->say($cmd->channel,implode(" ",$list));
+	}
+}
+
+class Executor_MiscListEdit extends CommandExecutor
+{
+	public $list_name;
+	
+	private $shared, $list;
+	
+	function Executor_MiscListEdit($list_name, $auth='admin')
+	{
+		parent::__construct($list_name,$auth,"$list_name [+|add|-|rm value]|[clear]",
+			"Add a value to the $list_name list");
+			
+		$this->list_name = $list_name;
+		$this->shared = true;
+			
+		if ( !$this->shared )
+		{
+			$this->list = array();
+		}
+	}
+	
+	function add_to_list($value)
+	{
+		$this->list []= $value;
+		$this->list = array_unique($this->list);
+	}
+	
+	function remove_from_list($value)
+	{
+		if (($key = array_search($value, $this->list)) !== false) 
+		{
+			array_splice($this->list,$key,1);
+		}
+	}
+	
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	{
+		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
+	}
+	
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		if ( $this->shared && $this->list == null )
+		{
+			$driver->data[$this->list_name] = array();
+			$this->list = &$driver->data[$this->list_name];
+		}
+		
+		$remove = false;
+		$nick_i = 1;
+		if ( $cmd->params[0] == "add" || $cmd->params[0] == "+" )
+			$remove = false;
+		elseif ( $cmd->params[0] == "rm" || $cmd->params[0] == "-" ) 
+			$remove = true;
+		elseif ( $cmd->params[0] == "clear" )
+		{
+			$this->list = array();
+			$bot->say($cmd->channel,"OK, {$this->list_name} cleared");
+				
+			return;
+		}
+		else
+			$nick_i = 0;
+			
+		if ( !isset($cmd->params[$nick_i]) )
+			$bot->say($cmd->channel,"What?");
+		else
+		{
+			for ( $i = $nick_i; $i < count($cmd->params); $i++ )
+			{
+				$value = $cmd->params[$i];
+				
+				if ( $value != "" )
+				{
+					if ( $remove )
+					{
+						$this->remove_from_list($value);
+						$bot->say($cmd->channel,"OK, $value is no longer in {$this->list_name}");
+					}
+					else
+					{
+						$this->add_to_list($value);
+						$bot->say($cmd->channel,"OK, $value is in {$this->list_name}");
+					}
+					usleep(($i-$nick_i+1)*100000);
+				}
+			}
+		}
+		/*else
+		{
+			if ( count($this->list) == 0 )
+				$bot->say($cmd->channel,"(Empty list)");
+			else
+				$bot->say($cmd->channel,implode(" ",$this->list));
+		}*/
+	}
+	
+}
+
+class Executor_MiscList extends Executor_Multi
+{
+	function Executor_MiscList($list_name, $auth_edit='admin',$auth_read=null)
+	{
+		parent::__construct($list_name,array(
+			new Executor_MiscListEdit($list_name,$auth_edit),
+			new Executor_MiscListReadonly($list_name,$auth_read)
+		));
 	}
 }

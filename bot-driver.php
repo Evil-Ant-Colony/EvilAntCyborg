@@ -13,7 +13,7 @@ abstract class ExecutorBase
 	}
 	
 	/// Show help about this command
-	abstract function help(MelanoBot $bot,$channel);
+	abstract function help(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver);
 	
 	/// Check that with the data provided by cmd, this executor can run
 	abstract function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver);
@@ -53,10 +53,10 @@ abstract class CommandExecutor extends ExecutorBase
 	}
 	
 	/// Show help about this command
-	function help(MelanoBot $bot,$channel)
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
 	{
-		$bot->say($channel,"\x0304".$this->name()."\x03: \x0314{$this->synopsis}\x03");
-		$bot->say($channel,"\x0302{$this->description}\x03");
+		$bot->say($cmd->channel,"\x0304".$this->name()."\x03: \x0314{$this->synopsis}\x03");
+		$bot->say($cmd->channel,"\x0302{$this->description}\x03");
 	}
 	
 	
@@ -80,7 +80,7 @@ abstract class RawCommandExecutor extends ExecutorBase
 	}
 	
 	/// Show help about this command
-	function help(MelanoBot $bot,$channel)
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
 	{
 	}
 	
@@ -105,7 +105,7 @@ abstract class Filter extends ExecutorBase
 	
 	
 	/// Show help about this filter
-	function help(MelanoBot $bot,$channel)
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
 	{
 	}
 	
@@ -148,15 +148,16 @@ abstract class PreExecutor
  */
 class BotDriver
 {
-	public $executors = array();
-	public $raw_executors = array();
-	public $filters = array();
-	public $post_executors = array();
-	public $pre_executors = array();
-	public $on_error = null;
-	public $lists = array();
-	private $grant_access = array();
-	public $bot;
+	public $executors = array();      ///< List of executors for direct PRIVMSG commands
+	public $raw_executors = array();  ///< List of executors for indirect PRIVMSG commands
+	public $filters = array();        ///< Stuff to be applied to each command before checking for execution
+	public $post_executors = array(); ///< List of executors applied before the bot quits
+	public $pre_executors = array();  ///< List of executors applied before the bot starts
+	public $on_error = null;          ///< Function called when a user doesn't have the right to fire a direct executor
+	public $lists = array();          ///< Lists of user "list_name" => array(user_nick=>host or null)
+	private $grant_access = array();  ///< Grant rights from a list to other list1 => array(lis2begrantedrights)
+	public $bot;                      ///< IRC listener
+	public $data = array();           ///< Misc data that can be shared between executors
 	
 	function BotDriver(MelanoBot $bot)
 	{

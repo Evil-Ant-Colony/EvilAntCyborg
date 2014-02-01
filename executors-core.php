@@ -31,7 +31,7 @@ class Executor_Help extends CommandExecutor
 			{
 				$hc = strtolower($hc);
 				if ( isset($list[$hc]) )
-					$list[$hc]->help($bot,$cmd->channel);
+					$list[$hc]->help($cmd,$bot,$driver);
 				else
 					$bot->say($cmd->channel,"You can't do $hc");
 				$i++;
@@ -329,4 +329,57 @@ class Executor_RawIRC extends CommandExecutor
 			$bot->command($command, $cmd->param_string() ); 
 		}
 	}
+}
+
+
+/**
+ * \brief Handles multiple executors with different permissions but the same trigger
+ */
+class Executor_Multi extends CommandExecutor
+{
+	public $executors;
+	
+	function Executor_Multi($trigger,$executors)
+	{
+		parent::__construct($trigger,null);
+		$this->executors = $executors;
+	}
+	
+	function check_auth($nick,$host,BotDriver $driver)
+	{
+		foreach($this->executors as $ex )
+			if ( $ex->check_auth($nick,$host,$driver) )
+				return true;
+		return false;
+	}
+	
+	
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	{
+		foreach($this->executors as $ex )
+			if ( $ex->check($cmd,$bot,$driver) )
+				return true;
+		return false;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		foreach($this->executors as $ex )
+			if ( $ex->check($cmd,$bot,$driver) )
+			{
+				$ex->execute($cmd,$bot,$driver);
+				return;
+			}
+	}
+	
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	{
+		foreach($this->executors as $ex )
+			if ( $ex->check_auth($cmd->from,$cmd->host,$driver) )
+			{
+				$ex->help($cmd,$bot,$driver);
+				return;
+			}
+	}
+	
 }
