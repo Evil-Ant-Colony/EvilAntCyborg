@@ -338,6 +338,15 @@ class MelanoBot
         {
             $this->command('PONG',$inarr[1]);
         }
+        else if ( $inarr[0] == 'ERROR' )
+        {
+			if ( strripos($data,'throttled') !== FALSE )
+			{
+				$this->reconnect("Throttled");
+				return null;
+			}
+			$this->log(">\x1b[31m$data\x1b[0m",0);
+        }
         
         if ( $insize > 1 && $inarr[1] == 221  )
         {

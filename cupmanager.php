@@ -260,7 +260,8 @@ class CupManager
             ) )
         {
             $cup->description = $matches[1];
-            $cup->maps = explode(', ',$matches[3]);
+            if ( count($matches) > 3 )
+				$cup->maps = explode(', ',$matches[3]);
             if ( count($matches) > 6 )
                 $cup->start_time=strtotime($matches[6]);
             //$cup->start_time = $matches;

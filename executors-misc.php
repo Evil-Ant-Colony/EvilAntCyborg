@@ -186,12 +186,16 @@ class Executor_GreetingSelf extends CommandExecutor
 class Executor_MiscListReadonly extends CommandExecutor
 {
 	public $list_name;
+	public $list;
 	
-	function Executor_MiscListReadonly($list_name, $auth=null)
+	function Executor_MiscListReadonly($list_name, $auth=null,&$list_ref=null)
 	{
 		parent::__construct($list_name,$auth,"$list_name",
 			"Show the values in the $list_name list");
 		$this->list_name = $list_name;
+		
+		if ( isset($list_ref) )
+			$this->list = &$list_ref;
 	}
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
@@ -201,11 +205,13 @@ class Executor_MiscListReadonly extends CommandExecutor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
 	{
-		$list = &$driver->data[$this->list_name] ;
-		if ( count($list) == 0 )
+		if ( !isset($this->list) )
+			$this->list = &$driver->data[$this->list_name] ;
+		
+		if ( count($this->list) == 0 )
 			$bot->say($cmd->channel,"(Empty list)");
 		else
-			$bot->say($cmd->channel,implode(" ",$list));
+			$bot->say($cmd->channel,implode(" ",$this->list));
 	}
 }
 
@@ -213,20 +219,17 @@ class Executor_MiscListEdit extends CommandExecutor
 {
 	public $list_name;
 	
-	private $shared, $list;
+	public $list;
 	
-	function Executor_MiscListEdit($list_name, $auth='admin')
+	function Executor_MiscListEdit($list_name, $auth='admin',&$list_ref=null)
 	{
 		parent::__construct($list_name,$auth,"$list_name [+|add|-|rm value]|[clear]",
 			"Add a value to the $list_name list");
 			
 		$this->list_name = $list_name;
-		$this->shared = true;
-			
-		if ( !$this->shared )
-		{
-			$this->list = array();
-		}
+		
+		if ( isset($list_ref) )
+			$this->list = &$list_ref;
 	}
 	
 	function add_to_list($value)
@@ -251,7 +254,7 @@ class Executor_MiscListEdit extends CommandExecutor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
 	{
-		if ( $this->shared && $this->list == null )
+		if ( !isset($this->list) )
 		{
 			$driver->data[$this->list_name] = array();
 			$this->list = &$driver->data[$this->list_name];
@@ -297,24 +300,17 @@ class Executor_MiscListEdit extends CommandExecutor
 				}
 			}
 		}
-		/*else
-		{
-			if ( count($this->list) == 0 )
-				$bot->say($cmd->channel,"(Empty list)");
-			else
-				$bot->say($cmd->channel,implode(" ",$this->list));
-		}*/
 	}
 	
 }
 
 class Executor_MiscList extends Executor_Multi
 {
-	function Executor_MiscList($list_name, $auth_edit='admin',$auth_read=null)
+	function Executor_MiscList($list_name, $auth_edit='admin',$auth_read=null,&$list_ref=null)
 	{
 		parent::__construct($list_name,array(
-			new Executor_MiscListEdit($list_name,$auth_edit),
-			new Executor_MiscListReadonly($list_name,$auth_read)
+			new Executor_MiscListEdit($list_name,$auth_edit,$list_ref),
+			new Executor_MiscListReadonly($list_name,$auth_read,$list_ref)
 		));
 	}
 }

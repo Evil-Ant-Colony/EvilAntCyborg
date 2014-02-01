@@ -14,7 +14,7 @@ $map_pick_stage = 0;
     return is_owner($user) || in_array($user, $whitelist);
 }*/
 
-function is_owner($user)
+/*function is_owner($user)
 {
     global $owners;
     return isset($owners[$user]);
@@ -50,9 +50,9 @@ function helpcheck($help_cmd,$cmd)
         case OWNER: return check_owner($cmd);
         default: return false;
     }
-}
+}*/
 
-function check_cup($cmd,$bot)
+/*function check_cup($cmd,$bot)
 {   
     global $cups, $cup;
     if ( $cup != null )
@@ -65,7 +65,7 @@ function check_cup($cmd,$bot)
     else
         $cup = $cups[0];
     return true;
-}
+}*/
 
 function map_pick_show_turn($cmd,$bot)
 {
@@ -202,7 +202,7 @@ function commands_cup($cmd,$bot)
     
     switch($cmd->cmd)
     {
-        case 'next':
+        /*case 'next':
             if ( check_cup($cmd,$bot) )
             {
                 $num = isset($cmd->params[0]) ? (int)$cmd->params[0] : 1;
@@ -229,7 +229,7 @@ function commands_cup($cmd,$bot)
                 }
             }
             return true;
-            
+            */
         case 'score':
             if ( check_cup($cmd,$bot) && count($cmd->params) >= 1 )
             {
@@ -279,12 +279,12 @@ function commands_cup($cmd,$bot)
             }
             return true;
         
-        case 'results':
+        /*case 'results':
             if ( check_cup($cmd,$bot) )
                 $bot->say($cmd->channel,$cup->result_url());
-            return true;
+            return true;*/
             
-        case 'cup':
+        /*case 'cup':
             if ( !empty($cmd->params) && check_admin($cmd) )
             {
                 $next = trim($cmd->param_string);
@@ -310,9 +310,9 @@ function commands_cup($cmd,$bot)
             if ( check_cup($cmd,$bot) )
                 $bot->say($cmd->channel,"Current cup: {$cup->name} - {$cup->id}");
                 
-            return true;
+            return true;*/
             
-        case 'cups':
+        /*case 'cups':
             if ( check_admin($cmd) )
             {
                 $cups = $cup_manager->tournaments();
@@ -331,7 +331,7 @@ function commands_cup($cmd,$bot)
                     $bot->say($cmd->channel,$text);
                 }
             }
-            return true;
+            return true;*/
             
         case 'pick':
             if ( check_cup($cmd,$bot) && check_admin($cmd) )
@@ -363,7 +363,7 @@ function commands_cup($cmd,$bot)
             }
             return true;
             
-        case 'maps':
+        /*case 'maps':
             if ( check_cup($cmd,$bot) )
             {
                 if ( count($cmd->params) == 1 && $cmd->params[0] == 'count' )
@@ -398,9 +398,9 @@ function commands_cup($cmd,$bot)
                 else
                     $bot->say($cmd->channel,"No maps");
             }
-            return true;
+            return true;*/
             
-        case 'description':    
+        /*case 'description':    
             if ( check_cup($cmd,$bot) )
             {
                 if ( check_admin($cmd) && !empty($cmd->params) )
@@ -411,7 +411,7 @@ function commands_cup($cmd,$bot)
                 $bot->say($cmd->channel,"Cup {$cup->name} ({$cup->id}): {$cup->description}");
             }
             return true;
-            
+            */
         case 'start':
             if ( check_cup($cmd,$bot) && check_admin($cmd) )
             {
@@ -422,7 +422,7 @@ function commands_cup($cmd,$bot)
             }
             return true;
             
-        case 'time':
+        /*case 'time':
             if ( check_cup($cmd,$bot) )
             {
                 if ( check_admin($cmd) && !empty($cmd->params) )
@@ -461,10 +461,10 @@ function commands_cup($cmd,$bot)
         default:
             return false;    
     }
-    return true;
+    return true;*/
 }
 
-function commands_owner($cmd,$bot)
+/*function commands_owner($cmd,$bot)
 {
     if ( ! check_owner($cmd) )
         return false;
@@ -481,9 +481,9 @@ function commands_owner($cmd,$bot)
         default:
             return false;
     }
-}
+}*/
 
-function commands_admin($cmd,$bot)
+/*function commands_admin($cmd,$bot)
 {
     if ( ! check_admin($cmd) )
         return false;
@@ -553,10 +553,10 @@ function commands_admin($cmd,$bot)
         default:
             return false;
     }
-}
+}*/
 
 
-function commands_always($cmd,$bot)
+/*function commands_always($cmd,$bot)
 {
     global $help;
     
@@ -598,9 +598,9 @@ function commands_always($cmd,$bot)
     return false;
 }
 
-$bot->login();
+$bot->login();*/
 
-
+/*
 while(true)
 {
     $cmd = $bot->loop_step();
@@ -621,4 +621,4 @@ while(true)
     }
     //sleep(1);
 }
-
+*/
