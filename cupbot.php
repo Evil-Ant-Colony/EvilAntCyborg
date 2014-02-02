@@ -230,7 +230,7 @@ function commands_cup($cmd,$bot)
             }
             return true;
             */
-        case 'score':
+        /*case 'score':
             if ( check_cup($cmd,$bot) && count($cmd->params) >= 1 )
             {
                 $match = $cup_manager->match($cup->id,$cmd->params[0]);
@@ -255,9 +255,9 @@ function commands_cup($cmd,$bot)
                 $bot->say($cmd->channel,str_pad($t1,$len).": ".$match->score1());
                 $bot->say($cmd->channel,str_pad($t2,$len).": ".$match->score2()); 
             }
-            return true;
+            return true;*/
             
-        case 'end':
+        /*case 'end':
             if ( check_cup($cmd,$bot) && count($cmd->params) == 1 && check_admin($cmd) )
             {
                 $match = $cup_manager->match($cup->id,$cmd->params[0]);
@@ -277,7 +277,7 @@ function commands_cup($cmd,$bot)
                 $cup_manager->end_match($cup,$match);
                 $bot->say($cmd->channel,"{$win->name} won match {$match->id} (".$match->team1()." vs ".$match->team2().")");
             }
-            return true;
+            return true;*/
         
         /*case 'results':
             if ( check_cup($cmd,$bot) )
@@ -412,7 +412,7 @@ function commands_cup($cmd,$bot)
             }
             return true;
             */
-        case 'start':
+        /*case 'start':
             if ( check_cup($cmd,$bot) && check_admin($cmd) )
             {
                 $cup->start();
@@ -420,7 +420,7 @@ function commands_cup($cmd,$bot)
                 $bot->say($cmd->channel,"Cup started");
                 $cup_manager->update_cup($cup);
             }
-            return true;
+            return true;*/
             
         /*case 'time':
             if ( check_cup($cmd,$bot) )

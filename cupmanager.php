@@ -172,6 +172,7 @@ class Cup
         $this->id = $id;
         $this->url = $url;
         $this->name = $name;
+        $this->maps = array();
     }
     
     function result_url()

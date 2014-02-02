@@ -5,16 +5,16 @@ const ADMIN = 1;
 const OWNER = 2;
 $help = array(
     
-    'admin_score'=>array(
+    /*'admin_score'=>array(
         'auth'=>ADMIN,
         'synopsis'=>'score match_id score_1 score_2',
         'desc'=>'Appends the given scores to the score list in the given match',
-    ),
-    'end'=>array(
+    ),*/
+    /*'end'=>array(
         'auth'=>ADMIN,
         'synopsis'=>'end match_id',
         'desc'=>'End the given match and save score changes to challonge',
-    ),
+    ),*/
     /*'admin_cup'=>array(
         'auth'=>ADMIN,
         'synopsis'=>'cup cup_name|cup_id',
@@ -35,11 +35,11 @@ $help = array(
         'synopsis'=>'description new_description',
         'desc'=>'Change the description for the current cup',
     ),*/
-    'start'=>array(
+    /*'start'=>array(
         'auth'=>ADMIN,
         'synopsis'=>'start',
         'desc'=>'Start the cup',
-    ),
+    ),*/
     /*'admin_time'=>array(
         'auth'=>ADMIN,
         'synopsis'=>'time time',
@@ -56,11 +56,11 @@ $help = array(
         'synopsis'=>'next [n]',
         'desc'=>'Show the next (n) scheduled matches',
     ),*/
-    'score'=>array(
+    /*'score'=>array(
         'auth'=>ANYONE,
         'synopsis'=>'score match_id',
         'desc'=>'Show the scores for match_id',
-    ),
+    ),*/
     /*'results'=>array(
         'auth'=>ANYONE,
         'synopsis'=>'results',
