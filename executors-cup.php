@@ -735,11 +735,11 @@ class Executor_Cup_Pick_Stop extends Executor_Cup
 	}
 }
 
-class Executor_Cup_Pick_Start extends Executor_Cup
+class Executor_Cup_Pick_Begin extends Executor_Cup
 {
-	function Executor_Cup_Pick_Start(CachedCupManager $cup_manager)
+	function Executor_Cup_Pick_Begin(CachedCupManager $cup_manager)
 	{
-		parent::__construct($cup_manager,'start','admin','start',
+		parent::__construct($cup_manager,'begin','admin','begin',
 			'Start the actual map picking (after setup)');
 		$this->on_picking = 1;
 	}
@@ -751,7 +751,9 @@ class Executor_Cup_Pick_Start extends Executor_Cup
 		$bot->say($cmd->channel,"Starting map picking ");
 		$bot->say($cmd->channel,$this->map_picker()->player[0]." vs ".$this->map_picker()->player[1]);
 		$bot->say($cmd->channel,$this->map_picker()->pick_drops());
-		$driver->lists['player'] = $this->map_picker()->player;
+		$driver->lists['player'] = array();
+		foreach ( $this->map_picker()->player as $nick )
+			$driver->lists['player'][$nick] = null; /// \todo can use host
 		$this->map_pick_show_turn($cmd,$bot);
 		$this->cup_manager->map_picking_status = 2;
 	}
@@ -818,7 +820,7 @@ class Executor_Pick_Raw extends Executor_Cup
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
 	{
 		return  $this->check_auth($cmd->from,$cmd->host,$driver)
-				&& $cmd->from == $this->map_picker()->current_player();
+				&& $this->map_picker() && $cmd->from == $this->map_picker()->current_player();
 	}
 	
 	function install_on(BotDriver $driver)

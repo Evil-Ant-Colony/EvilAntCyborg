@@ -1,0 +1,73 @@
+<?php
+require_once("networks.php");
+
+require_once("executors-core.php");
+require_once("executors-misc.php");
+require_once('executors-cup.php');
+
+date_default_timezone_set("UTC");
+
+
+
+$bot = new MelanoBot('irc.example.org',6667,'ExampleBot',null,
+                        array('#example','#channel'),
+                        array("OtherBot")); // nicks blacklisted here will be completely ignored
+
+
+$driver = new BotDriver($bot);
+
+$driver->add_to_list('owner','BotOwnerNick','BotOwnerNick.users.example.com');
+
+$driver->add_to_list('admin','Admin1Nick');
+$driver->add_to_list('admin','Admin2Nick','example.com');
+
+$driver->add_to_list('blacklist','AnnoyingUser');
+
+$driver->grant_access['player-admin'] = array('player','admin');
+
+$cup_manager = new CachedCupManager('your challonge api key');
+
+$driver->install(array(
+// owner commands
+	new Executor_Reconnect(),
+	new Executor_Server(),
+	new Executor_Quit(),
+	new Executor_Restart("Cup bot restarting"),
+	new Executor_Join(),
+	new Executor_Part(),
+	new Executor_Nick(),
+// admin commands
+	new Executor_UserList('admin','admin',array('owner'=>"But % is my daddy!")),
+	new Executor_UserList('blacklist','admin',array('owner'=>"But % is my daddy!")),
+// cup commands (admin)
+	new Executor_Cup_Cups($cup_manager),
+	new Executor_Cup_Start($cup_manager),
+	new Executor_Cup_End($cup_manager),
+	new Executor_Cup_Pick_Setup($cup_manager),
+	new Executor_Cup_Pick_Stop($cup_manager),
+	new Executor_Cup_Pick_Begin($cup_manager),
+	new Executor_Cup_Pick_Nick($cup_manager),
+	new Executor_Cup_Pick_Pick($cup_manager),
+// cup commands (admin+anyone)
+	new Executor_Cup_Cup($cup_manager),
+	new Executor_Cup_Description($cup_manager),
+	new Executor_Cup_Time($cup_manager),
+	new Executor_Cup_Maps($cup_manager),
+	new Executor_Cup_Score($cup_manager),
+// cup commands (anyone)
+	new Executor_Cup_Next($cup_manager),
+	new Executor_Cup_Results($cup_manager),
+// cup commands (selected players)
+	new Executor_Pick_Raw($cup_manager),
+// filters
+	new Filter_UserList('blacklist'),
+// public commands
+	new Executor_Help(),
+// non-PRIVMSG
+	new Executor_GreetingSelf("Cup bot ready to go"),
+// Raw
+// Finalizing commands
+	new Post_Restart(),
+));
+
+$driver->run();

@@ -383,3 +383,18 @@ class Executor_Multi extends CommandExecutor
 	}
 	
 }
+
+
+
+class Executor_StdoutDump extends CommandExecutor
+{
+	function Executor_StdoutDump($trigger='debug')
+	{
+		parent::__construct($trigger,'owner',"$trigger",'Print the object structure on stdout');
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		print_r($driver);
+	}
+}
