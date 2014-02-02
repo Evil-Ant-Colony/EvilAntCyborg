@@ -155,7 +155,7 @@ class BotDriver
 	public $pre_executors = array();  ///< List of executors applied before the bot starts
 	public $on_error = null;          ///< Function called when a user doesn't have the right to fire a direct executor
 	public $lists = array();          ///< Lists of user "list_name" => array(user_nick=>host or null)
-	private $grant_access = array();  ///< Grant rights from a list to other list1 => array(lis2begrantedrights)
+	public $grant_access = array();   ///< Grant rights from a list to other list1 => array(lis2begrantedrights)
 	public $bot;                      ///< IRC listener
 	public $data = array();           ///< Misc data that can be shared between executors
 	

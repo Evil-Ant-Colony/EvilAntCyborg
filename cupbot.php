@@ -67,13 +67,13 @@ function helpcheck($help_cmd,$cmd)
     return true;
 }*/
 
-function map_pick_show_turn($cmd,$bot)
+/*function map_pick_show_turn($cmd,$bot)
 {
     global $map_pick;
     $dp = $map_pick->is_picking() ? "\x0303PICK\x03" : "\x0304DROP\x03";
     $bot->say($cmd->channel,$map_pick->current_player().", your turn");
     $bot->say($cmd->channel,"$dp ".implode(', ',$map_pick->maps));
-}
+}*/
 
 function commands_map_pick_setup($cmd,$bot)
 {
@@ -88,14 +88,14 @@ function commands_map_pick_setup($cmd,$bot)
     
     switch($cmd->cmd)
     {
-        case 'start':
+        /*case 'start':
             $bot->say($cmd->channel,"Starting map picking ");
             $bot->say($cmd->channel,$map_pick->player[0]." vs ".$map_pick->player[1]);
             $bot->say($cmd->channel,$map_pick->pick_drops());
             map_pick_show_turn($cmd,$bot);
             $map_pick_stage = 1;
-            return true;
-        case 'nick':
+            return true;*/
+        /*case 'nick':
             if ( count($cmd->params) == 2 && $map_pick->is_player($cmd->params[0]) )
             {
                 foreach ( $map_pick->player as &$p )
@@ -111,8 +111,8 @@ function commands_map_pick_setup($cmd,$bot)
                 $bot->say($cmd->channel,"Currently listening to ".
                                             implode(' and ',$map_pick->player));
             }
-            return true;
-        case 'pick':
+            return true;*/
+        /*case 'pick':
             if ( count($cmd->params) >= 1 )
             {
                 $map_pick->pick_num = (int)$cmd->params[0];
@@ -122,7 +122,7 @@ function commands_map_pick_setup($cmd,$bot)
             {
                 $bot->say($cmd->channel,"How many picks?");
             }
-            return true;
+            return true;*/
         default:
             return false;
     }
@@ -132,7 +132,7 @@ function commands_map_pick($cmd,$bot)
 {
     global $map_pick, $map_pick_stage;
     
-    if ( $cmd->cmd == 'stop' && check_admin($cmd) )
+    /*if ( $cmd->cmd == 'stop' && check_admin($cmd) )
     {
         $bot->say($cmd->channel,"Map picking stopped");
         $totmaps = array_merge($map_pick->picks,$map_pick->maps);
@@ -140,9 +140,9 @@ function commands_map_pick($cmd,$bot)
         $map_pick = null;
         $map_pick_stage = 0;
         return true;
-    }
+    }*/
     
-    if ( $map_pick == null )
+    /*if ( $map_pick == null )
         return false;
         
     
@@ -156,9 +156,9 @@ function commands_map_pick($cmd,$bot)
     }
         
     if ( $map_pick_stage == 0 )
-        return commands_map_pick_setup($cmd,$bot);
+        return commands_map_pick_setup($cmd,$bot);*/
         
-   if ( $cmd->from == $map_pick->current_player() )
+   /*if ( $cmd->from == $map_pick->current_player() )
    {
         $map = $cmd->cmd == null && !empty($cmd->params) ? $cmd->params[0] : $cmd->cmd;
         if ( !$map_pick->has_map($map) )
@@ -182,7 +182,7 @@ function commands_map_pick($cmd,$bot)
         
         map_pick_show_turn($cmd,$bot);
         return true;
-   }
+   }*/
    else if ( $map_pick->is_player($cmd->from) )
    {
         $bot->say($cmd->channel,"Wait for your turn {$cmd->from}");
@@ -333,7 +333,7 @@ function commands_cup($cmd,$bot)
             }
             return true;*/
             
-        case 'pick':
+        /*case 'pick':
             if ( check_cup($cmd,$bot) && check_admin($cmd) )
             {
                 if ( empty($cmd->params) )
@@ -361,7 +361,7 @@ function commands_cup($cmd,$bot)
                                         $map_pick->player[0]." vs ".$map_pick->player[1]);
                 
             }
-            return true;
+            return true;*/
             
         /*case 'maps':
             if ( check_cup($cmd,$bot) )

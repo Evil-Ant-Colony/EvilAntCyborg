@@ -7,13 +7,14 @@ require_once('cupmanager.php');
  */
 class CachedCupManager extends CupManager
 {
-	public $cups, $current_cup;
+	public $cups, $current_cup, $map_picking_status, $map_picker;
 	
 	function CachedCupManager($api_key,$organization=null)
 	{
 		parent::__construct($api_key,$organization);
 		$this->cups = $this->tournaments();
 		$this->current_cup = empty($this->cups) ? null : $this->cups[0];
+		$this->map_picking_status = 0;
 	}
 	
 	function update_tournaments()
@@ -54,18 +55,29 @@ class CachedCupManager extends CupManager
 		return $this->open_matches($this->current_cup->id);
 	}
 	
-	
 }
 
 abstract class Executor_Cup extends CommandExecutor
 {
 	public $cup_manager;
+	public $on_picking;
 	
 	function Executor_Cup(CachedCupManager $cup_manager, 
 						$name,$auth,$synopsis="",$description="",$irc_cmd='PRIVMSG')
 	{
 		parent::__construct($name,$auth,$synopsis,$description,$irc_cmd);
 		$this->cup_manager = $cup_manager;
+		$this->on_picking = 0;
+	}
+	
+	function check_picking()
+	{
+		return $this->on_picking == $this->cup_manager->map_picking_status;
+	}
+	
+	function check_auth($nick,$host,BotDriver $driver)
+	{
+		return $this->check_picking() && parent::check_auth($nick,$host,$driver);
 	}
 	
 	function check_cup(MelanoBotCommand $cmd, MelanoBot $bot)
@@ -81,6 +93,18 @@ abstract class Executor_Cup extends CommandExecutor
 	function cup()
 	{
 		return $this->cup_manager->current_cup;
+	}
+	
+	function map_picker()
+	{
+		return $this->cup_manager->map_picker;
+	}
+	
+	function map_pick_show_turn($cmd,$bot)
+	{
+		$dp = $this->map_picker()->is_picking() ? "\x0303PICK\x03" : "\x0304DROP\x03";
+		$bot->say($cmd->channel,$this->map_picker()->current_player().", your turn");
+		$bot->say($cmd->channel,"$dp ".implode(', ',$this->map_picker()->maps));
 	}
 }
 
@@ -98,13 +122,13 @@ abstract class Executor_Multi_Cup extends Executor_Cup
 	
 	function check_auth($nick,$host,BotDriver $driver)
 	{
-		return $this->multiple_inheritance->check_auth($nick,$host,$driver);
+		return $this->check_picking() && $this->multiple_inheritance->check_auth($nick,$host,$driver);
 	}
 	
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
 	{
-		return $this->multiple_inheritance->check($cmd,$bot,$driver);
+		return $this->check_picking() && $this->multiple_inheritance->check($cmd,$bot,$driver);
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
@@ -259,11 +283,11 @@ class Executor_Cup_CupSelect extends Executor_Cup
 	
 }
 
-class Executor_Cup_Cup extends Executor_Multi
+class Executor_Cup_Cup extends Executor_Multi_Cup
 {
 	function Executor_Cup_Cup(CachedCupManager $cup_manager)
 	{
-		parent::__construct('cup',array(
+		parent::__construct($cup_manager,'cup',null,array(
 			new Executor_Cup_CupSelect($cup_manager),
 			new Executor_Cup_CupReadonly($cup_manager),
 		));
@@ -320,11 +344,11 @@ class Executor_Cup_DescriptionSet extends Executor_Cup
 }
 
 
-class Executor_Cup_Description extends Executor_Multi
+class Executor_Cup_Description extends Executor_Multi_Cup
 {
 	function Executor_Cup_Description(CachedCupManager $cup_manager)
 	{
-		parent::__construct('description',array(
+		parent::__construct($cup_manager,'description',null,array(
 			new Executor_Cup_DescriptionSet($cup_manager),
 			new Executor_Cup_DescriptionReadonly($cup_manager),
 		));
@@ -518,7 +542,7 @@ class Executor_Cup_Score extends Executor_Cup
 		parent::__construct($cup_manager,'score',null);
 		$this->ro = new Executor_Cup_ScoreReadonly();
 		$this->rw = new Executor_Cup_ScoreSet();
-		$this->reports_error = true;
+		//$this->reports_error = true;
 	}
 	
 	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
@@ -570,7 +594,6 @@ class Executor_Cup_Score extends Executor_Cup
 	}
 }
 
-
 class Executor_Cup_End extends Executor_Cup
 {
 	function Executor_Cup_End(CachedCupManager $cup_manager)
@@ -581,7 +604,11 @@ class Executor_Cup_End extends Executor_Cup
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
 	{
-		if ( $this->check_cup($cmd,$bot) )
+		if ( count($cmd->params) != 1 )
+		{
+			$bot->say($cmd->channel,"Match ID?");
+		}
+		else if ( $this->check_cup($cmd,$bot) )
 		{
 			$cup = $this->cup();
 			$match = $this->cup_manager->match($cup->id,$cmd->params[0]);
@@ -602,12 +629,233 @@ class Executor_Cup_End extends Executor_Cup
 			$bot->say($cmd->channel,"{$win->name} won match {$match->id} (".$match->team1()." vs ".$match->team2().")");
 		}
 	}
+
+}
+
+class Executor_Cup_Pick_Setup extends Executor_Cup
+{
+	function Executor_Cup_Pick_Setup(CachedCupManager $cup_manager)
+	{
+		parent::__construct($cup_manager,'setup','admin','setup match_id',
+			'Start a map picking session');
+	}
 	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		if ( $this->check_cup($cmd,$bot) )
+		{
+			$cup = $this->cup();
+			if ( empty($cmd->params) )
+			{
+				$bot->say($cmd->channel,"Match ID?");
+				return;
+			}
+			if ( empty($cup->maps) )
+			{
+				$bot->say($cmd->channel,"No maps to pick...");
+				return;
+			}
+			
+			$bot->say($cmd->channel,"Fetching match...");
+			
+			$match = $this->cup_manager->match($cup->id,$cmd->params[0]);
+			if ( $match == null )
+			{
+				$bot->say($cmd->channel,"Match ".$cmd->params[0]." not found");
+				return;
+			}
+			
+			$map_pick = new MapPicker($match->team1(),$match->team2(),$cup->maps);
+			$this->cup_manager->map_picker = $map_pick;
+			$this->cup_manager->map_picking_status = 1;
+			$driver->lists['player'] = array();
+			
+			$bot->say($cmd->channel, "Setting up picking for {$match->id}: ".
+									$map_pick->player[0]." vs ".$map_pick->player[1]);
+			
+		}
+	}
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
 	{
 		return count($cmd->params) == 1 && parent::check($cmd,$bot,$driver);
 	}
+
+}
+
+
+
+class Executor_Cup_Pick_Pick extends Executor_Cup
+{
+	function Executor_Cup_Pick_Pick(CachedCupManager $cup_manager)
+	{
+		parent::__construct($cup_manager,'pick','admin','pick n',
+			'Set the number of maps to pick (ie: not drop)');
+		$this->on_picking = 1;
+	}
 	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		if ( count($cmd->params) >= 1 )
+		{
+			$this->map_picker()->pick_num = (int)$cmd->params[0];
+			$bot->say($cmd->channel,"Map picking: ".$this->map_picker()->pick_drops());
+		}
+		else
+		{
+			$bot->say($cmd->channel,"How many picks?");
+		}
+	}
+}
+
+
+
+class Executor_Cup_Pick_Stop extends Executor_Cup
+{
+	function Executor_Cup_Pick_Stop(CachedCupManager $cup_manager)
+	{
+		parent::__construct($cup_manager,'stop','admin','stop',
+			'Interrupt the current picking session and show the result');
+	}
+	
+	function check_picking()
+	{
+		return $this->cup_manager->map_picking_status != 0;
+	}
+	
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		$bot->say($cmd->channel,"Map picking stopped");
+		$totmaps = array_merge($this->map_picker()->picks,$this->map_picker()->maps);
+		$bot->say($cmd->channel,"Remaining maps: ".implode(', ',$totmaps));
+		$driver->lists['player'] = array();
+		$this->cup_manager->map_picker = null;
+		$this->cup_manager->map_picking_status = 0;
+	}
+}
+
+class Executor_Cup_Pick_Start extends Executor_Cup
+{
+	function Executor_Cup_Pick_Start(CachedCupManager $cup_manager)
+	{
+		parent::__construct($cup_manager,'start','admin','start',
+			'Start the actual map picking (after setup)');
+		$this->on_picking = 1;
+	}
+	
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+        
+		$bot->say($cmd->channel,"Starting map picking ");
+		$bot->say($cmd->channel,$this->map_picker()->player[0]." vs ".$this->map_picker()->player[1]);
+		$bot->say($cmd->channel,$this->map_picker()->pick_drops());
+		$driver->lists['player'] = $this->map_picker()->player;
+		$this->map_pick_show_turn($cmd,$bot);
+		$this->cup_manager->map_picking_status = 2;
+	}
+}
+
+class Executor_Cup_Pick_Nick extends Executor_Cup
+{
+	function Executor_Cup_Pick_Nick(CachedCupManager $cup_manager)
+	{
+		parent::__construct($cup_manager,'nick','admin','nick [old new]',
+			'Change IRC nick to listen for map picking');
+		$this->on_picking = 1;
+	}
+	
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		if ( count($cmd->params) == 2 && $this->map_picker()->is_player($cmd->params[0]) )
+		{
+			foreach ( $this->map_picker()->player as &$p )
+				if ( $cmd->params[0] == $p )
+				{
+					$p = $cmd->params[1];
+					break;
+				}
+			$bot->say($cmd->channel,"Listen to {$cmd->params[1]} as map picker for {$cmd->params[0]}");
+		}
+		else
+		{
+			$bot->say($cmd->channel,"Currently listening to ".
+										implode(' and ',$this->map_picker()->player));
+		}
+	}
+}
+
+class Executor_Cup_Pick_Turn extends Executor_Cup
+{
+
+	function Executor_Cup_Pick_Turn(CachedCupManager $cup_manager)
+	{
+		parent::__construct($cup_manager,'turn','player-admin','turn',
+			'Show the current map picking turn');
+		$this->on_picking = 2;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		$this->map_pick_show_turn($cmd,$bot);
+	}
+}
+
+
+class Executor_Pick_Raw extends Executor_Cup
+{
+
+	function Executor_Pick_Raw(CachedCupManager $cup_manager, 
+		$auth='player',$synopsis="",$description="",$irc_cmd='PRIVMSG')
+	{
+		parent::__construct($cup_manager,null,$auth,$synopsis,$description,$irc_cmd);
+		$this->on_picking = 2;
+	}
+	
+	
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	{
+		return  $this->check_auth($cmd->from,$cmd->host,$driver)
+				&& $cmd->from == $this->map_picker()->current_player();
+	}
+	
+	function install_on(BotDriver $driver)
+	{
+		$driver->raw_executors []= $this;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	{
+		if ( $cmd->cmd != null )
+			$map = $cmd->cmd;
+		else if ( !empty($cmd->params) )
+			$map = $cmd->params[0];
+		else
+			return;
+			
+		if ( !$this->map_picker()->has_map($map) )
+		{
+			$bot->say($cmd->channel,"Map $map is not in the list");
+		}
+		else
+		{
+			$this->map_picker()->choose($map);
+			if ( count($this->map_picker()->maps) == 1 )
+			{
+				$this->map_picker()->picks []= $this->map_picker()->maps[0];
+				$bot->say($cmd->channel,"Map picking ended");
+				$bot->say($cmd->channel,"Result: ".implode(', ',$this->map_picker()->picks));
+				$driver->lists['player'] = array();
+				$this->cup_manager->map_picker = null;
+				$this->cup_manager->map_picking_status = 0;
+				return;
+			}
+			$this->map_picker()->next_round();
+		}
+			
+		$this->map_pick_show_turn($cmd,$bot);
+	}
 	
 }
