@@ -165,6 +165,7 @@ class BotDriver
 		$this->grant_access['admin'] = array('owner');
 		$this->add_to_list('owner',':STDIN:',':STDIN:');
 		stream_set_blocking(STDIN,0);
+		stream_set_timeout(STDIN,10);
 	}
 	
 	/// Append an executor to the list
