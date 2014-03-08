@@ -37,7 +37,7 @@ class Rcon_Data_Source extends DataSource
 }
 
 
-
+/// \todo find some way to reconnect $rcon when the server restarts (or just keep spamming)
 class RconDispatcher extends BotCommandDispatcher
 {
 	public $out_channel;

@@ -19,7 +19,7 @@ class Color
 			{
 				if ( $matches[0] == "^^" )
 					return "^";
-				return self::oct2irc(self::dp2oct($matches[0]));
+				return Color::oct2irc(Color::dp2oct($matches[0]));
 			}
 			,$string)."\x03";
 	}
@@ -49,7 +49,7 @@ class Color
 			{
 				if ( $matches[0] == "^^" )
 					return "^";
-				return self::oct2ansi(self::dp2oct($matches[0]));
+				return Color::oct2ansi(Color::dp2oct($matches[0]));
 			}
 			,$string)."\x1b[0m";
 	}
@@ -57,7 +57,7 @@ class Color
 	/**
 	 * \brief Convert a 24bit hexadecimal color code to a 7bit color code
 	 */
-	private static function hex2oct($color)
+	static function hex2oct($color)
 	{
 		$color = "$color";
 		$r = $color[0] > '7';
@@ -70,7 +70,7 @@ class Color
 	 * \brief Convert a 7bit color code to an ANSI escape sequence
 	 * \note Converts black to white to display nicely on terminals with a black background
 	 */
-	private static function oct2ansi($color)
+	static function oct2ansi($color)
 	{
 		if ( $color == null )
 			return "\x1b[0m";
@@ -80,7 +80,7 @@ class Color
 		return "\x1b[3{$color}m";
 	}
 	
-	private static function dp2oct($color)
+	static function dp2oct($color)
 	{
 		$digit = 7;
 		if ( strlen($color) == 2 ) // ^N
@@ -97,7 +97,7 @@ class Color
 		return $digit;
 	}
 	
-	private static function irc2oct($color)
+	static function irc2oct($color)
 	{
 		switch((int)$color)
 		{
@@ -130,7 +130,7 @@ class Color
 		}
 	}
 	
-	private static function oct2irc($color)
+	static function oct2irc($color)
 	{
 		$out = "";
 		switch((int)$color)
@@ -146,6 +146,5 @@ class Color
 		}
 		return "\x03$out";
 	}
-	
-	
-} 
+
+}

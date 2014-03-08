@@ -92,6 +92,7 @@ class BotDriver
 			if ( is_array($disp->channel_filter) )
 				$chans = array_merge($chans,$disp->channel_filter);
 		}
+		/// \todo skip fake channels (rcon)
 		$this->bot->join_list = array_unique($chans);
 		
 		// loop
