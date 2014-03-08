@@ -82,8 +82,8 @@ class BotOutBuffer
 		$this->flood_next_time = $time + $this->flood_time_start * $this->flood_time_counter;
 		$this->flood_time_counter++;
 		
-		echo "Wait: ".($this->flood_next_time-$time).
-			", Time: $time, Next: {$this->flood_next_time}, #{$this->flood_time_counter}\n";
+		/*echo "Wait: ".($this->flood_next_time-$time).
+			", Time: $time, Next: {$this->flood_next_time}, #{$this->flood_time_counter}\n";*/
 		
 		$this->write($data);
 	}
@@ -301,7 +301,7 @@ class MelanoBot extends DataSource
         {
             $data = str_replace(array("\n","\r")," ",$data);
             $this->buffer->send("$command $data");
-            $this->log("<\x1b[32m$command $data\x1b[0m\n",1);
+            $this->log("\x1b[35mirc\x1b[32m<\x1b[0m$command $data\n",1);
         }
     }
     
@@ -346,7 +346,7 @@ class MelanoBot extends DataSource
         if ( $data == "" )
 			return null;
         
-		$this->log(">\x1b[33m$data\x1b[0m",1);
+		$this->log("\x1b[35mirc\x1b[33m>\x1b[0m$data",1);
         
         if ( $this->strip_colors )
             $data = Color::irc2none($data);

@@ -11,6 +11,11 @@ class Rcon_Server
 		$this->host = $host;
 		$this->port = $port;
 	}
+	
+	public function __toString()
+    {
+        return "{$this->host}:{$this->port}";
+    }
 }
 
 class Rcon_Packet
@@ -37,9 +42,9 @@ class Rcon_Packet
 	{
 		$packet = new Rcon_Packet();
 		$packet->server = new Rcon_Server();
-		socket_recvfrom($socket, $packet->contents, $len, 0, $packet->server->host, $packet->server->port);
+		socket_recvfrom($socket, $packet->contents, $len, MSG_DONTWAIT, $packet->server->host, $packet->server->port);
 		$head = substr($packet->contents,0,strlen(self::$read_header));
-		$packet->payload = rtrim(substr($packet->contents,strlen(self::$read_header)),"\n");
+		$packet->payload = rtrim(substr($packet->contents,strlen(self::$read_header)),"\n\r");
 		$packet->valid = $head == self::$read_header;
 		return $packet;
 	}
@@ -82,7 +87,7 @@ class Rcon
 		else
 			$payload = "rcon {$this->password} $command";*/
 		$packet = new Rcon_Packet("rcon {$this->password} $command",$this->write);
-		echo "dp << $command\n";
+		$this->log("\x1b[36mdp \x1b[32m<\x1b[0m ".Color::dp2ansi($command)."\n");
 		$packet->send($this->socket);
 		return $packet;
 	}
@@ -90,20 +95,32 @@ class Rcon
 	function read()
 	{
 		$packet = Rcon_Packet::read($this->socket,32768);
-		echo "\x1b[32mdp >> \x1b[0m".Color::dp2ansi($packet->payload)."\n";
+		if ( $packet->valid )
+			$this->log("\x1b[36mdp \x1b[33m>\x1b[0m ".Color::dp2ansi($packet->payload)."\n");
 		return $packet;
+	}
+	
+	function log($msg)
+	{
+		echo "\x1b[30;1m".date("[H:i:s]")."\x1b[0m".$msg;
 	}
 	
 	function connect()
 	{
 		$this->send("log_dest_udp {$this->read->host}:{$this->read->port}");
 	}
+	
+	function irc_name()
+	{
+		return ":RCON:{$this->write}";
+	}
 }
 
+/*date_default_timezone_set("UTC");
 $rcon = new Rcon ( "127.0.0.1", 26000, "foo");
 $rcon->connect();
 $rcon->send("say test");
 while(true)
 {
 	$rcon->read();
-}
+}*/

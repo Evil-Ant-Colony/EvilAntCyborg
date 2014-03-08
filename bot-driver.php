@@ -41,6 +41,7 @@ class BotDriver
 				
 			if ( $cmd != null )
 			{
+				/// \todo apply filters here (eg: blacklist)
 				$this->bot->log(print_r($cmd,true),4);
 				foreach($this->dispatchers as $disp)
 				{
@@ -73,11 +74,16 @@ class BotDriver
 		if ( !$this->bot )
 			return;
 		
+		// initialize sources
 		foreach ( $this->data_sources as $src )
 			$src->initialize($this->data);
 			
 		array_unshift($this->data_sources,$this->bot);
+		
+		/// \todo move Executors Pre and Post in here (no need for the dispatcher)
+		/// Maybe merge those classes in a single one and have different install functions
 			
+		// initialize dispatchers
 		$chans = $this->bot->join_list;
 		foreach($this->dispatchers as $disp)
 		{
@@ -88,14 +94,17 @@ class BotDriver
 		}
 		$this->bot->join_list = array_unique($chans);
 		
+		// loop
 		while($this->check_status())
 		{
 			$this->loop_step();
 		}
 		
+		// finalize dispatchers
 		foreach($this->dispatchers as $disp)
 			$disp->loop_end($this->bot,$this->data);
-			
+		
+		// finalize sources
 		foreach ( $this->data_sources as $src )
 			$src->finalize($this->data);
 			
