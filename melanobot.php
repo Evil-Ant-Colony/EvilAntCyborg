@@ -1,34 +1,12 @@
 <?php
+require_once("color.php");
+require_once("data-source.php");
 
 function irc_action($msg)
 {
 	return "\x01ACTION $msg\x01";
 }
 
-class MelanoBotCommand
-{
-    public $cmd, $params, $from, $host, $channel, $raw,  $irc_cmd;
-    
-    function MelanoBotCommand($cmd, $params, $from, $host, $channel, $raw, $irc_cmd)
-    {
-        $this->cmd = $cmd; 
-        $this->params = $params; 
-        $this->from = $from; 
-        $this->host = $host; 
-        $this->channel = $channel;
-        $this->raw = $raw; 
-        $this->irc_cmd = $irc_cmd;
-    }
-    
-    function param_string($cmd=false,$offset=0,$length=null)
-    {
-		$p = $this->params;
-		if ( $cmd )
-			array_unshift($p,$this->cmd);
-		return implode(" ",array_slice($p,$offset,$length));
-    }
-   
-}
 
 class MelanoBotServer
 {
@@ -118,7 +96,7 @@ class BotOutBuffer
 	
 }
 
-class MelanoBot
+class MelanoBot extends DataSource
 {
 
 	const DISCONNECTED = 0;
@@ -350,7 +328,10 @@ class MelanoBot
         $this->disconnect();
     }
     
-    function loop_step()
+    
+	function initialize(BotData $data){}
+    
+    function get_command()
     {
         if ( !$this->buffer->server->connected() )
         {
@@ -368,7 +349,7 @@ class MelanoBot
 		$this->log(">\x1b[33m$data\x1b[0m",1);
         
         if ( $this->strip_colors )
-            $data = preg_replace("{\x03([0-9][0-9]?)?(,[0-9][0-9]?)?}","",$data);
+            $data = Color::irc2none($data);
         
         $inarr = explode(' ',trim($data));
         $insize = count($inarr);
