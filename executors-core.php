@@ -32,7 +32,6 @@ class Executor_Help extends CommandExecutor
 		
 		if ( count($cmd->params) > 0 )
 		{
-			$i = 0;
 			foreach ( $cmd->params as $hc )
 			{
 				$hc = strtolower($hc);
@@ -40,8 +39,6 @@ class Executor_Help extends CommandExecutor
 					$list[$hc]->help($cmd,$bot,$data);
 				else
 					$bot->say($cmd->channel,"You can't do $hc");
-				$i++;
-				sleep(1+$i/5);
 			}
 			if ( count($cmd->params) > 1 )
 				$bot->say($cmd->channel,"(End of help list)");

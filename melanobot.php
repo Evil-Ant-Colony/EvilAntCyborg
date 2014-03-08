@@ -81,6 +81,43 @@ class MelanoBotServer
 	}
 }
 
+class BotOutBuffer
+{
+	public $flood_time_start = 0.2;
+	private $flood_time_counter = 1;
+	private $flood_next_time = 0;
+	public $flood_max_bytes = 512;
+	public $server = null;
+	private $buffer = array();
+	private $buffer_max_size = 128;
+	
+	function send($data)
+	{
+		$time = microtime(true);
+		/// \todo buffer
+		if ( $time < $this->flood_next_time )
+			usleep(($this->flood_next_time - $time) * 1000000 );
+		else
+			$this->flood_time_counter = 1;
+
+		$time = microtime(true);
+		$this->flood_next_time = $time + $this->flood_time_start * $this->flood_time_counter;
+		$this->flood_time_counter++;
+		
+		echo "Wait: ".($this->flood_next_time-$time).
+			", Time: $time, Next: {$this->flood_next_time}, #{$this->flood_time_counter}\n";
+		
+		$this->write($data);
+	}
+	
+	private function write($data)
+	{
+		$data = substr($data,0,$this->flood_max_bytes-2)."\n\r";
+		$this->server->write($data);
+	}
+	
+}
+
 class MelanoBot
 {
 
@@ -90,7 +127,7 @@ class MelanoBot
 	const PROTOCOL_CONNECTED = 3;
 
 
-	public $current_server, $current_index;
+	private $server_index;
     public $servers, $real_name, $nick, $auth_nick, $password;
     public $blacklist, $listen_to;
     public $mode = null;
@@ -101,6 +138,8 @@ class MelanoBot
     public $output_log = 1; ///< Output log verbosity: 0: no output, 1: some output, 2: a lot of output
     public $auto_restart = false;
     public $channels=array(); ///< Channels the bot is currently connected to
+    public $buffer;
+    
     
     function MelanoBot($servers, $nick, $password, 
                  $channels, $blacklist=array())
@@ -116,6 +155,7 @@ class MelanoBot
         $this->blacklist = $blacklist;
         $this->join_list = $channels;
         $this->listen_to = "$nick:";
+        $this->buffer = new BotOutBuffer();
         $this->connect();
     }
     
@@ -127,9 +167,9 @@ class MelanoBot
 			if ( $this->servers[$i]->connected() )
 			{
 				$this->connection_status = self::SERVER_CONNECTED;
-				$this->current_index = $i;
-				$this->current_server = $this->servers[$i];
-				$this->log("Connected to {$this->current_server}\n",1);
+				$this->server_index = $i;
+				$this->buffer->server = $this->servers[$i];
+				$this->log("Connected to {$this->buffer->server}\n",1);
 			}
 			else
 			{
@@ -142,10 +182,10 @@ class MelanoBot
     {
 		$this->channels = array();
 		$this->names = array();
-		if ( $this->current_server->connected() )
+		if ( $this->buffer->server->connected() )
 		{
-			$this->log("Disconnecting {$this->current_server}\n",1);
-			$this->current_server->disconnect();
+			$this->log("Disconnecting {$this->buffer->server}\n",1);
+			$this->buffer->server->disconnect();
 		}
 		$this->connection_status = self::DISCONNECTED;
     }
@@ -155,8 +195,8 @@ class MelanoBot
 		$this->connection_status = self::DISCONNECTED;
 		$join_list = $this->channels;
 		$this->quit($message);
-		$i = $this->current_index;
-		for ( $tries = 0; $tries < count($this->current_server); $tries++ )
+		$i = $this->server_index;
+		for ( $tries = 0; $tries < count($this->servers); $tries++ )
 		{
 			$i = ( $i + 1 ) % count($this->servers);
 			$this->connect($i);
@@ -279,10 +319,10 @@ class MelanoBot
     
     function command($command, $data)
     {
-        if ( $this->current_server->connected() )
+        if ( $this->buffer->server->connected() )
         {
             $data = str_replace(array("\n","\r")," ",$data);
-            $this->current_server->write("$command $data\n\r");
+            $this->buffer->send("$command $data");
             $this->log("<\x1b[32m$command $data\x1b[0m\n",1);
         }
     }
@@ -312,15 +352,15 @@ class MelanoBot
     
     function loop_step()
     {
-        if ( !$this->current_server->connected() )
+        if ( !$this->buffer->server->connected() )
         {
 			$this->connection_status = self::DISCONNECTED;
-            $this->log("Network Quit on {$this->current_server}\n",1);
+            $this->log("Network Quit on {$this->buffer->server}\n",1);
             $this->reconnect("Automatic Reconnection");
             return null;
         }
         
-        $data = $this->current_server->read();
+        $data = $this->buffer->server->read();
         
         if ( $data == "" )
 			return null;
@@ -488,7 +528,7 @@ class MelanoBot
     
     function server_connected()
     {
-		return $this->current_server && $this->current_server->connected();
+		return $this->buffer->server && $this->buffer->server->connected();
     }
     
     function connection_status()

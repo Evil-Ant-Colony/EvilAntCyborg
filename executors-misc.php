@@ -296,7 +296,6 @@ class Executor_MiscListEdit extends CommandExecutor
 						$this->add_to_list($value);
 						$bot->say($cmd->channel,"OK, $value is in {$this->list_name}");
 					}
-					usleep(($i-$nick_i+1)*100000);
 				}
 			}
 		}

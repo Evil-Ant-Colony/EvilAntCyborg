@@ -303,12 +303,9 @@ class Executor_RenderPony extends CommandExecutor
 			if ( isset(self::$ponies[$pony]) )
 			{
 				$lines = file($this->ponypath."/".self::$ponies[$pony].".irc.txt", FILE_IGNORE_NEW_LINES);
-				$i = 0;
 				foreach ( $lines as $line )
 				{
 					$bot->say($cmd->channel,$line);
-					$i++;
-					usleep((1+$i/10)*1000000);
 				}
 			}
 			else

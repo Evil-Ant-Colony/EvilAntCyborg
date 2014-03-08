@@ -177,7 +177,6 @@ class Executor_Cup_Next extends Executor_Cup
 						break;
 					$bot->say($cmd->channel,
 						$match->id.": ".$match->team1()." vs ".$match->team2());
-					sleep((1+$i)/10);
 				}
 			}
 		}
