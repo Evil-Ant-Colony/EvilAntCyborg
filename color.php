@@ -11,6 +11,17 @@ class Color
 		return preg_replace("{\x03([0-9][0-9]?)?(,[0-9][0-9]?)?}","",$string);
 	}
 	
+	static function irc2ansi($string)
+	{
+		
+		return preg_replace_callback("{\x03([0-9][0-9]?)?(,[0-9][0-9]?)?}",
+			function ($matches)
+			{
+				if ( count($matches) > 1 )
+					return Color::oct2ansi(Color::irc2oct($matches[1]));
+				return "";
+			},$string);
+	}
 	
 	static function dp2irc($string)
 	{

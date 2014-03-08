@@ -301,7 +301,7 @@ class MelanoBot extends DataSource
         {
             $data = str_replace(array("\n","\r")," ",$data);
             $this->buffer->send("$command $data");
-            $this->log("\x1b[35mirc\x1b[32m<\x1b[0m$command $data\n",1);
+            $this->log("\x1b[35mirc\x1b[32m<\x1b[0m".Color::irc2ansi("$command $data")."\n",1);
         }
     }
     
@@ -346,7 +346,7 @@ class MelanoBot extends DataSource
         if ( $data == "" )
 			return null;
         
-		$this->log("\x1b[35mirc\x1b[33m>\x1b[0m$data",1);
+		$this->log("\x1b[35mirc\x1b[33m>\x1b[0m".Color::irc2ansi($data),1);
         
         if ( $this->strip_colors )
             $data = Color::irc2none($data);
