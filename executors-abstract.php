@@ -22,6 +22,9 @@ abstract class ExecutorBase
 	abstract function name();
 	
 	abstract function install_on(BotCommandDispatcher $driver);
+	
+	// whether the command may be executed again
+	function keep_running() { return false; }
 }
 
 /**
@@ -67,6 +70,9 @@ abstract class CommandExecutor extends ExecutorBase
 	{
 		$driver->add_executor($this);
 	}
+	
+	
+	function keep_running() { return $this->irc_cmd != 'PRIVMSG'; }
 }
 
 abstract class RawCommandExecutor extends ExecutorBase
@@ -275,13 +281,19 @@ class BotCommandDispatcher
 			$ex->execute($bot,$data);
 	}
 	
+	function log($bot,$executor)
+	{
+		$bot->log("\x1b[34mHandled by \x1b[1m".get_class($executor).
+			"\x1b[22m via \x1b[1m".$this->id()."\x1b[0m\n",3);
+	}
+	
 	
 	function loop_step(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
 		if ( !$this->matches($cmd) )
 			return false;
 		$cmd = $this->convert($cmd);
-		$executed = "";
+		$keep_running = true;
 		if ( $this->filter($cmd, $bot, $data) )
 		{
 			if ( $cmd->irc_cmd == "PRIVMSG" )
@@ -296,15 +308,17 @@ class BotCommandDispatcher
 						$on_error = $this->on_error;
 						$on_error($cmd,$bot,$data);
 					}
-					$executed = get_class($ex);
+					$keep_running = $ex->keep_running();
+					$this->log($bot,$ex);
 				}
 				else
 				{
 					foreach($this->raw_executors as $ex)
-						if ( $ex->check($cmd,$bot,$data) )
+						if ( $ex->check($cmd,$bot,$data) && $keep_running )
 						{
 							$ex->execute($cmd,$bot,$data);
-							$executed = get_class($ex);
+							$keep_running = $ex->keep_running();
+							$this->log($bot,$ex);
 							break;
 						}
 				}
@@ -312,13 +326,14 @@ class BotCommandDispatcher
 			elseif ( isset($this->executors_irc[$cmd->irc_cmd]) )
 			{
 				foreach ( $this->executors_irc[$cmd->irc_cmd] as $ex )
-					if ( $ex->check($cmd,$bot,$data) )
+					if ( $ex->check($cmd,$bot,$data) && $keep_running )
 					{
 						$ex->execute($cmd,$bot,$data);
-						$executed = get_class($ex);
+						$keep_running = $ex->keep_running();
+						$this->log($bot,$ex);
 					}
 			}
 		}
-		return $executed;
+		return !$keep_running;
 	}
 }

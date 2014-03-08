@@ -110,19 +110,12 @@ class BotDriver
 			
 		if ( $cmd != null )
 		{
-			$handler = "\x1b[31mNo Dispatcher";
-			$executor = "";
-			
-			$this->bot->log(print_r($cmd,true),3);
+			$this->bot->log(print_r($cmd,true),4);
 			foreach($this->dispatchers as $disp)
 			{
-				if ( $executor = $disp->loop_step($cmd,$this->bot,$this->data) )
-				{
-					$handler = $executor." ".$disp->id();
+				if ( $disp->loop_step($cmd,$this->bot,$this->data) )
 					break;
-				}
 			}
-			$this->bot->log("\x1b[34mHandled by \x1b[1m$handler\x1b[0m\n",3);
 		}
 	}
 	
