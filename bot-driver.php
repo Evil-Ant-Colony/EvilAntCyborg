@@ -8,7 +8,13 @@ class BotData
 	public $data = array();           ///< Misc data that can be shared between executors
 	public $lists = array();          ///< Lists of user "list_name" => array(user_nick=>host or null)
 	public $grant_access = array();   ///< Grant rights from a list to other list1 => array(list2begrantedrights)
-
+	public $driver = null;
+	
+	function BotData(BotDriver $driver)
+	{
+		$this->driver = $driver;
+	}
+	
 	/// Add/update an IRC user to a user list
 	function add_to_list($list,$nick,$host=null)
 	{
@@ -66,14 +72,22 @@ class BotDriver
 {
 	public $bot;                      ///< IRC listener
 	public $data = null;              ///< Shared bot data
-	public $dispatcher;
+	public $dispatchers = array();
+	
+	function install($dispatchers)
+	{
+		if ( !is_array($dispatchers) )
+			$this->dispatchers []= $dispatchers;
+		else
+			$this->dispatchers = array_merge($this->dispatchers,$dispatchers);
+	}
 	
 	function BotDriver(MelanoBot $bot)
 	{
 		$this->bot = $bot;
 		stream_set_blocking(STDIN,0);
 		stream_set_timeout(STDIN,10);
-		$this->data = new BotData;
+		$this->data = new BotData($this);
 		$this->data->grant_access['admin'] = array('owner');
 		$this->data->add_to_list('owner',':STDIN:',':STDIN:');
 	}
@@ -96,8 +110,19 @@ class BotDriver
 			
 		if ( $cmd != null )
 		{
+			$handler = "\x1b[31mNo Dispatcher";
+			$executor = "";
+			
 			$this->bot->log(print_r($cmd,true),3);
-			$this->dispatcher->loop_step($cmd,$this->bot,$this->data);
+			foreach($this->dispatchers as $disp)
+			{
+				if ( $executor = $disp->loop_step($cmd,$this->bot,$this->data) )
+				{
+					$handler = $executor." ".$disp->id();
+					break;
+				}
+			}
+			$this->bot->log("\x1b[34mHandled by \x1b[1m$handler\x1b[0m\n",3);
 		}
 	}
 	
@@ -122,15 +147,24 @@ class BotDriver
 	{
 		if ( !$this->bot )
 			return;
-		
-		$this->dispatcher->loop_begin($this->bot,$this->data);
+			
+		$chans = $this->bot->join_list;
+		foreach($this->dispatchers as $disp)
+		{
+			$disp->loop_begin($this->bot,$this->data);
+			
+			if ( is_array($disp->channel_filter) )
+				$chans = array_merge($chans,$disp->channel_filter);
+		}
+		$this->bot->join_list = array_unique($chans);
 		
 		while($this->check_status())
 		{
 			$this->loop_step();
 		}
 		
-		$this->dispatcher->loop_end($this->bot,$this->data);
+		foreach($this->dispatchers as $disp)
+			$disp->loop_end($this->bot,$this->data);
 		
 	}
 }

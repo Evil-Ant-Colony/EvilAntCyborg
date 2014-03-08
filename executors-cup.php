@@ -823,7 +823,7 @@ class Executor_Pick_Raw extends Executor_Cup
 				&& $this->map_picker() && $cmd->from == $this->map_picker()->current_player();
 	}
 	
-	function install_on(BotData $driver)
+	function install_on(BotCommandDispatcher $driver)
 	{
 		$driver->raw_executors []= $this;
 	}

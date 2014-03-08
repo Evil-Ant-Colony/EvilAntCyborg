@@ -7,9 +7,9 @@ function irc_action($msg)
 
 class MelanoBotCommand
 {
-    public $cmd, $params, $from, $host, $channel, $raw, /*$chanhax, $param_string,*/ $irc_cmd;
+    public $cmd, $params, $from, $host, $channel, $raw,  $irc_cmd;
     
-    function MelanoBotCommand($cmd, $params, /*$query,*/ $from, $host, $channel, $raw, $irc_cmd/*, $chanhax=false*/)
+    function MelanoBotCommand($cmd, $params, $from, $host, $channel, $raw, $irc_cmd)
     {
         $this->cmd = $cmd; 
         $this->params = $params; 
@@ -17,8 +17,6 @@ class MelanoBotCommand
         $this->host = $host; 
         $this->channel = $channel;
         $this->raw = $raw; 
-        //$this->chanhax = $chanhax;
-        //$this->param_string = $query;
         $this->irc_cmd = $irc_cmd;
     }
     
@@ -98,7 +96,7 @@ class MelanoBot
     public $mode = null;
     private $connection_status = self::DISCONNECTED; 
     private $names = array();
-    private $join_list = array();
+    public $join_list = array();
     public $strip_colors = false; ///< whether IRC colors should be removed before command interpretation
     public $output_log = 1; ///< Output log verbosity: 0: no output, 1: some output, 2: a lot of output
     public $auto_restart = false;

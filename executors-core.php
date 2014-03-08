@@ -10,18 +10,24 @@ class Executor_Help extends CommandExecutor
 		parent::__construct("help",null,'help [command]','Guess what this does...');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		$list = array();
-		foreach($driver->executors as $name => $ex)
-			if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$driver) )
-				$list[$ex->name] = $ex;
-		foreach($driver->raw_executors as $ex)
-			if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$driver) )
-				$list[$ex->name] = $ex;
-		foreach($driver->filters as $ex)
-			if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$driver) )
-				$list[$ex->name] = $ex;
+		foreach ( $data->driver->dispatchers as $disp )
+		{
+			if ( $disp->matches_channel($cmd->channel) )
+			{
+				foreach($disp->executors as $name => $ex)
+					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$data) )
+						$list[$ex->name] = $ex;
+				foreach($disp->raw_executors as $ex)
+					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$data) )
+						$list[$ex->name] = $ex;
+				foreach($disp->filters as $ex)
+					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$data) )
+						$list[$ex->name] = $ex;
+			}
+		}
 		ksort($list);
 		
 		if ( count($cmd->params) > 0 )
@@ -31,7 +37,7 @@ class Executor_Help extends CommandExecutor
 			{
 				$hc = strtolower($hc);
 				if ( isset($list[$hc]) )
-					$list[$hc]->help($cmd,$bot,$driver);
+					$list[$hc]->help($cmd,$bot,$data);
 				else
 					$bot->say($cmd->channel,"You can't do $hc");
 				$i++;

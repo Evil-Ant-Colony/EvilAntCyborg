@@ -154,7 +154,53 @@ class BotCommandDispatcher
 	public $post_executors = array(); ///< List of executors applied before the bot quits
 	public $pre_executors = array();  ///< List of executors applied before the bot starts
 	public $on_error = null;          ///< Function called when a user doesn't have the right to fire a direct executor
-
+	public $channel_filter = array(); ///< List of channels this dispatcher is allowed to work on, empty == all channels
+	public $prefix = null;            ///< Customized prefix for this dispatcher, empty == bot default
+	
+	function BotCommandDispatcher($channel_filter = array(), $prefix = null)
+	{
+		$this->channel_filter = $channel_filter;
+		$this->prefix = $prefix;
+	}
+	
+	function matches_channel($channel)
+	{
+		return empty($this->channel_filter) || in_array($channel,$this->channel_filter) ;
+	}
+	
+	function id()
+	{
+		if ( !$this->channel_filter && !$this->prefix )
+			return "Global Dispatcher";
+		$id = "";
+		$chans = implode(" ",$this->channel_filter);
+		if ( $chans )
+			$id = "($chans)";
+		if ( $this->prefix );
+			$id = "{$this->prefix} $id";
+		return $id;
+	}
+	
+	/// Whether the channel and prefix match this dispatcher
+	function matches(MelanoBotCommand $cmd )
+	{
+		return $this->matches_channel($cmd->channel ) && ( !$this->prefix || 
+				( $cmd->cmd == null && count($cmd->params) > 0 && $cmd->params[0] == $this->prefix ) );
+	}
+	
+	// Convert the command (ie remove prefix)
+	function convert(MelanoBotCommand $cmd)
+	{
+		if ( $this->prefix && count($cmd->params) > 0 && $cmd->params[0] == $this->prefix )
+		{
+			$cmd = new MelanoBotCommand($cmd->cmd, $cmd->params, $cmd->from, 
+					$cmd->host, $cmd->channel, $cmd->raw, $cmd->irc_cmd);
+			array_shift($cmd->params);
+			if ( count($cmd->params) > 0  )
+				$cmd->cmd = array_shift($cmd->params);
+		}
+		return $cmd;
+	}
 	
 	/// Append an executor to the list
 	function add_executor(CommandExecutor $ex)
@@ -204,8 +250,7 @@ class BotCommandDispatcher
 				$ex->install_on($this);
 	}
 	
-	
-	function filter($cmd,$bot,$data)
+	function filter(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
 		foreach($this->filters as $f )
 		{
@@ -216,21 +261,27 @@ class BotCommandDispatcher
 		
 	}
 	
-	function loop_begin($bot,$data)
+	function loop_begin(MelanoBot $bot,BotData $data)
 	{
+		if ( !is_array($this->channel_filter) )
+			$this->channel_filter = array($this->channel_filter);
 		foreach ( $this->pre_executors as $ex )
 			$ex->execute($bot,$data);
 	}
 	
-	function loop_end($bot,$data)
+	function loop_end(MelanoBot $bot,BotData $data)
 	{
 		foreach ( $this->post_executors as $ex )
 			$ex->execute($bot,$data);
 	}
 	
 	
-	function loop_step($cmd, $bot,$data)
+	function loop_step(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
+		if ( !$this->matches($cmd) )
+			return false;
+		$cmd = $this->convert($cmd);
+		$executed = "";
 		if ( $this->filter($cmd, $bot, $data) )
 		{
 			if ( $cmd->irc_cmd == "PRIVMSG" )
@@ -245,6 +296,7 @@ class BotCommandDispatcher
 						$on_error = $this->on_error;
 						$on_error($cmd,$bot,$data);
 					}
+					$executed = get_class($ex);
 				}
 				else
 				{
@@ -252,6 +304,7 @@ class BotCommandDispatcher
 						if ( $ex->check($cmd,$bot,$data) )
 						{
 							$ex->execute($cmd,$bot,$data);
+							$executed = get_class($ex);
 							break;
 						}
 				}
@@ -260,8 +313,12 @@ class BotCommandDispatcher
 			{
 				foreach ( $this->executors_irc[$cmd->irc_cmd] as $ex )
 					if ( $ex->check($cmd,$bot,$data) )
+					{
 						$ex->execute($cmd,$bot,$data);
+						$executed = get_class($ex);
+					}
 			}
 		}
+		return $executed;
 	}
 }
