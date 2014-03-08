@@ -10,7 +10,7 @@ class Executor_Help extends CommandExecutor
 		parent::__construct("help",null,'help [command]','Guess what this does...');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$list = array();
 		foreach($driver->executors as $name => $ex)
@@ -56,7 +56,7 @@ class Executor_Quit extends CommandExecutor
 		parent::__construct($cmd,'owner',$cmd,'Shut down the bot');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$bot->quit(); 
 		$bot->auto_restart = false;
@@ -71,7 +71,7 @@ class Executor_Reconnect extends CommandExecutor
 		parent::__construct('reconnect','owner','reconnect','Reconnect to a different server');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$bot->reconnect("Reconnecting...");
 	}
@@ -84,7 +84,7 @@ class Executor_Server extends CommandExecutor
 		parent::__construct('server','owner','server','Show server name');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$bot->say($cmd->channel,$bot->current_server);
 	}
@@ -99,7 +99,7 @@ class Executor_Restart extends CommandExecutor
 		parent::__construct("restart",'owner',"restart",'Restart the bot (quit and rejoin)');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$bot->quit($this->message);
 		$bot->auto_restart = true;
@@ -121,9 +121,9 @@ class Post_Restart extends PostExecutor
 			$this->restart_file = $restart_file;
 	}
 	
-	function execute( BotDriver $driver)
+	function execute(MelanoBot $bot, BotData $driver)
 	{
-		if ( $driver->bot->connection_status() == MelanoBot::DISCONNECTED && $driver->bot->auto_restart )
+		if ( $bot->connection_status() == MelanoBot::DISCONNECTED && $bot->auto_restart )
 			touch($this->restart_file);
 	}
 }
@@ -137,7 +137,7 @@ class Executor_Join extends CommandExecutor
 		$this->reports_error = true;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_auth($cmd->from,$cmd->host,$driver)  && isset($cmd->params[0]))
 			$bot->join($cmd->params[0]);
@@ -154,7 +154,7 @@ class Executor_Part extends CommandExecutor
 		$this->reports_error = true;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_auth($cmd->from,$cmd->host,$driver) )
 		{
@@ -173,7 +173,7 @@ class Executor_Nick extends CommandExecutor
 		parent::__construct('nick','owner','nick Nickname','Change nickname');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( isset($cmd->params[0]) )
 		{
@@ -197,14 +197,14 @@ class Executor_UserList extends CommandExecutor
 		parent::__construct($listener,$auth,"$listener [ +|add|-|rm Nickname [Host] ]|[clear]","Add a user to the $list list");
 	}
 	
-	function check_nick($nick,$host,MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function check_nick($nick,$host,MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $nick == $bot->nick )
 		{
 			$bot->say($cmd->channel,"Who, me?");
 			return false;
 		}
-		foreach($exclude as $list => $msg)
+		foreach($this->exclude as $list => $msg)
 		{
 			if ( $driver->user_in_list($list,$nick,$host) )
 			{
@@ -215,7 +215,7 @@ class Executor_UserList extends CommandExecutor
 		return true;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( isset($cmd->params[0]) )
 		{
@@ -278,7 +278,7 @@ class Filter_UserList extends Filter
 		$this->list = $list;
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return !$driver->user_in_list($this->list,$cmd->from,$cmd->host);
 	}
@@ -295,7 +295,7 @@ class Filter_ChanHax extends Filter
 		$this->dewscription = 'Execute the command on the given channel';
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		$n_params=count($cmd->params);
 		if ( $n_params > 2 && $cmd->params[$n_params-2] == $this->name && $this->check_auth($cmd->from,$cmd->host,$driver) )
@@ -321,7 +321,7 @@ class Executor_RawIRC extends CommandExecutor
 		parent::__construct($trigger,'owner',"$trigger IRC_CMD [irc_options...]",'Execute an arbitrary IRC command');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( count($cmd->params) )
 		{
@@ -345,7 +345,7 @@ class Executor_Multi extends CommandExecutor
 		$this->executors = $executors;
 	}
 	
-	function check_auth($nick,$host,BotDriver $driver)
+	function check_auth($nick,$host,BotData $driver)
 	{
 		foreach($this->executors as $ex )
 			if ( $ex->check_auth($nick,$host,$driver) )
@@ -354,7 +354,7 @@ class Executor_Multi extends CommandExecutor
 	}
 	
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		foreach($this->executors as $ex )
 			if ( $ex->check($cmd,$bot,$driver) )
@@ -362,7 +362,7 @@ class Executor_Multi extends CommandExecutor
 		return false;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		foreach($this->executors as $ex )
 			if ( $ex->check($cmd,$bot,$driver) )
@@ -372,7 +372,7 @@ class Executor_Multi extends CommandExecutor
 			}
 	}
 	
-	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		foreach($this->executors as $ex )
 			if ( $ex->check_auth($cmd->from,$cmd->host,$driver) )
@@ -393,7 +393,7 @@ class Executor_StdoutDump extends CommandExecutor
 		parent::__construct($trigger,'owner',"$trigger",'Print the object structure on stdout');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		print_r($driver);
 	}

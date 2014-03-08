@@ -24,7 +24,7 @@ $driver->add_to_list('admin','Admin2Nick','example.com');
 
 $driver->add_to_list('blacklist','AnnoyingUser');
 
-$driver->on_error = function (MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+$driver->on_error = function (MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 {
 	$bot->say($cmd->channel,"Shut up ".$cmd->from);
 };

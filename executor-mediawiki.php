@@ -149,7 +149,7 @@ class Executor_Wiki extends CommandExecutor
 		$this->api_url = $api_url;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
         $text = mediawiki_describe($cmd->param_string(),$this->api_url);
         if ( $text == "" )
@@ -171,7 +171,7 @@ class Executor_Wiki_Opensearch extends CommandExecutor
 		$this->api_url = $api_url;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$url=$this->api_url."?action=opensearch&format=xml&limit=1&search=".urlencode($cmd->param_string());
 		$reply = new SimpleXMLElement(file_get_contents($url));

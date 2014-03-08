@@ -75,7 +75,7 @@ abstract class Executor_Cup extends CommandExecutor
 		return $this->on_picking == $this->cup_manager->map_picking_status;
 	}
 	
-	function check_auth($nick,$host,BotDriver $driver)
+	function check_auth($nick,$host,BotData $driver)
 	{
 		return $this->check_picking() && parent::check_auth($nick,$host,$driver);
 	}
@@ -120,18 +120,18 @@ abstract class Executor_Multi_Cup extends Executor_Cup
 	}
 	
 	
-	function check_auth($nick,$host,BotDriver $driver)
+	function check_auth($nick,$host,BotData $driver)
 	{
 		return $this->check_picking() && $this->multiple_inheritance->check_auth($nick,$host,$driver);
 	}
 	
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return $this->check_picking() && $this->multiple_inheritance->check($cmd,$bot,$driver);
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		return $this->multiple_inheritance->execute($cmd,$bot,$driver);
 	}
@@ -141,7 +141,7 @@ abstract class Executor_Multi_Cup extends Executor_Cup
 		return $this->multiple_inheritance->executors;
 	}
 	
-	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return $this->multiple_inheritance->help($cmd,$bot,$driver);
 	}
@@ -154,7 +154,7 @@ class Executor_Cup_Next extends Executor_Cup
 		parent::__construct($cup_manager,'next',null,'next [n]','Show the next (n) scheduled matches');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -191,7 +191,7 @@ class Executor_Cup_Cups extends Executor_Cup
 		parent::__construct($cup_manager,'cups','admin','cups','Show the available cups');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$this->cup_manager->update_tournaments();
 		
@@ -220,7 +220,7 @@ class Executor_Cup_Results extends Executor_Cup
 			'Show a URL where you can view the cup details');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 			$bot->say($cmd->channel,$this->cup()->result_url());
@@ -236,12 +236,12 @@ class Executor_Cup_CupReadonly extends Executor_Cup
 			'Show the current cup name and ID');
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$cmd->from,$cmd->host) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 			$bot->say($cmd->channel,
@@ -257,12 +257,12 @@ class Executor_Cup_CupSelect extends Executor_Cup
 			'Change the current cup');
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$next = trim($cmd->param_string());
 		$cup = null;
@@ -303,12 +303,12 @@ class Executor_Cup_DescriptionReadonly extends Executor_Cup
 			'Show the description of the current cup');
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$cmd->from,$cmd->host) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -326,12 +326,12 @@ class Executor_Cup_DescriptionSet extends Executor_Cup
 			'Change the description for the current cup');
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -363,12 +363,12 @@ class Executor_Cup_TimeReadonly extends Executor_Cup
 			'Display the scheduled start time for the current cup');
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$cmd->from,$cmd->host) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		// noop
 	}
@@ -382,12 +382,12 @@ class Executor_Cup_TimeSet extends Executor_Cup
 			'Change the scheduled start time for the current cup');
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -417,7 +417,7 @@ class Executor_Cup_Time extends Executor_Multi_Cup
 	}
 	
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd, $bot) )
 		{
@@ -457,7 +457,7 @@ class Executor_Cup_Maps extends Executor_Multi_Cup
 		));
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -489,7 +489,7 @@ class Executor_Cup_Start extends Executor_Cup
 			'Start the cup');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -513,7 +513,7 @@ class Executor_Cup_ScoreReadonly extends CommandExecutor
 			'Show the scores for match_id');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		// noop
 	}
@@ -527,7 +527,7 @@ class Executor_Cup_ScoreSet extends CommandExecutor
 			'Appends the given scores to the score list in the given match');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		// noop
 	}
@@ -545,7 +545,7 @@ class Executor_Cup_Score extends Executor_Cup
 		//$this->reports_error = true;
 	}
 	
-	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		if ( $this->rw->check_auth($cmd->from,$cmd->host,$driver) )
 		{
@@ -555,7 +555,7 @@ class Executor_Cup_Score extends Executor_Cup
 			$this->ro->help($cmd,$bot,$driver);
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd, $bot) )
 		{
@@ -602,7 +602,7 @@ class Executor_Cup_End extends Executor_Cup
 			'End the given match and save score changes to challonge');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( count($cmd->params) != 1 )
 		{
@@ -640,7 +640,7 @@ class Executor_Cup_Pick_Setup extends Executor_Cup
 			'Start a map picking session');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -676,7 +676,7 @@ class Executor_Cup_Pick_Setup extends Executor_Cup
 		}
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return count($cmd->params) == 1 && parent::check($cmd,$bot,$driver);
 	}
@@ -694,7 +694,7 @@ class Executor_Cup_Pick_Pick extends Executor_Cup
 		$this->on_picking = 1;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( count($cmd->params) >= 1 )
 		{
@@ -724,7 +724,7 @@ class Executor_Cup_Pick_Stop extends Executor_Cup
 	}
 	
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$bot->say($cmd->channel,"Map picking stopped");
 		$totmaps = array_merge($this->map_picker()->picks,$this->map_picker()->maps);
@@ -745,7 +745,7 @@ class Executor_Cup_Pick_Begin extends Executor_Cup
 	}
 	
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
         
 		$bot->say($cmd->channel,"Starting map picking ");
@@ -769,7 +769,7 @@ class Executor_Cup_Pick_Nick extends Executor_Cup
 	}
 	
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( count($cmd->params) == 2 && $this->map_picker()->is_player($cmd->params[0]) )
 		{
@@ -799,7 +799,7 @@ class Executor_Cup_Pick_Turn extends Executor_Cup
 		$this->on_picking = 2;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$this->map_pick_show_turn($cmd,$bot);
 	}
@@ -817,18 +817,18 @@ class Executor_Pick_Raw extends Executor_Cup
 	}
 	
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return  $this->check_auth($cmd->from,$cmd->host,$driver)
 				&& $this->map_picker() && $cmd->from == $this->map_picker()->current_player();
 	}
 	
-	function install_on(BotDriver $driver)
+	function install_on(BotData $driver)
 	{
 		$driver->raw_executors []= $this;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $cmd->cmd != null )
 			$map = $cmd->cmd;

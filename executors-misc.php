@@ -12,7 +12,7 @@ class Executor_Echo extends CommandExecutor
 		parent::__construct($trigger,$auth,"$trigger Text...","Make the bot $trigger something");
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$text = $cmd->param_string();
 		if ( $this->action )
@@ -31,7 +31,7 @@ class Executor_Action extends CommandExecutor
 		$this->reports_error = true;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_auth($cmd->from,$cmd->host,$driver) && count($cmd->params)>0 )
 		{
@@ -69,7 +69,7 @@ class Executor_RespondKick extends CommandExecutor
 		$this->irc_cmd = 'KICK';
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$bot->say($cmd->channel, $cmd->from == $bot->nick ? "Why??" : "We won't miss {$cmd->from}!" );
 	}
@@ -77,13 +77,13 @@ class Executor_RespondKick extends CommandExecutor
 
 class Raw_What extends RawCommandExecutor
 {
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return $cmd->cmd != null;
 	}
 	
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$bot->say($cmd->channel, "What?" );
 	}
@@ -107,12 +107,12 @@ class Raw_Echo extends RawCommandExecutor
 		$this->phrase_norm = $this->normalize($phrase);
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return $cmd->cmd == null && $this->normalize($cmd->param_string(true)) == $this->phrase_norm && $this->check_auth($cmd->from,$cmd->host,$driver);
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$bot->say($cmd->channel,$this->phrase);
 	}
@@ -129,12 +129,12 @@ class Executor_GreetingAllUsers extends CommandExecutor
 		$this->message = $message;
 	}
 	
-	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		return $cmd->from != $bot->nick;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$message = str_replace('%',$cmd->from,$this->message);
 		$bot->say($cmd->channel,$message);
@@ -151,12 +151,12 @@ class Executor_GreetingUsers extends CommandExecutor
 		$this->messages = $messages;
 	}
 	
-	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		return isset($this->messages[$cmd->from]);
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$bot->say($cmd->channel,$this->messages[$cmd->from]);
 	}
@@ -172,12 +172,12 @@ class Executor_GreetingSelf extends CommandExecutor
 		$this->message = $message;
 	}
 	
-	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		return $cmd->from == $bot->nick;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$bot->say($cmd->channel,$this->message);
 	}
@@ -198,12 +198,12 @@ class Executor_MiscListReadonly extends CommandExecutor
 			$this->list = &$list_ref;
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return count($cmd->params) == 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( !isset($this->list) )
 			$this->list = &$driver->data[$this->list_name] ;
@@ -246,13 +246,13 @@ class Executor_MiscListEdit extends CommandExecutor
 		}
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotDriver $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
 	}
 	
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( !isset($this->list) )
 		{

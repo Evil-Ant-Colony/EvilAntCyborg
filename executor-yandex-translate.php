@@ -39,7 +39,7 @@ class Executor_YandexTranslate extends CommandExecutor
         return $transl["text"][0];
     }
     
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( count($cmd->params) > 2 )
 		{

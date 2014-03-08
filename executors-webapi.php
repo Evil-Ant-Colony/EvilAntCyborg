@@ -40,7 +40,7 @@ class Executor_GoogleImages extends CommandExecutor
 		'Post an image matching the search term (using Google Images)');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$url="https://ajax.googleapis.com/ajax/services/search/images?v=1.0&rsz=1&q=".urlencode($cmd->param_string());
 		$response = json_decode(file_get_contents($url),true);
@@ -65,7 +65,7 @@ class Executor_Youtube extends CommandExecutor
 		'Post a video matching the search term (using Youtube)');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
         $url="https://gdata.youtube.com/feeds/api/videos?alt=json&max-results=1&q=".urlencode($cmd->param_string());
         $response = json_decode(file_get_contents($url),true);
@@ -85,13 +85,13 @@ class Executor_Youtube extends CommandExecutor
 class Raw_Youtube extends RawCommandExecutor
 {
 	
-	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		return strpos($cmd->raw,"www.youtube.com/watch?v=") !== false;
 	}
 	
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$match = array();
 		if ( preg_match("{www\.youtube\.com/watch\?v=([-_0-9a-zA-Z]+)}",$cmd->raw,$match) )
@@ -132,7 +132,7 @@ class Executor_Dictionary extends CommandExecutor
 		'Find the definition of Term (using Urban Dictionary)');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
         $url="http://api.urbandictionary.com/v0/define?term=".urlencode($cmd->param_string());
         $response = json_decode(file_get_contents($url),true);

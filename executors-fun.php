@@ -3,12 +3,12 @@
 
 class Raw_Question extends RawCommandExecutor
 {
-	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		return $cmd->cmd != null && substr(trim($cmd->raw),-1) == '?' ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $cmd->cmd == 'where' )
 		{
@@ -69,7 +69,7 @@ class Executor_Morse extends CommandExecutor
 		parent::__construct('morse',$auth,"morse Text|.-.-.","Morse decode/encode");
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( preg_match("/^[-. ]+$/",$cmd->param_string()) )
 		{
@@ -170,7 +170,7 @@ class Executor_ReverseText extends CommandExecutor
 		parent::__construct('reverse',null,"reverse Text...","Print text upside-down");
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$rev = "";
 		$param_string = $cmd->param_string();
@@ -295,7 +295,7 @@ class Executor_RenderPony extends CommandExecutor
 	}
 	
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( isset($cmd->params[0]) )
 		{
@@ -361,7 +361,7 @@ class Raw_Annoy extends RawCommandExecutor
 		$this->enabled = true;
 	}
 	
-	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		return ( $cmd->cmd == null && $this->enabled && count($cmd->params) == 1 
 				&& in_array(strtoupper($cmd->params[0]),$this->terms) )
@@ -369,7 +369,7 @@ class Raw_Annoy extends RawCommandExecutor
 				$this->check_auth($cmd->from,$cmd->host,$driver) );
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( strtoupper($cmd->cmd) == $this->toggler )
 			$this->enabled = !$this->enabled;

@@ -40,7 +40,7 @@ class Executor_Message extends CommandExecutor
 		$this->queue = $queue;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->queue->count_messages($cmd->from) > 0 )
 		{
@@ -64,7 +64,7 @@ class Executor_Tell extends CommandExecutor
 		$this->queue = $queue;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$who = isset($cmd->params[0]) ? trim($cmd->params[0]) : "";
 		if ( $who == "" )
@@ -107,7 +107,7 @@ class Executor_NotifyMessages extends CommandExecutor
 		$this->irc_cmd = $irc_cmd;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotDriver $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $cmd->from != $bot->nick )
 		{
