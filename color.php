@@ -3,6 +3,46 @@
 /// \todo instead of just 7bit conversion use 8 bit conversion (1 bit for brightness)
 class Color
 {
+	const NOCOLOR= null;
+	
+	const BLACK  = 0;
+	const RED    = 1;
+	const GREEN  = 2;
+	const YELLOW = 3;
+	const BLUE   = 4;
+	const MAGENTA= 5;
+	const CYAN   = 6;
+	const WHITE  = 7;
+	
+	const BRIGHT = true;
+	const DARK   = false;
+
+	public $code; ///< 7 bit rgb, null means no color
+	public $bright; ///< if true, brighter color
+	
+	function Color($code, $bright=false)
+	{
+		$this->code = (int)$code;
+		$this->bright = $bright;
+	}
+	
+	function r()
+	{
+		return !!($code & 1);
+	}
+	
+	function g()
+	{
+		return !!($code & 2);
+	}
+	
+	
+	function b()
+	{
+		return !!($code & 4);
+	}
+	
+// string conversion
 	/**
 	 * \brief Strip colors from an IRC colored string
 	 */
@@ -18,7 +58,7 @@ class Color
 			function ($matches)
 			{
 				if ( count($matches) > 1 )
-					return Color::oct2ansi(Color::irc2oct($matches[1]));
+					return Color::from_irc($matches[1])->ansi();
 				return "";
 			},$string);
 	}
@@ -30,7 +70,7 @@ class Color
 			{
 				if ( $matches[0] == "^^" )
 					return "^";
-				return Color::oct2irc(Color::dp2oct($matches[0]));
+				return Color::from_dp($matches[0])->irc();
 			}
 			,$string)."\x03";
 	}
@@ -60,101 +100,129 @@ class Color
 			{
 				if ( $matches[0] == "^^" )
 					return "^";
-				return Color::oct2ansi(Color::dp2oct($matches[0]));
+				return Color::from_dp($matches[0])->ansi();
 			}
 			,$string)."\x1b[0m";
 	}
-	
+
+// static constructors
 	/**
-	 * \brief Convert a 24bit hexadecimal color code to a 7bit color code
+	 * \brief Create a color from a 3 digit hex string
 	 */
-	static function hex2oct($color)
+	static function from_24hex($color)
 	{
 		$color = "$color";
-		$r = $color[0] > '7';
-		$g = $color[1] > '7';
-		$b = $color[2] > '7';
-		return $r|($g<<1)|($b<<2);
+		if ( strlen($color) < 3 )
+			return new Color(self::NOCOLOR);
+		$r = hexdec($color[0]); $g = hexdec($color[1]); $b = hexdec($color[2]);
+		$rt = $r > 4; $gt = $g > 4; $bt = $b > 4;
+		return new Color($rt|($gt<<1)|($bt<<2), $r > 7 || $b > 7 || $g > 7);
 	}
 	
+	/**
+	 * \brief Create a color from a DP ^string
+	 */
+	static function from_dp($color)
+	{
+		if ( strlen($color) == 2 ) // ^N
+		{
+			switch((int)$color[1])
+			{
+				case 5: return new Color(6);
+				case 6: return new Color(5);
+			}
+		}
+		else if ( strlen($color) == 5 ) // ^xNNN
+			return self::from_24hex(substr($color,2));
+		return new Color(self::NOCOLOR);
+	}
+	
+	/**
+	 * \brief Create a color from an IRC color number
+	 */
+	static function from_irc($color)
+	{
+		switch((int)$color)
+		{
+			case 14:
+				return new Color(self::BLACK,self::BRIGHT);
+			case 1: 
+				return new Color(self::BLACK,self::DARK);
+			case 4:
+				return new Color(self::RED,self::BRIGHT);
+			case 5:
+				return new Color(self::RED,self::DARK);
+			case 9: 
+				return new Color(self::GREEN,self::BRIGHT);
+			case 3:
+				return new Color(self::GREEN,self::DARK);
+			case 8: 
+				return new Color(self::YELLOW,self::BRIGHT);
+			case 7:
+				return new Color(self::YELLOW,self::DARK);
+			case 12:
+				return new Color(self::BLUE,self::BRIGHT);
+			case 2:
+				return new Color(self::BLUE,self::DARK);
+			case 13:
+				return new Color(self::MAGENTA,self::BRIGHT);
+			case 6:
+				return new Color(self::MAGENTA,self::DARK);
+			case 11:
+				return new Color(self::CYAN,self::BRIGHT);
+			case 10:
+				return new Color(self::CYAN,self::DARK);
+			case 0:
+				return new Color(self::WHITE,self::BRIGHT);
+			case 15:
+				return new Color(self::WHITE,self::DARK);
+			default: 
+				return new Color(self::NOCOLOR);
+		}
+	}
+	
+// color to string conversions
 	/**
 	 * \brief Convert a 7bit color code to an ANSI escape sequence
 	 * \note Converts black to white to display nicely on terminals with a black background
 	 */
-	static function oct2ansi($color)
+	function ansi()
 	{
-		if ( $color == null )
+		if ( $this->code == null )
 			return "\x1b[0m";
-		$color = (int)$color;
-		if ( $color < 1 || $color > 7 )
-			$color = 7;
-		return "\x1b[3{$color}m";
+		$c = $this->bright ? 9 : 3;
+		if ( $this->code < 1 || $this->code > 7 )
+			$this->code = 7;
+		return "\x1b[$c{$this->code}m";
 	}
-	
-	static function dp2oct($color)
-	{
-		$digit = 7;
-		if ( strlen($color) == 2 ) // ^N
-		{
-			$digit = (int)$color[1];
-			switch($digit)
-			{
-				case 5: $digit = 6; break;
-				case 6: $digit = 5; break;
-			}
-		}
-		else if ( strlen($color) == 5 ) // ^xNNN
-			$digit = self::hex2oct(substr($color,2));
-		return $digit;
-	}
-	
-	static function irc2oct($color)
-	{
-		switch((int)$color)
-		{
-			case 1:  // black
-			case 14: // gray
-				return 0;
-			case 4: // red
-			case 5: // dark red
-				return 1;
-			case 3: // dark green
-			case 9: // green
-				return 2;
-			case 8: // yellow
-			case 7: // orange
-				return 3;
-			case 2: // dark blue
-			case 12: // blue
-				return 4;
-			case 6: // dark magenta
-			case 13:// magenta
-				return 5;
-			case 10: // dark cyan
-			case 11: // cyan
-				return 6;
-			case 0:  // white
-			case 15: // light gray
-				return 7;
-			default: 
-				return null;
-		}
-	}
-	
-	static function oct2irc($color)
+
+	function irc()
 	{
 		$out = "";
-		switch((int)$color)
-		{
-			case 0: $out = 1; break;
-			case 1: $out = 4; break;
-			case 2: $out = 9; break;
-			case 3: $out = 7; break;
-			case 4: $out = 12; break;
-			case 5: $out = 13; break;
-			case 6: $out = 11; break;
-			// no white
-		}
+		if ( $this->bright )
+			switch($this->code)
+			{
+				case 0: $out = 14; break;
+				case 1: $out = 4; break;
+				case 2: $out = 9; break;
+				case 3: $out = 7; break; // no bright yellow
+				case 4: $out = 12; break;
+				case 5: $out = 13; break;
+				case 6: $out = 11; break;
+				// no white
+			}
+		else
+			switch($this->code)
+			{
+				case 0: $out = 1; break;
+				case 1: $out = 5; break;
+				case 2: $out = 3; break;
+				case 3: $out = 7; break;
+				case 4: $out = 2; break;
+				case 5: $out = 6; break;
+				case 6: $out = 10; break;
+				case 7: $out = 15; break;
+			}
 		return "\x03$out";
 	}
 
