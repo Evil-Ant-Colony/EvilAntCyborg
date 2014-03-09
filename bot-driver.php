@@ -15,6 +15,7 @@ class BotDriver
 	public $post_executors = array(); ///< List of executors applied before the bot quits
 	public $pre_executors = array();  ///< List of executors applied before the bot starts
 	public $filters = array();        ///< Stuff to be applied to each command before checking for execution
+	public $extarnal_comm = array();///< Connect external processes to irc
 	
 	function install_source(DataSource $source)
 	{
@@ -55,6 +56,14 @@ class BotDriver
 			$this->filters = array_merge($this->filters,$ex);
 	}
 	
+	function install_external($ex)
+	{
+		if ( !is_array($ex) )
+			$this->extarnal_comm []= $ex;
+		else
+			$this->extarnal_comm = array_merge($this->extarnal_comm,$ex);
+	}
+	
 	function BotDriver(MelanoBot $bot)
 	{
 		$this->bot = $bot;
@@ -76,6 +85,9 @@ class BotDriver
 	
 	function loop_step()
 	{
+		foreach ( $this->extarnal_comm as $c )
+			$c->step($this->bot,$this->data);
+		
 		foreach ( $this->data_sources as $src )
 		{
 			$cmd = $src->get_command();
@@ -120,6 +132,9 @@ class BotDriver
 			
 		array_unshift($this->data_sources,$this->bot);
 			
+		foreach ( $this->extarnal_comm as $c )
+			$c->initialize($this->data);
+			
 		// initialize channel list
 		$chans = $this->bot->join_list;
 		foreach($this->dispatchers as $disp)
@@ -147,5 +162,7 @@ class BotDriver
 			
 		array_shift($this->data_sources);
 		
+		foreach ( $this->extarnal_comm as $c )
+			$c->finalize($this->data);
 	}
 }

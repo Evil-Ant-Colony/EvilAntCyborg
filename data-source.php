@@ -52,6 +52,12 @@ class Stdin_Data_Source extends DataSource
 	}
 }
 
+interface ExternalCommunicator
+{
+	function initialize(BotData $data);
+	function finalize(BotData $data);
+	function step(MelanoBot $bot, BotData $data);
+}
 
 class BotData
 {

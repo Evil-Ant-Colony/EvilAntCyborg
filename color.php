@@ -107,12 +107,13 @@ class Color
 	 */
 	static function from_dp($color)
 	{
-		if ( strlen($color) == 2 ) // ^N
+		if ( strlen($color) == 2 && ($code = (int)$color[1]) < 8 ) // ^N
 		{
-			switch((int)$color[1])
+			switch ( $code )
 			{
-				case 5: return new Color(6);
-				case 6: return new Color(5);
+				case 5: return new Color(6,self::BRIGHT);
+				case 6: return new Color(5,self::BRIGHT);
+				default: return new Color((int)$color[1],self::BRIGHT);
 			}
 		}
 		else if ( strlen($color) == 5 ) // ^xNNN

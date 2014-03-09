@@ -87,6 +87,7 @@ class Rcon
 		else
 			$payload = "rcon {$this->password} $command";*/
 		$packet = new Rcon_Packet("rcon {$this->password} $command",$this->write);
+		/// \todo singleton logger->log("dp","<","blah blah");
 		$this->log("\x1b[36mdp \x1b[32m<\x1b[0m ".Color::dp2ansi($command)."\n");
 		$packet->send($this->socket);
 		return $packet;
