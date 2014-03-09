@@ -1,6 +1,5 @@
 <?php
 
-/// \todo instead of just 7bit conversion use 8 bit conversion (1 bit for brightness)
 class Color
 {
 	const NOCOLOR= null;
@@ -26,40 +25,24 @@ class Color
 		$this->bright = $bright;
 	}
 	
-	function r()
-	{
-		return !!($code & 1);
-	}
-	
-	function g()
-	{
-		return !!($code & 2);
-	}
-	
-	
-	function b()
-	{
-		return !!($code & 4);
-	}
-	
 // string conversion
 	/**
 	 * \brief Strip colors from an IRC colored string
 	 */
 	static function irc2none($string)
 	{
-		return preg_replace("{\x03([0-9][0-9]?)?(,[0-9][0-9]?)?}","",$string);
+		return preg_replace(array("{\3([0-9][0-9]?)?(,[0-9][0-9]?)?}","\xf"),"",$string);
 	}
 	
 	static function irc2ansi($string)
 	{
 		
-		return preg_replace_callback("{\x03([0-9][0-9]?)?(,[0-9][0-9]?)?}",
+		return preg_replace_callback("{(\3([0-9][0-9]?)?(,[0-9][0-9]?)?)|\xf}",
 			function ($matches)
 			{
-				if ( count($matches) > 1 )
-					return Color::from_irc($matches[1])->ansi();
-				return "";
+				if ( count($matches) > 2 )
+					return Color::from_irc($matches[2])->ansi();
+				return "\x1b[0m";
 			},$string);
 	}
 	
@@ -72,7 +55,7 @@ class Color
 					return "^";
 				return Color::from_dp($matches[0])->irc();
 			}
-			,$string)."\x03";
+			,$string)."\xf";
 	}
 	
 	/**
@@ -109,14 +92,14 @@ class Color
 	/**
 	 * \brief Create a color from a 3 digit hex string
 	 */
-	static function from_24hex($color)
+	static function from_12hex($color)
 	{
 		$color = "$color";
 		if ( strlen($color) < 3 )
 			return new Color(self::NOCOLOR);
 		$r = hexdec($color[0]); $g = hexdec($color[1]); $b = hexdec($color[2]);
-		$rt = $r > 4; $gt = $g > 4; $bt = $b > 4;
-		return new Color($rt|($gt<<1)|($bt<<2), $r > 7 || $b > 7 || $g > 7);
+		$rt = $r > 3; $gt = $g > 3; $bt = $b > 3;
+		return new Color($rt|($gt<<1)|($bt<<2), $r > 9 || $b > 9 || $g > 9);
 	}
 	
 	/**
@@ -133,7 +116,7 @@ class Color
 			}
 		}
 		else if ( strlen($color) == 5 ) // ^xNNN
-			return self::from_24hex(substr($color,2));
+			return self::from_12hex(substr($color,2));
 		return new Color(self::NOCOLOR);
 	}
 	
@@ -202,28 +185,30 @@ class Color
 		if ( $this->bright )
 			switch($this->code)
 			{
-				case 0: $out = 14; break;
-				case 1: $out = 4; break;
-				case 2: $out = 9; break;
-				case 3: $out = 7; break; // no bright yellow
-				case 4: $out = 12; break;
-				case 5: $out = 13; break;
-				case 6: $out = 11; break;
+				case 0: $out = "14"; break;
+				case 1: $out = "04"; break;
+				case 2: $out = "09"; break;
+				case 3: $out = "07"; break; // no bright yellow
+				case 4: $out = "12"; break;
+				case 5: $out = "13"; break;
+				case 6: $out = "11"; break;
 				// no white
 			}
 		else
 			switch($this->code)
 			{
-				case 0: $out = 1; break;
-				case 1: $out = 5; break;
-				case 2: $out = 3; break;
-				case 3: $out = 7; break;
-				case 4: $out = 2; break;
-				case 5: $out = 6; break;
-				case 6: $out = 10; break;
-				case 7: $out = 15; break;
+				case 0: $out = "01"; break;
+				case 1: $out = "05"; break;
+				case 2: $out = "03"; break;
+				case 3: $out = "07"; break;
+				case 4: $out = "02"; break;
+				case 5: $out = "06"; break;
+				case 6: $out = "10"; break;
+				case 7: $out = "15"; break;
 			}
-		return "\x03$out";
+		if ( !$out )
+			return "\xf";
+		return "\3$out";
 	}
 
 }

@@ -109,7 +109,7 @@ class Executor_Restart extends CommandExecutor
 	}
 }
 
-class Post_Restart extends PostExecutor
+class Post_Restart extends StaticExecutor
 {
 	public $restart_file;
 	

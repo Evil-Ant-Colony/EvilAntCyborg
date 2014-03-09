@@ -124,29 +124,12 @@ abstract class Filter extends ExecutorBase
 	}
 }
 
-/// Runs at the end
-abstract class PostExecutor
+/// Runs at the very beginning or at the very end
+abstract class StaticExecutor
 {
 	
 	abstract function execute( MelanoBot $bot, BotData $driver);
-	
-	function install_on(BotCommandDispatcher $driver)
-	{
-		$driver->add_post_executor($this);
-	}
 }
-/// Runs at the beginning
-abstract class PreExecutor
-{
-	
-	abstract function execute(MelanoBot $bot, BotData $driver);
-	
-	function install_on(BotCommandDispatcher $driver)
-	{
-		$driver->add_pre_executor($this);
-	}
-}
- 
 
 
 /**
@@ -157,15 +140,16 @@ class BotCommandDispatcher
 	public $executors = array();      ///< List of executors for direct PRIVMSG commands
 	public $raw_executors = array();  ///< List of executors for indirect PRIVMSG commands
 	public $filters = array();        ///< Stuff to be applied to each command before checking for execution
-	public $post_executors = array(); ///< List of executors applied before the bot quits
-	public $pre_executors = array();  ///< List of executors applied before the bot starts
 	public $on_error = null;          ///< Function called when a user doesn't have the right to fire a direct executor
 	public $channel_filter = array(); ///< List of channels this dispatcher is allowed to work on, empty == all channels
 	public $prefix = null;            ///< Customized prefix for this dispatcher, empty == bot default
 	
 	function BotCommandDispatcher($channel_filter = array(), $prefix = null)
 	{
-		$this->channel_filter = $channel_filter;
+		if ( !is_array($channel_filter) )
+			$this->channel_filter = array($channel_filter);
+		else
+			$this->channel_filter = $channel_filter;
 		$this->prefix = $prefix;
 	}
 	
@@ -230,16 +214,6 @@ class BotCommandDispatcher
 	{
 		$this->raw_executors []= $ex;
 	}
-	/// Append an executor to the list
-	function add_post_executor(PostExecutor $ex)
-	{
-		$this->post_executors []= $ex;
-	}
-	/// Append an executor to the list
-	function add_pre_executor(PreExecutor $ex)
-	{
-		$this->pre_executors []= $ex;
-	}
 	
 	/// Append a filter to the list
 	function add_filter(Filter $ex)
@@ -265,20 +239,6 @@ class BotCommandDispatcher
 		}
 		return true;
 		
-	}
-	
-	function loop_begin(MelanoBot $bot,BotData $data)
-	{
-		if ( !is_array($this->channel_filter) )
-			$this->channel_filter = array($this->channel_filter);
-		foreach ( $this->pre_executors as $ex )
-			$ex->execute($bot,$data);
-	}
-	
-	function loop_end(MelanoBot $bot,BotData $data)
-	{
-		foreach ( $this->post_executors as $ex )
-			$ex->execute($bot,$data);
 	}
 	
 	function log($bot,$executor)

@@ -12,6 +12,8 @@ class BotDriver
 	public $data = null;              ///< Shared bot data
 	public $dispatchers = array();
 	public $data_sources = array();
+	public $post_executors = array(); ///< List of executors applied before the bot quits
+	public $pre_executors = array();  ///< List of executors applied before the bot starts
 	
 	function install_source(DataSource $source)
 	{
@@ -24,6 +26,24 @@ class BotDriver
 			$this->dispatchers []= $dispatchers;
 		else
 			$this->dispatchers = array_merge($this->dispatchers,$dispatchers);
+	}
+	
+	
+	/// Append an executor to the list
+	function install_post_executor($ex)
+	{
+		if ( !is_array($ex) )
+			$this->post_executors []= $ex;
+		else
+			$this->post_executors = array_merge($this->post_executors,$ex);
+	}
+	/// Append an executor to the list
+	function install_pre_executor($ex)
+	{
+		if ( !is_array($ex) )
+			$this->pre_executors []= $ex;
+		else
+			$this->pre_executors = array_merge($this->pre_executors,$ex);
 	}
 	
 	function BotDriver(MelanoBot $bot)
@@ -79,21 +99,18 @@ class BotDriver
 			$src->initialize($this->data);
 			
 		array_unshift($this->data_sources,$this->bot);
-		
-		/// \todo move Executors Pre and Post in here (no need for the dispatcher)
-		/// Maybe merge those classes in a single one and have different install functions
 			
-		// initialize dispatchers
+		// initialize channel list
 		$chans = $this->bot->join_list;
 		foreach($this->dispatchers as $disp)
-		{
-			$disp->loop_begin($this->bot,$this->data);
-			
 			if ( is_array($disp->channel_filter) )
 				$chans = array_merge($chans,$disp->channel_filter);
-		}
 		/// \todo skip fake channels (rcon)
 		$this->bot->join_list = array_unique($chans);
+		
+		
+		foreach ( $this->pre_executors as $ex )
+			$ex->execute($this->bot,$this->data);
 		
 		// loop
 		while($this->check_status())
@@ -101,9 +118,8 @@ class BotDriver
 			$this->loop_step();
 		}
 		
-		// finalize dispatchers
-		foreach($this->dispatchers as $disp)
-			$disp->loop_end($this->bot,$this->data);
+		foreach ( $this->post_executors as $ex )
+			$ex->execute($this->bot,$this->data);
 		
 		// finalize sources
 		foreach ( $this->data_sources as $src )
