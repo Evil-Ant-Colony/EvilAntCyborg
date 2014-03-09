@@ -39,6 +39,11 @@ abstract class Rcon2Irc_Executor
 			return $this->execute($cmd,$bot,$data);
 		return false;
 	}
+	
+	function install_on(Rcon_Communicator $comm)
+	{
+		$comm->rcon_executors []= $this;
+	}
 }
 
 /// \todo find some way to reconnect $rcon when the server restarts (or just keep spamming)
@@ -48,6 +53,9 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	public $channel;
 	public $rcon;
 	public $rcon_executors = array();
+	public $poll_commands = array();
+	public $poll_interval = 30;
+	private $poll_time = 0;
 	
 	function Rcon_Communicator($channel,$rcon,$prefix=null)
 	{
@@ -59,15 +67,11 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	function initialize(BotData $data)
 	{
 		$this->rcon->connect();
+		$this->setup_server();
 	}
 	
 	function finalize(BotData $data)
 	{
-	}
-	
-	function install_irc2rcon($ex)
-	{
-		$this->install($ex);
 	}
 	
 	function install_rcon2irc($executors)
@@ -80,6 +84,18 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	
 	function step(MelanoBot $bot, BotData $data)
 	{
+		$time = time();
+		if ( $time > $this->poll_time )
+		{
+			$this->rcon->send("log_dest_udp {$this->rcon->read}");
+			
+			// unknown command hax to call setup_server
+			
+			foreach($this->poll_commands as $pc )
+				$this->rcon->send($pc);
+			$this->poll_time = $time + $this->poll_interval;
+		}
+		
 		$packet = $this->rcon->read();
 		if ( !$packet->valid )
 			return;
@@ -88,13 +104,58 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 			if ( $executor->step($cmd, $bot, $data) )
 				return;
 	}
+	
+	private function setup_server()
+	{
+		//$this->rcon->send("log_dest_udp {$this->rcon->read}");
+		$this->rcon->send("sv_logscores_console 0");
+		$this->rcon->send("sv_logscores_bots 1");
+		$this->rcon->send("sv_eventlog 1");
+		$this->rcon->send("sv_eventlog_console 1");
+	}
+}
+
+abstract class Irc2Rcon_Executor extends CommandExecutor
+{
+	public $rcon;
+	
+	function Irc2Rcon_Executor($rcon, $name,$auth=null,$synopsis="",$description="",$irc_cmd='PRIVMSG')
+	{
+		parent::__construct($name,$auth,$synopsis,$description,$irc_cmd);
+		$this->rcon = $rcon;
+	}
+}
+
+
+class Irc2Rcon_RawSay extends RawCommandExecutor
+{
+	public $rcon;
+	public $say_command;
+	public $action_command;
+	
+	function Irc2Rcon_RawSay($rcon, $say_command="say ^3[IRC] %s:^7 %s",$action_command="say ^4*^3 [IRC] %s %s")
+	{
+		$this->say_command=$say_command;
+		$this->action_command = $action_command;
+		$this->rcon = $rcon;
+	}
+	
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	{
+		$text = str_replace(array('\\','"'),array('\\\\','\"'),$cmd->param_string());
+		if ( preg_match("{^\1ACTION ([^\1]*)\1$}", $text, $match) )
+			$this->rcon->send(sprintf($this->action_command,$cmd->from,Color::irc2dp($match[1])));
+		else
+			$this->rcon->send(sprintf($this->say_command,$cmd->from,Color::irc2dp($text)));
+	}
 }
 
 class Rcon2Irc_Say extends Rcon2Irc_Executor
 {
 	function Rcon2Irc_Say()
 	{
-		parent::__construct("{\001(.*?)\^7: (.*)}");
+		parent::__construct("{\1(.*?)\^7: (.*)}");
 	}
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data)

@@ -31,18 +31,30 @@ class Color
 	 */
 	static function irc2none($string)
 	{
-		return preg_replace(array("{\3([0-9][0-9]?)?(,[0-9][0-9]?)?}","\xf"),"",$string);
+		return preg_replace("{(\3([0-9][0-9]?)?(,[0-9][0-9]?)?)|\xf|\1}","",$string);
 	}
 	
 	static function irc2ansi($string)
+	{
+		
+		return preg_replace_callback("{(\3([0-9][0-9]?)?(,[0-9][0-9]?)?)|\xf|\1}",
+			function ($matches)
+			{
+				if ( count($matches) > 2 )
+					return Color::from_irc($matches[2])->ansi();
+				return "\x1b[0m";
+			},$string);
+	}
+	
+	static function irc2dp($string)
 	{
 		
 		return preg_replace_callback("{(\3([0-9][0-9]?)?(,[0-9][0-9]?)?)|\xf}",
 			function ($matches)
 			{
 				if ( count($matches) > 2 )
-					return Color::from_irc($matches[2])->ansi();
-				return "\x1b[0m";
+					return Color::from_irc($matches[2])->dp();
+				return "^7";
 			},$string);
 	}
 	
@@ -210,6 +222,32 @@ class Color
 		if ( !$out )
 			return "\xf";
 		return "\3$out";
+	}
+	
+	function to12bit()
+	{
+		$m = $this->bright ? 15 : 5;
+		$r = $m * !!( $this->code & self::RED );
+		$g = $m * !!( $this->code & self::GREEN );
+		$b = $m * !!( $this->code & self::BLUE );
+		return dechex($r).dechex($g).dechex($b);
+	}
+	
+	function dp()
+	{
+		if ( !$this->code )
+			return "";
+		if ( $this->bright )
+		{
+			switch ( $this->code )
+			{
+				case 5: return "^6";
+				case 6: return "^5";
+				default: return "^{$this->code}";
+			}
+		}
+		else
+			return "^x".$this->to12bit();
 	}
 
 }
