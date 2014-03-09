@@ -1,6 +1,7 @@
 <?php
 
 require_once("bot-driver.php");
+require_once("logger.php");
 
 class MessageQueue
 {
@@ -88,7 +89,7 @@ class Executor_Tell extends CommandExecutor
 			else
 			{
 				$this->queue->send($cmd->from,$who,$text);
-				$bot->log("Stored a message from {$cmd->from} to $who\n");
+				Logger::log($msg,"!","Stored a message from {$cmd->from} to $who");
 				$bot->say($cmd->channel, "Will do!");
 			}
 		}

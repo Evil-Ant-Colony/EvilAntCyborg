@@ -2,6 +2,7 @@
 
 require_once("melanobot.php");
 require_once("executors-abstract.php");
+require_once("logger.php");
 
 /**
  * \brief Get and execute commands
@@ -94,7 +95,7 @@ class BotDriver
 				
 			if ( $cmd != null && $this->filter($cmd) )
 			{
-				$this->bot->log(print_r($cmd,true),4);
+				Logger::instance()->plain_log(print_r($cmd,true),4);
 				foreach($this->dispatchers as $disp)
 				{
 					if ( $disp->loop_step($cmd,$this->bot,$this->data) )

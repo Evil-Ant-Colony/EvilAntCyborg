@@ -1,5 +1,7 @@
 <?php
 
+require_once("logger.php");
+
 class MelanoBotCommand
 {
 	public $cmd, $params, $from, $host, $channel, $raw,  $irc_cmd;
@@ -48,6 +50,7 @@ class Stdin_Data_Source extends DataSource
 			return null;
 		$data_arr = explode(" ",trim($data));
 		$cmd = array_shift($data_arr);
+		Logger::log("std",">",$data,1);
 		return new MelanoBotCommand($cmd,$data_arr,':STDIN:',':STDIN:',":STDIN:",$data,'PRIVMSG');
 	}
 }

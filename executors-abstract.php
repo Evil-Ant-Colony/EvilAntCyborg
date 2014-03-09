@@ -1,4 +1,5 @@
 <?php
+require_once("logger.php");
 
 abstract class ExecutorBase
 {
@@ -243,8 +244,8 @@ class BotCommandDispatcher
 	
 	function log($bot,$executor)
 	{
-		$bot->log("\x1b[34mHandled by \x1b[1m".get_class($executor).
-			"\x1b[22m via \x1b[1m".$this->id()."\x1b[0m\n",3);
+		Logger::log("irc","!","\x1b[34mHandled by \x1b[1m".get_class($executor).
+			"\x1b[22m via \x1b[1m".$this->id()."\x1b[0m",3);
 	}
 	
 	

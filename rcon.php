@@ -1,5 +1,6 @@
 <?php
 
+require_once("logger.php");
 require_once("color.php");
 
 class Rcon_Server
@@ -87,8 +88,7 @@ class Rcon
 		else
 			$payload = "rcon {$this->password} $command";*/
 		$packet = new Rcon_Packet("rcon {$this->password} $command",$this->write);
-		/// \todo singleton logger->log("dp","<","blah blah");
-		$this->log("\x1b[36mdp \x1b[32m<\x1b[0m ".Color::dp2ansi($command)."\n");
+		Logger::log("dp","<",Color::dp2ansi($command),0);
 		$packet->send($this->socket);
 		return $packet;
 	}
@@ -97,17 +97,13 @@ class Rcon
 	{
 		$packet = Rcon_Packet::read($this->socket,32768);
 		if ( $packet->valid )
-			$this->log("\x1b[36mdp \x1b[33m>\x1b[0m ".Color::dp2ansi($packet->payload)."\n");
+			Logger::log("dp",">",Color::dp2ansi($packet->payload),0);
 		return $packet;
-	}
-	
-	function log($msg)
-	{
-		echo "\x1b[30;1m".date("[H:i:s]")."\x1b[0m".$msg;
 	}
 	
 	function connect()
 	{
+		Logger::log("dp","!","Connecting to {$this->read}",1);
 		$this->send("log_dest_udp {$this->read->host}:{$this->read->port}");
 	}
 	
