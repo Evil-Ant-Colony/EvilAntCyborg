@@ -14,6 +14,7 @@ class BotDriver
 	public $data_sources = array();
 	public $post_executors = array(); ///< List of executors applied before the bot quits
 	public $pre_executors = array();  ///< List of executors applied before the bot starts
+	public $filters = array();        ///< Stuff to be applied to each command before checking for execution
 	
 	function install_source(DataSource $source)
 	{
@@ -46,11 +47,31 @@ class BotDriver
 			$this->pre_executors = array_merge($this->pre_executors,$ex);
 	}
 	
+	function install_filter($ex)
+	{
+		if ( !is_array($ex) )
+			$this->filters []= $ex;
+		else
+			$this->filters = array_merge($this->filters,$ex);
+	}
+	
 	function BotDriver(MelanoBot $bot)
 	{
 		$this->bot = $bot;
 		$this->data = new BotData($this);
 		$this->data->grant_access['admin'] = array('owner');
+	}
+	
+	
+	function filter(MelanoBotCommand $cmd)
+	{
+		foreach($this->filters as $f )
+		{
+			if(!$f->check($cmd,$this->bot,$this->data))
+				return false;
+		}
+		return true;
+		
 	}
 	
 	function loop_step()
@@ -59,9 +80,8 @@ class BotDriver
 		{
 			$cmd = $src->get_command();
 				
-			if ( $cmd != null )
+			if ( $cmd != null && $this->filter($cmd) )
 			{
-				/// \todo apply filters here (eg: blacklist)
 				$this->bot->log(print_r($cmd,true),4);
 				foreach($this->dispatchers as $disp)
 				{
