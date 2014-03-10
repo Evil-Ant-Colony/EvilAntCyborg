@@ -22,26 +22,22 @@ class Rcon_Command
 
 abstract class Rcon2Irc_Executor
 {
-	public $rcon;
 	public $regex;
-	public $rcon_data;
 	
-	function Rcon2Irc_Executor(Rcon $rcon,$regex)
+	function Rcon2Irc_Executor($regex)
 	{
-		$this->rcon = $rcon;
 		$this->regex = $regex;
 	}
 	
 	/**
 	 * \return True if you want to prevent further processing
 	 */
-	abstract function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data);
+	abstract function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data);
 	
-	function step(Rcon_Command $cmd, MelanoBot $bot, BotData $data)
+	function step(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
 	{
-		$this->rcon_data = $data->rcon["{$this->rcon->read}"];
 		if ( preg_match($this->regex,$cmd->data, $cmd->params) )
-			return $this->execute($cmd,$bot,$data);
+			return $this->execute($cmd,$bot,$data,$rcon_data);
 		return false;
 	}
 	
@@ -60,6 +56,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	public $poll_commands = array();
 	public $poll_interval = 30;
 	private $poll_time = 0;
+	private $rcon_data;
 	
 	function Rcon_Communicator($channel,Rcon $rcon,$prefix=null)
 	{
@@ -76,7 +73,13 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		if ( !isset($data->rcon) )
 			$data->rcon = array();
 		
-		$data->rcon["{$this->rcon->read}"]->player = new PlayerManager;
+		if ( ! isset($data->rcon["{$this->rcon->read}"]) )
+		{
+			$data->rcon["{$this->rcon->read}"] = new StdClass();
+			$data->rcon["{$this->rcon->read}"]->rcon = $this->rcon;
+			$data->rcon["{$this->rcon->read}"]->player = new PlayerManager;
+		}
+		$this->rcon_data = $data->rcon["{$this->rcon->read}"];
 	}
 	
 	function finalize(BotData $data)
@@ -107,11 +110,13 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		}
 		
 		$packet = $this->rcon->read();
-		if ( !$packet->valid )
+		
+		if ( !$packet->valid || strlen($packet->payload) == 0 )
 			return;
+			
 		$cmd = new Rcon_Command($packet->payload, $packet->server,$this->channel);
 		foreach($this->rcon_executors as $executor)
-			if ( $executor->step($cmd, $bot, $data) )
+			if ( $executor->step($cmd, $bot, $data, $this->rcon_data) )
 				return;
 	}
 	
@@ -182,12 +187,12 @@ class Irc2Rcon_Who extends Irc2Rcon_Executor
 
 class Rcon2Irc_Say extends Rcon2Irc_Executor
 {
-	function Rcon2Irc_Say(Rcon $rcon)
+	function Rcon2Irc_Say()
 	{
-		parent::__construct($rcon,"{\1(.*?)\^7: (.*)}");
+		parent::__construct("{\1(.*?)\^7: (.*)}");
 	}
 	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data)
+	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
 	{
 		$nick = Color::dp2irc($cmd->params[1]);
 		$text = Color::dp2irc($cmd->params[2]);
@@ -199,15 +204,15 @@ class Rcon2Irc_Say extends Rcon2Irc_Executor
 
 class Rcon2Irc_UpdatePlayerNumber extends Rcon2Irc_Executor
 {
-	function Rcon2Irc_UpdatePlayerNumber(Rcon $rcon)
+	function Rcon2Irc_UpdatePlayerNumber()
 	{
-		parent::__construct($rcon,"{players:  (\d+) active \((\d+) max\)}");
+		parent::__construct("{players:  (\d+) active \((\d+) max\)}");
 	}
 	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data)
+	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
 	{
-		$this->rcon_data->player->max = $cmd->params[2];
-		$this->rcon_data->player->count = $cmd->params[1];
+		$rcon_data->player->max = $cmd->params[2];
+		$rcon_data->player->count = $cmd->params[1];
 	}
 }
 
@@ -216,20 +221,20 @@ class Rcon2Irc_Join extends Rcon2Irc_Executor
 	public $show_number;
 	public $show_ip;
 	
-	function Rcon2Irc_Join(Rcon $rcon, $show_number = true, $show_ip = false)
+	function Rcon2Irc_Join($show_number = true, $show_ip = false)
 	{
-		parent::__construct($rcon,"{:join:(\d+):(\d+):([^:]*):(.*)}");
+		parent::__construct("{:join:(\d+):(\d+):([^:]*):(.*)}");
 		$this->show_number = $show_number;
 		$this->show_ip = $show_ip;
 	}
 	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data)
+	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
 	{
 		$player = new RconPlayer();
 		list ($player->id, $player->slot, $player->ip, $player->nick) = array_slice($cmd->params,1);
 		
 		/// \todo how to handle bots?
-		$this->rcon_data->player->add($player);
+		$rcon_data->player->add($player);
 		
 		if ( $player->is_bot() )
 			return;
@@ -240,7 +245,7 @@ class Rcon2Irc_Join extends Rcon2Irc_Executor
 			$msg .= " (\00304{$player->ip}\xf)";
 		
 		if ( $this->show_number )
-			$msg .= " [\00304".$this->rcon_data->player->count."\xf/\00304".$this->rcon_data->player->max."\xf]";
+			$msg .= " [\00304".$rcon_data->player->count."\xf/\00304".$rcon_data->player->max."\xf]";
 			
 		$bot->say($cmd->channel,$msg." -- IP={$player->ip}, ID={$player->id}, SLOT={$player->slot} ");
 		
@@ -254,17 +259,17 @@ class Rcon2Irc_Part extends Rcon2Irc_Executor
 	public $show_number;
 	public $show_ip;
 	
-	function Rcon2Irc_Part(Rcon $rcon, $show_number = true, $show_ip = false)
+	function Rcon2Irc_Part($show_number = true, $show_ip = false)
 	{
-		parent::__construct($rcon,"{:part:(\d+)}");
+		parent::__construct("{:part:(\d+)}");
 		$this->show_number = $show_number;
 		$this->show_ip = $show_ip;
 	}
 	
 	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data)
+	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
 	{
-		$player = $this->rcon_data->player->remove($cmd->params[1]);
+		$player = $rcon_data->player->remove($cmd->params[1]);
 		if ( $player && !$player->is_bot() )
 		{
 			$msg = "\00304- part\xf: ".Color::dp2irc($player->nick);
@@ -273,7 +278,7 @@ class Rcon2Irc_Part extends Rcon2Irc_Executor
 				$msg .= " (\00304{$player->ip}\xf)";
 				
 			if ( $this->show_number )
-				$msg .= " [\00304".$this->rcon_data->player->count."\xf/\00304".$this->rcon_data->player->max."\xf]";
+				$msg .= " [\00304".$rcon_data->player->count."\xf/\00304".$rcon_data->player->max."\xf]";
 				
 			$bot->say($cmd->channel,$msg." -- IP={$player->ip}, ID={$player->id}, SLOT={$player->slot} ");
 		}
@@ -284,15 +289,15 @@ class Rcon2Irc_Part extends Rcon2Irc_Executor
 class Rcon2Irc_Endmatch extends Rcon2Irc_Executor
 {
 	
-	function Rcon2Irc_Endmatch(Rcon $rcon)
+	function Rcon2Irc_Endmatch()
 	{
-		parent::__construct($rcon,"{:end}");
+		parent::__construct("{:end}");
 	}
 	
 	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data)
+	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
 	{
-		$this->rcon_data->player->clear();
+		$rcon_data->player->clear();
 		return true;
 	}
 }
