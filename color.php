@@ -19,6 +19,9 @@ class Color
 	public $code; ///< 7 bit rgb, null means no color
 	public $bright; ///< if true, brighter color
 	
+	private static $irc_regex = "{(\3([0-9][0-9]?)?(,[0-9][0-9]?)?)|\xf|\1|\2|\x16|\x1f}";
+	private static $dp_regex = "/(\^\^)|(\^[0-9])|(\^x[0-9a-fA-F]{3})/";
+	
 	function Color($code, $bright=false)
 	{
 		$this->code = (int)$code;
@@ -31,13 +34,13 @@ class Color
 	 */
 	static function irc2none($string)
 	{
-		return preg_replace("{(\3([0-9][0-9]?)?(,[0-9][0-9]?)?)|\xf|\1}","",$string);
+		return preg_replace(self::$irc_regex,"",$string);
 	}
 	
 	static function irc2ansi($string)
 	{
 		
-		return preg_replace_callback("{(\3([0-9][0-9]?)?(,[0-9][0-9]?)?)|\xf|\1}",
+		return preg_replace_callback(self::$irc_regex,
 			function ($matches)
 			{
 				if ( count($matches) > 2 )
@@ -49,7 +52,7 @@ class Color
 	static function irc2dp($string)
 	{
 		
-		return preg_replace_callback("{(\3([0-9][0-9]?)?(,[0-9][0-9]?)?)|\xf}",
+		return preg_replace_callback(self::$irc_regex,
 			function ($matches)
 			{
 				if ( count($matches) > 2 )
@@ -60,7 +63,7 @@ class Color
 	
 	static function dp2irc($string)
 	{
-		return preg_replace_callback("/(\^\^)|(\^[0-9])|(\^x[0-9a-fA-F]{3})/",
+		return preg_replace_callback(self::$dp_regex,
 			function ($matches)
 			{
 				if ( $matches[0] == "^^" )
@@ -75,7 +78,7 @@ class Color
 	 */
 	static function dp2none($string)
 	{
-		return preg_replace_callback("/(\^\^)|(\^[0-9])|(\^x[0-9a-fA-F]{3})/",
+		return preg_replace_callback(self::$dp_regex,
 			function ($matches)
 			{
 				if ( $matches[0] == "^^" )
@@ -90,7 +93,7 @@ class Color
 	 */
 	static function dp2ansi($string)
 	{
-		return preg_replace_callback("/(\^\^)|(\^[0-9])|(\^x[0-9a-fA-F]{3})/",
+		return preg_replace_callback(self::$dp_regex,
 			function ($matches)
 			{
 				if ( $matches[0] == "^^" )

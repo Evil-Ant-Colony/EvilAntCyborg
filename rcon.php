@@ -96,7 +96,7 @@ class Rcon
 	function read()
 	{
 		$packet = Rcon_Packet::read($this->socket,32768);
-		if ( $packet->valid )
+		if ( $packet->valid && $packet->payload )
 			Logger::log("dp",">",Color::dp2ansi($packet->payload),0);
 		return $packet;
 	}
@@ -104,7 +104,7 @@ class Rcon
 	function connect()
 	{
 		Logger::log("dp","!","Connecting to {$this->read}",1);
-		$this->send("log_dest_udp {$this->read->host}:{$this->read->port}");
+		$this->send("addtolist log_dest_udp {$this->read->host}:{$this->read->port}");
 	}
 	
 	function irc_name()

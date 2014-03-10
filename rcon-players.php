@@ -5,15 +5,45 @@ require_once("color.php");
 
 class RconPlayer
 {
-	public $nick;
+	public $name;
 	public $slot;
 	public $ip;
 	public $id;
+	public $ping;
+	public $pl;
+	public $frags;
+	public $time;
 	
 	function is_bot()
 	{
-		return $this->ip == 'bot';
+		return substr($this->ip,0,3) == 'bot';
 	}
+	
+	function normalize()
+	{
+		if ( isset($this->id) )
+			$this->id = (int)$this->id;
+		if ( isset($this->slot) )
+			$this->slot = self::str2slot($this->slot);
+	}
+	
+	function merge(RconPlayer $other)
+	{
+		if ( isset($other->slot) && $other->slot != $this->slot )
+			return $this;
+			
+		if ( isset($other->name) ) $this->name = $other->name;
+		if ( isset($other->ip) ) $this->ip = $other->ip;
+		if ( isset($other->ping) ) $this->ping = $other->ping;
+		if ( isset($other->pl) ) $this->pl = $other->pl;
+		if ( isset($other->frags) ) $this->frags = $other->frags;
+		if ( isset($other->time) ) $this->time = $other->time;
+		
+		return $this;
+	}
+	
+	static function str2slot($slot) { return (int)trim($slot,'#'); }
+	
 }
 
 class PlayerManager
@@ -24,37 +54,66 @@ class PlayerManager
 	
 	function add(RconPlayer $player)
 	{
-		$player->id = (int) $player->id;
-		Logger::log("dp","!","\x1b[32mAdding\x1b[0m player \x1b[31m{$player->id}\x1b[0m #\x1b[31m{$player->slot}\x1b[0m ".
-			Color::dp2ansi($player->nick)." @ \x1b[36m$player->ip\x1b[0m",3);
-		$this->count++;
-		$this->players [$player->id] = $player;
+		$player->normalize();
+		if ( !$player->slot )
+			return;
+		
+		Logger::log("dp","!","\x1b[32mAdding\x1b[0m player #\x1b[31m{$player->slot}\x1b[0m ".
+			Color::dp2ansi($player->name)." @ \x1b[36m$player->ip\x1b[0m",3);
+
+		if ( isset($this->players[$player->slot]) )
+			$this->players[$player->slot]->merge($player);
+		else
+		{
+			$this->count++;
+			$this->players [$player->slot] = $player;
+		}
 	}
-	
-	function find ( $id )
+	function find_by_id ( $id )
 	{
-		$id = (int)$id;
-		if ( isset($this->players[$id]) )
-			return $this->players[$id];
+		foreach ( $this->players as $player ) 
+			if ( $id == $player->id )
+				return $player;
 		return null;
 	}
 	
-	/**
-	 * \brief Remove player by slot and return a reference to it
-	 */
-	function remove ( $id )
+	function find ( $slot )
 	{
-		$id = (int)$id;
-		if ( isset($this->players[$id]) )
+		$slot = RconPlayer::str2slot($slot);
+		if ( isset($this->players[$slot]) )
+			return $this->players[$slot];
+		return null;
+	}
+	
+	function set_players($players)
+	{
+		$old = $this->players;
+		$this->clear();
+		foreach($players as $player)
 		{
-			$player = $this->players[$id];
-			Logger::log("dp","!","\x1b[31mRemoving\x1b[0m player \x1b[31m{$player->id}\x1b[0m #\x1b[31m{$player->slot}\x1b[0m ".
-				Color::dp2ansi($player->nick)." @ \x1b[36m$player->ip\x1b[0m",3);
-			unset($this->players[$id]);
+			if ( isset($old[$player->slot]) )
+				$this->add($old[$player->slot]->merge($player));
+			else
+				$this->add($player);
+		}
+	}
+	
+	/**
+	 * \brief Remove player by id and return a reference to it
+	 */
+	function remove ( $slot )
+	{
+		$slot = RconPlayer::str2slot($slot);
+		if ( isset($this->players[$slot]) )
+		{
+			$player = $this->players[$slot];
+			Logger::log("dp","!","\x1b[31mRemoving\x1b[0m player #\x1b[31m{$player->slot}\x1b[0m ".
+				Color::dp2ansi($player->name)." @ \x1b[36m$player->ip\x1b[0m",3);
+			unset($this->players[$slot]);
 			$this->count--;
 			return $player;
 		}
-		return 0;
+		return null;
 	}
 	
 	function clear()
@@ -68,6 +127,16 @@ class PlayerManager
 		$players = array();
 		foreach($this->players as $id => $player)
 			if ( $player )
+				$players[]=$player;
+		return $players;
+	}
+	
+	
+	function all_no_bots()
+	{
+		$players = array();
+		foreach($this->players as $slot => $player)
+			if ( $player && !$player->is_bot())
 				$players[]=$player;
 		return $players;
 	}
