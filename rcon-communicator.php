@@ -49,6 +49,7 @@ abstract class Rcon2Irc_Executor
 
 class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunicator
 {
+	const WAITING_IRC = -2;
 	const CHECKING_CONNECTION = -1;
 	const DISCONNECTED = 0;
 	const CONNECTED = 1;
@@ -72,7 +73,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	
 	function initialize(BotData $data)
 	{
-		$this->connection_status = self::DISCONNECTED;
+		$this->connection_status = self::WAITING_IRC;
 		$this->rcon->connect();
 		$this->setup_server();
 		if ( !isset($data->rcon) )
@@ -83,23 +84,23 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 			$data->rcon["{$this->rcon->read}"] = new StdClass();
 			$data->rcon["{$this->rcon->read}"]->rcon = $this->rcon;
 			$data->rcon["{$this->rcon->read}"]->player = new PlayerManager;
-			$data->rcon["{$this->rcon->read}"]->hostname = "";
+			$data->rcon["{$this->rcon->read}"]->hostname = "{$this->rcon->read}";
 		}
 		$this->rcon_data = $data->rcon["{$this->rcon->read}"];
 	}
 	
 	private function set_connection_status($status,MelanoBot $bot)
 	{
-		Logger::log("dp","!","connection status {$this->connection_status} -> $status");
 		if ( $status != $this->connection_status )
 		{
 			if ( $status == self::DISCONNECTED )
 			{
 				$bot->say($this->channel,"\2Warning!\xf server \00304{$this->rcon_data->hostname}\xf disconnected!");
 			}
-			else if ( $status == self::CONNECTED && $this->connection_status == self::DISCONNECTED )
+			else if ( $status == self::CONNECTED && $this->connection_status != self::CHECKING_CONNECTION )
 			{
 				$bot->say($this->channel,"Server \00309{$this->rcon_data->hostname}\xf connected.");
+				$this->setup_server();
 			}
 		}
 		$this->connection_status = $status;
@@ -120,13 +121,22 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	
 	function step(MelanoBot $bot, BotData $data)
 	{
+		if ( $this->connection_status == self::WAITING_IRC && $bot->connection_status() == MelanoBot::PROTOCOL_CONNECTED )
+		{
+			$this->connection_status = self::DISCONNECTED;
+			$this->poll_time = 0;
+		}
+		
 		$time = time();
 		if ( $time > $this->poll_time )
 		{
-			if ( $this->connection_status == self::CONNECTED )
-				$this->set_connection_status(self::CHECKING_CONNECTION,$bot);
-			else
-				$this->set_connection_status(self::DISCONNECTED,$bot);
+			if ( $this->connection_status != self::WAITING_IRC )
+			{
+				if ( $this->connection_status == self::CONNECTED )
+					$this->set_connection_status(self::CHECKING_CONNECTION,$bot);
+				else
+					$this->set_connection_status(self::DISCONNECTED,$bot);
+			}
 				
 			// ensure we are always listening correctly
 			$this->rcon->send("addtolist log_dest_udp {$this->rcon->read}");
@@ -177,17 +187,20 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 				$this->rcon_data->player->set_players($players);
 			}
 		}
-		else if (  preg_match("{:melanorcon:ok}",$packet->payload) )
+		else if (  preg_match("{:melanorcon:ok}",$packet->payload) && $this->connection_status != self::WAITING_IRC )
 		{
-			Logger::log("dp","!","Server {$this->rcon->read} is connected");
+			Logger::log("dp","!","Server {$this->rcon->read} is connected", 3);
 			$this->set_connection_status(self::CONNECTED,$bot);
 		}
 
 		// run commands
-		$cmd = new Rcon_Command($packet->payload, $packet->server,$this->channel);
-		foreach($this->rcon_executors as $executor)
-			if ( $executor->step($cmd, $bot, $data, $this->rcon_data) )
-				return;
+		if ( $this->connection_status != self::WAITING_IRC )
+		{
+			$cmd = new Rcon_Command($packet->payload, $packet->server,$this->channel);
+			foreach($this->rcon_executors as $executor)
+				if ( $executor->step($cmd, $bot, $data, $this->rcon_data) )
+					return;
+		}
 	}
 	
 	private function setup_server()
