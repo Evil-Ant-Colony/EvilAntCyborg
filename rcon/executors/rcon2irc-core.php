@@ -102,7 +102,7 @@ class Rcon2Irc_Filter_BlahBlah extends Rcon2Irc_Filter
 		"^Map .* supports unknown game type .*",
 		"^LHNET_Write: sendto returned error: Network is unreachable",
 		"^Invalid sound info line: .*",
-		'^[-_./a-zA-Z]+ parsing warning: unknown surfaceparm "[a-zA-Z]+"',
+		'^[-_./a-zA-Z0-9]+ parsing warning: unknown surfaceparm "[a-zA-Z]+"',
 		"^waypoint_load_links: couldn't find .*",
 		"^WARNING: weapon model .*",
 		"^Shader '.*' already defined.*",
@@ -110,6 +110,9 @@ class Rcon2Irc_Filter_BlahBlah extends Rcon2Irc_Filter
 		"^plane [-0-9. ]* mismatches dist .*",
 		"^Couldn't select .*",
 		"^SHUFFLE: insert pos .*",
+		"^Map .* contains the legacy 'type' keyword.*",
+		"^Map .* provides unknown info item .*",
+		"^Mod_LoadQ3Shaders: .*",
 	);
 	
 	

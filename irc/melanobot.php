@@ -30,7 +30,7 @@ class MelanoBotServer
 	function connect()
 	{
 		$this->socket = fsockopen($this->server,$this->port);
-		//stream_set_blocking($this->socket,0);
+		stream_set_blocking($this->socket,0);
 		stream_set_timeout($this->socket,1);
 		return $this->socket;
 	}

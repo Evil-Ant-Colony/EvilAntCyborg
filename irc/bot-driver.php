@@ -148,10 +148,17 @@ class BotDriver
 		foreach ( $this->pre_executors as $ex )
 			$ex->execute($this->bot,$this->data);
 		
+		/// \todo parametrize
+		$delay = 0.001;
 		// loop
 		while($this->check_status())
 		{
+			$time = microtime(true);
 			$this->loop_step();
+			// computer programs are weird, they need to get some sleep if they have not been awake long enough :3
+			$delta = microtime(true) - $time;
+			if ( $delta < $delay )
+				usleep(($delay-$delta)*1000000);
 		}
 		
 		foreach ( $this->post_executors as $ex )
