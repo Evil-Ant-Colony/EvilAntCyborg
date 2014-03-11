@@ -89,14 +89,6 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		$this->rcon->send("removefromlist log_dest_udp {$this->rcon->read}");
 	}
 	
-	function install_rcon2irc($executors)
-	{
-		if ( !is_array($executors) )
-			$this->rcon_executors[]=$executors;
-		else
-			$this->rcon_executors = array_merge($executors,$this->rcon_executors);
-	}
-	
 	function step(MelanoBot $bot, BotData $data)
 	{
 		if ( $this->connection_status == self::WAITING_IRC && $bot->connection_status() == MelanoBot::PROTOCOL_CONNECTED )
@@ -174,16 +166,29 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		{
 			foreach ( $lines as $line ) 
 			{
-				Logger::log("dp",">",Color::dp2ansi($line),0);
-				if ( $line )
+				$cmd = new Rcon_Command($line, $packet->server,$this->channel);
+				if ( $this->rcon_filter($cmd) )
 				{
-					$cmd = new Rcon_Command($line, $packet->server,$this->channel);
+					Logger::log("dp",">",Color::dp2ansi($line),0);
+				
 					foreach($this->rcon_executors as $executor)
 						if ( $executor->step($cmd, $bot, $data, $this->rcon_data) )
 							break;
 				}
+				else
+				{
+					Logger::log("dp",">","\x1b[31m".Color::dp2none($line)."\x1b[0m",5);
+				}
 			}
 		}
+	}
+	
+	function rcon_filter(Rcon_Command $cmd)
+	{
+		foreach ( $this->rcon_filters as $f )
+			if ( !$f->filter($cmd,$this->rcon_data) )
+				return false;
+		return true;
 	}
 	
 	private function setup_server()

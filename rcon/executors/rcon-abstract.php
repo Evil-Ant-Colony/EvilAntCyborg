@@ -5,15 +5,16 @@ abstract class Rcon2Irc_Executor
 {
 	public $regex;
 	
-	function Rcon2Irc_Executor($regex)
-	{
-		$this->regex = $regex;
-	}
 	
 	/**
 	 * \return True if you want to prevent further processing
 	 */
 	abstract function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data);
+	
+	function Rcon2Irc_Executor($regex)
+	{
+		$this->regex = $regex;
+	}
 	
 	function step(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
 	{
@@ -25,6 +26,20 @@ abstract class Rcon2Irc_Executor
 	function install_on(Rcon_Communicator $comm)
 	{
 		$comm->rcon_executors []= $this;
+	}
+}
+
+abstract class Rcon2Irc_Filter
+{
+	
+	/**
+	 * \return False if you want to prevent further processing
+	 */
+	abstract function filter(Rcon_Command $cmd,$rcon_data);
+	
+	function install_on(Rcon_Communicator $comm)
+	{
+		$comm->rcon_filters []= $this;
 	}
 } 
 

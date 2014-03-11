@@ -86,3 +86,33 @@ class Rcon2Irc_Part extends Rcon2Irc_JoinPart_Base
 		return true;
 	}
 }
+
+
+
+
+/**
+ * \brief Remove most of the useless Xonotic garbage log
+ */
+class Rcon2Irc_Filter_BlahBlah extends Rcon2Irc_Filter
+{
+	public $stuff = array(
+		"^Map .* supports unknown game type .*",
+		"^LHNET_Write: sendto returned error: Network is unreachable",
+		"^Invalid sound info line: .*",
+		'^[-_./a-zA-Z]+ parsing warning: unknown surfaceparm "[a-zA-Z]+"',
+		"^waypoint_load_links: couldn't find .*",
+		"^WARNING: weapon model .*",
+		"^Shader '.*' already defined.*",
+		"^PRVM_LoadProgs: no cvar for autocvar global .*",
+		"^plane [-0-9. ]* mismatches dist .*",
+	);
+	
+	
+	function filter(Rcon_Command $cmd,$rcon_data)
+	{
+		foreach($this->stuff as $r)
+			if ( preg_match("{{$r}}",$cmd->data) )
+				return false;
+		return !preg_match("{server received rcon command from {$rcon_data->rcon->read}:.*}",$cmd->data);
+	}
+}
