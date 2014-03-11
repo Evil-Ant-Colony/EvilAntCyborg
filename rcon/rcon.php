@@ -1,6 +1,5 @@
 <?php
 
-require_once("misc/logger.php");
 
 class Rcon_Server
 {
@@ -90,7 +89,6 @@ class Rcon
 		else
 			$payload = "rcon {$this->password} $command";*/
 		$packet = new Rcon_Packet("rcon {$this->password} $command",$this->write);
-		Logger::log("dp","<",Color::dp2ansi($command),0);
 		$packet->send($this->socket);
 		return $packet;
 	}
@@ -98,14 +96,11 @@ class Rcon
 	function read()
 	{
 		$packet = Rcon_Packet::read($this->socket,Rcon_Packet::MAX_READ_LENGTH);
-		/*if ( $packet->valid && $packet->payload )
-			Logger::log("dp",">",Color::dp2ansi($packet->payload),0);*/
 		return $packet;
 	}
 	
 	function connect()
 	{
-		Logger::log("dp","!","Connecting to {$this->read}",1);
 		$this->send("addtolist log_dest_udp {$this->read->host}:{$this->read->port}");
 	}
 	
@@ -115,11 +110,12 @@ class Rcon
 	}
 }
 
-/*date_default_timezone_set("UTC");
+/*
 $rcon = new Rcon ( "127.0.0.1", 26000, "foo");
 $rcon->connect();
 $rcon->send("say test");
 while(true)
 {
-	$rcon->read();
+	$packed = $rcon->read();
+	echo "{$packet->payload}\n";
 }*/

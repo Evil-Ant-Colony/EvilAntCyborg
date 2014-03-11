@@ -12,8 +12,8 @@ class CachedCupManager extends CupManager
 	function __construct($api_key,$organization=null)
 	{
 		parent::__construct($api_key,$organization);
-		$this->cups = $this->tournaments();
-		$this->current_cup = empty($this->cups) ? null : $this->cups[0];
+		//$this->cups = $this->tournaments();
+		//$this->current_cup = empty($this->cups) ? null : $this->cups[0];
 		$this->map_picking_status = 0;
 	}
 	
@@ -859,4 +859,22 @@ class Executor_Pick_Raw extends Executor_Cup
 		$this->map_pick_show_turn($cmd,$bot);
 	}
 	
+}
+
+class Executor_Cup_AutoStartup extends Executor_Cup
+{
+	function __construct(CachedCupManager $cup_manager)
+	{
+		parent::__construct($cup_manager, null,null,"","","JOIN");
+	}
+	
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	{
+		return $cmd->from == $bot->nick;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	{
+		$this->cup_manager->update_tournaments();
+	}
 }

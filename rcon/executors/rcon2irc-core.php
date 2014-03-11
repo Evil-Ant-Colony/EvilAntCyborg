@@ -16,7 +16,7 @@ class Rcon2Irc_Say extends Rcon2Irc_Executor
 		parent::__construct("{\1(.*?)\^7: (.*)}");
 	}
 	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
 		$nick = Color::dp2irc($cmd->params[1]);
 		$text = Color::dp2irc($cmd->params[2]);
@@ -36,7 +36,7 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 	}
 	
 	/// \todo show only non-bots in total
-	protected function send_message($bot,$channel,$player,$rcon_data)
+	protected function send_message(MelanoBot $bot,$channel,$player,Rcon_Communicator $rcon)
 	{
 		if ( !$player || $player->is_bot() )
 			return;
@@ -44,9 +44,9 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 			'%name%'   => Color::dp2irc($player->name),
 			'%ip%'    => $player->ip,
 			'%slot%'  => $player->slot,
-			'%count%' => $rcon_data->player->count,
-			'%max%'   => $rcon_data->player->max,
-			'%map%'   => $rcon_data->map,
+			'%count%' => $rcon->data->player->count,
+			'%max%'   => $rcon->data->player->max,
+			'%map%'   => $rcon->data->map,
 		);
 		$bot->say($channel,str_replace(array_keys($values),array_values($values),$this->format));
 	}
@@ -60,13 +60,13 @@ class Rcon2Irc_Join extends Rcon2Irc_JoinPart_Base
 		parent::__construct("{:join:(\d+):(\d+):([^:]*):(.*)}", $format);
 	}
 	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
 		$player = new RconPlayer();
 		list ($player->id, $player->slot, $player->ip, $player->name) = array_splice($cmd->params,1);
-		$rcon_data->player->add($player);
+		$rcon->data->player->add($player);
 		
-		$this->send_message($bot,$cmd->channel,$player,$rcon_data);
+		$this->send_message($bot,$cmd->channel,$player,$rcon);
 		
 		return true;
 	}
@@ -80,21 +80,18 @@ class Rcon2Irc_Part extends Rcon2Irc_JoinPart_Base
 	}
 	
 	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
-		$player = $rcon_data->player->find_by_id($cmd->params[1]);
+		$player = $rcon->data->player->find_by_id($cmd->params[1]);
 		if ( $player && !$player->is_bot() )
 		{
-			$rcon_data->player->remove($player->slot);
+			$rcon->data->player->remove($player->slot);
 			
-			$this->send_message($bot,$cmd->channel,$player,$rcon_data);
+			$this->send_message($bot,$cmd->channel,$player,$rcon);
 		}
 		return true;
 	}
 }
-
-
-
 
 /**
  * \brief Remove most of the useless Xonotic garbage log
@@ -114,11 +111,126 @@ class Rcon2Irc_Filter_BlahBlah extends Rcon2Irc_Filter
 	);
 	
 	
-	function filter(Rcon_Command $cmd,$rcon_data)
+	function filter(Rcon_Command $cmd,Rcon_Communicator $rcon)
 	{
 		foreach($this->stuff as $r)
 			if ( preg_match("{{$r}}",$cmd->data) )
 				return false;
-		return !preg_match("{server received rcon command from {$rcon_data->rcon->read}:.*}",$cmd->data);
+		return !preg_match("{server received rcon command from {$rcon->read_server}:.*}",$cmd->data);
+	}
+}
+
+
+
+class Rcon2Irc_Score extends Rcon2Irc_Executor
+{
+	private $player_scores= array();
+	private $team_scores  = array();
+	public $team_colors = array(5 => Color::RED, 
+								14 => Color::BLUE, 
+								13 => Color::YELLOW, 
+								10 => Color::MAGENTA );
+	
+	function __construct()
+	{
+		$re=array("(:end)",// 1
+				  "(:teamscores:see-labels:(-?\d+)[-0-9,]*:(\d+))", // 2 - score=3 id=4
+				  "(:player:see-labels:(-?\d+)[-0-9,]*:(\d+):([^:]+):(\d+):(.*))");// 5 - score=6 time=7 team=8 id=9 name=10
+
+		parent::__construct("{".implode("|",$re)."}");
+	}
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot,  Rcon_Communicator $rcon)
+	{
+		if ( $this->matches($cmd->params,1) )
+		{
+			$gametype = "TODO Gametype";
+			$map = isset($rcon->data->map) && $rcon->data->map ? $rcon->data->map : "?";
+			$bot->say($cmd->channel,"\00304$gametype\017 on \00304$map\017 ended:");
+			$this->print_scores($cmd,$bot);
+			$this->player_scores= array();
+			$this->team_scores  = array();
+		}
+		else if ( $this->matches($cmd->params,2) )
+		{
+			$this->gather_team($cmd,$rcon);
+		}
+		else if ( $this->matches($cmd->params,5) )
+		{
+			$this->gather_player($cmd,$rcon);
+		}
+		
+		return false;
+	}
+	
+	private function player_score( $player,$color)
+	{
+		$name = $player->name;
+		if ( $color != null )
+			$name = $color->irc().Color::dp2none($name)."\xf";
+		else
+			$name = Color::dp2irc($name);
+		
+		$score = $player->frags;
+		if ( $player->team == 'spectator' )
+			$score = "";
+			
+		return "\002".sprintf('%3s',$score)."\xf $name";
+	}
+	
+	private function score_compare($a,$b)
+	{
+		return $a->frags == $b->frags ? 0 : ( $a->frags > $b->frags ? -1 : +1 );
+	}
+	
+	private function print_scores(Rcon_Command $cmd, MelanoBot $bot)
+	{
+		usort($this->player_scores,'Rcon2Irc_Score::score_compare');
+		if ( empty($this->team_scores) )
+		{
+			foreach($this->player_scores as $p )
+				$bot->say($cmd->channel,$this->player_score($p,null));
+		}
+		else
+		{
+			$ts = array();
+			foreach($this->team_scores as $team => $score )
+			{
+				$color = new Color($this->team_colors[$team],true);
+				$ts[$team] = $color->irc()."$score\xf";
+			}
+			$bot->say($cmd->channel,"Team Scores: ".implode(":",array_values($ts)));
+			$ts['spectator'] = null;
+			foreach(array_keys($ts) as $team )
+			{
+				$color = isset($this->team_colors[$team]) ? new Color($this->team_colors[$team],true) : null;
+				foreach($this->player_scores as $p )
+				{
+					if ( $p->team == $team )
+						$bot->say($cmd->channel,$this->player_score($p,$color));
+				}
+			}
+		}
+	}
+	
+	private function matches($array,$n)
+	{
+		return isset($array[$n]) && $array[$n];
+	}
+	
+	private function gather_team(Rcon_Command $cmd, Rcon_Communicator $rcon)
+	{
+		$this->team_scores[ $cmd->params[4] ] = $cmd->params[3];
+	}
+	
+	private function gather_player(Rcon_Command $cmd, Rcon_Communicator $rcon)
+	{
+		$player = new RconPlayer;
+		list ($player->frags, $player->time, $player->team, $player->id, $player->name) = array_splice($cmd->params,6);
+		if ( $existing_player = $rcon->data->player->find_by_id($player->id) )
+		{
+			$existing_player->merge($player);
+		}
+		$this->player_scores []= $player;
 	}
 }

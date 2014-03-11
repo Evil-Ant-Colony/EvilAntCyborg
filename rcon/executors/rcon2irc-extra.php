@@ -12,7 +12,7 @@ class Rcon2Irc_SayAction extends Rcon2Irc_Executor
 		parent::__construct("{\1\^4\* \^7(.*)}");
 	}
 	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
 		$bot->say($cmd->channel,"\00312*\xf ".Color::dp2irc($cmd->params[1]));
 		return true;
