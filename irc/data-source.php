@@ -6,7 +6,7 @@ class MelanoBotCommand
 {
 	public $cmd, $params, $from, $host, $channel, $raw,  $irc_cmd;
 	
-	function MelanoBotCommand($cmd, $params, $from, $host, $channel, $raw, $irc_cmd)
+	function __construct($cmd, $params, $from, $host, $channel, $raw, $irc_cmd)
 	{
 		$this->cmd = $cmd; 
 		$this->params = $params; 
@@ -69,7 +69,7 @@ class BotData
 	public $grant_access = array();   ///< Grant rights from a list to other list1 => array(list2begrantedrights)
 	public $driver = null;
 	
-	function BotData(BotDriver $driver)
+	function __construct(BotDriver $driver)
 	{
 		$this->driver = $driver;
 	}

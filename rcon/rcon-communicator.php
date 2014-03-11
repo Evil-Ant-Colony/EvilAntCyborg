@@ -15,7 +15,7 @@ class Rcon_Command
 	public $channel;
 	public $params = array();
 	
-	function Rcon_Command($data, Rcon_Server $server, $irc_channel)
+	function __construct($data, Rcon_Server $server, $irc_channel)
 	{
 		$this->data = $data;
 		$this->server = $server;
@@ -42,7 +42,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	private $connection_status;
 	private $cache = "";
 	
-	function Rcon_Communicator($channel,Rcon $rcon,$prefix=null)
+	function __construct($channel,Rcon $rcon,$prefix=null)
 	{
 		parent::__construct(array($channel),$prefix);
 		$this->channel = $channel;

@@ -64,7 +64,7 @@ class Raw_Question extends RawCommandExecutor
 class Executor_Morse extends CommandExecutor
 {
 	
-	function Executor_Morse($auth='admin')
+	function __construct($auth='admin')
 	{
 		parent::__construct('morse',$auth,"morse Text|.-.-.","Morse decode/encode");
 	}
@@ -165,7 +165,7 @@ class Executor_Morse extends CommandExecutor
 class Executor_ReverseText extends CommandExecutor
 {
 	
-	function Executor_ReverseText()
+	function __construct()
 	{
 		parent::__construct('reverse',null,"reverse Text...","Print text upside-down");
 	}
@@ -288,7 +288,7 @@ class Executor_ReverseText extends CommandExecutor
 class Executor_RenderPony extends CommandExecutor
 {
 	public $ponypath;
-	function Executor_RenderPony($trigger,$ponypath)
+	function __construct($trigger,$ponypath)
 	{
 		parent::__construct($trigger,'owner',"$trigger [Pony name]","Draw a pretty pony");
 		$this->ponypath = $ponypath;
@@ -350,7 +350,7 @@ class Raw_Annoy extends RawCommandExecutor
 	public $toggler;
 	public $enabled;
 	
-	function Raw_Annoy($toggler,$auth='admin')
+	function __construct($toggler,$auth='admin')
 	{
 		$this->auth = $auth;
 		$this->terms=array('LOL','ROFL','XD','><',':D','OMG','WTF');

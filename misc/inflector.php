@@ -4,7 +4,7 @@ class Inflector
 {
     public $rules;
     
-    function Inflector($rules=array())
+    function __construct($rules=array())
     {
         $this->rules = $rules;
     }
@@ -50,7 +50,7 @@ $english_genitive = new Inflector( array(
 // you <-> me
 class PronounSwapper extends Inflector
 {
-    function PronounSwapper($me,$you)
+    function __construct($me,$you)
     {
         global $english_genitive;
         $my = $english_genitive->inflect($me);

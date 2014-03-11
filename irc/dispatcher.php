@@ -12,7 +12,7 @@ class BotCommandDispatcher
 	public $channel_filter = array(); ///< List of channels this dispatcher is allowed to work on, empty == all channels
 	public $prefix = null;            ///< Customized prefix for this dispatcher, empty == bot default
 	
-	function BotCommandDispatcher($channel_filter = array(), $prefix = null)
+	function __construct($channel_filter = array(), $prefix = null)
 	{
 		if ( !is_array($channel_filter) )
 			$this->channel_filter = array($channel_filter);

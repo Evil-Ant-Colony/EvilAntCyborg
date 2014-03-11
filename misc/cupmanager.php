@@ -4,7 +4,7 @@ class MapPicker
 {
     public $player, $maps, $turn, $pick_num = 1, $picks = array();
     
-    function MapPicker($player1, $player2, $maps)
+    function __construct($player1, $player2, $maps)
     {
         $this->turn = rand(0,1);
         $this->player = array($player1,$player2);
@@ -84,7 +84,7 @@ class MapPicker
 class MatchPlayer
 {
     public $name, $id, $score;
-    function MatchPlayer($id, $name, $score=array())
+    function __construct($id, $name, $score=array())
     {
         $this->name =$name;
         $this->id = $id;
@@ -103,7 +103,7 @@ class Match
     public $team1, $team2;
     public $score1=array(), $score2=array();
     
-    function Match($id, $label, MatchPlayer $team1, MatchPlayer $team2)
+    function __construct($id, $label, MatchPlayer $team1, MatchPlayer $team2)
     {
         $this->id = $id;
         $this->label = $label;
@@ -166,7 +166,7 @@ class Cup
     public $start_time;
     public $name;
     
-    function Cup($manager,$id,$url,$name)
+    function __construct($manager,$id,$url,$name)
     {
         $this->manager = $manager;
         $this->id = $id;
@@ -206,7 +206,7 @@ class CupManager
     public $organization;
     public $score_cache = array();
     
-    function CupManager($api_key,$organization=null)
+    function __construct($api_key,$organization=null)
     {
         $this->api_key = $api_key;
         $this->organization = $organization;

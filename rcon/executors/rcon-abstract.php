@@ -11,7 +11,7 @@ abstract class Rcon2Irc_Executor
 	 */
 	abstract function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data);
 	
-	function Rcon2Irc_Executor($regex)
+	function __construct($regex)
 	{
 		$this->regex = $regex;
 	}
@@ -48,7 +48,7 @@ abstract class Irc2Rcon_Executor extends CommandExecutor
 {
 	public $rcon;
 	
-	function Irc2Rcon_Executor(Rcon $rcon, $name,$auth=null,$synopsis="",$description="",$irc_cmd='PRIVMSG')
+	function __construct(Rcon $rcon, $name,$auth=null,$synopsis="",$description="",$irc_cmd='PRIVMSG')
 	{
 		parent::__construct($name,$auth,$synopsis,$description,$irc_cmd);
 		$this->rcon = $rcon;

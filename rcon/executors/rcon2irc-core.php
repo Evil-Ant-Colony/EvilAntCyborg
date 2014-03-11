@@ -2,10 +2,16 @@
 
 require_once("rcon/executors/rcon-abstract.php");
 
-
+/**
+ * \brief Send chat messages from rcon to IRC
+ * 
+ * \bug If a player has the string "^7: " in their nick it won't be shown correctlt
+ * This can be fixed by checking all the player names with the beginning of the string (passed \1)
+ * But maybe it's not worth doing
+ */
 class Rcon2Irc_Say extends Rcon2Irc_Executor
 {
-	function Rcon2Irc_Say()
+	function __construct()
 	{
 		parent::__construct("{\1(.*?)\^7: (.*)}");
 	}
@@ -23,7 +29,7 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 {
 	public $format;
 	
-	function Rcon2Irc_JoinPart_Base($regex,$format)
+	function __construct($regex,$format)
 	{
 		parent::__construct($regex);
 		$this->format = $format;
@@ -49,7 +55,7 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 class Rcon2Irc_Join extends Rcon2Irc_JoinPart_Base
 {
 	
-	function Rcon2Irc_Join($format="\00309+ join\xf: %name% \00304%map%\xf [\00304%count%\xf/\00304%max%\xf]")
+	function __construct($format="\00309+ join\xf: %name% \00304%map%\xf [\00304%count%\xf/\00304%max%\xf]")
 	{
 		parent::__construct("{:join:(\d+):(\d+):([^:]*):(.*)}", $format);
 	}
@@ -68,7 +74,7 @@ class Rcon2Irc_Join extends Rcon2Irc_JoinPart_Base
 class Rcon2Irc_Part extends Rcon2Irc_JoinPart_Base
 {
 	
-	function Rcon2Irc_Part($format="\00304- part\xf: %name% \00304%map%\xf [\00304%count%\xf/\00304%max%\xf]")
+	function __construct($format="\00304- part\xf: %name% \00304%map%\xf [\00304%count%\xf/\00304%max%\xf]")
 	{
 		parent::__construct("{:part:(\d+)}",$format);
 	}

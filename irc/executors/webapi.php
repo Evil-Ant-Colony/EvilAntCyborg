@@ -6,7 +6,7 @@ require_once("irc/bot-driver.php");
 	private $response_location = array();
 	private $apiurl_pre;
 	
-	function Helper_JSON_API($response_location,$apiurl_pre,$apiurl_post="")
+	function __construct($response_location,$apiurl_pre,$apiurl_post="")
 	{
 		$this->apiurl_pre = $apiurl_pre;
 		$this->apiurl_post = $apiurl_post;
@@ -34,7 +34,7 @@ require_once("irc/bot-driver.php");
 class Executor_GoogleImages extends CommandExecutor
 {
 	
-	function Executor_GoogleImages()
+	function __construct()
 	{
 		parent::__construct("image",null,'image Search...',
 		'Post an image matching the search term (using Google Images)');
@@ -59,7 +59,7 @@ class Executor_GoogleImages extends CommandExecutor
 class Executor_Youtube extends CommandExecutor
 {
 	
-	function Executor_Youtube()
+	function __construct()
 	{
 		parent::__construct("video",null,'video Search...',
 		'Post a video matching the search term (using Youtube)');
@@ -126,7 +126,7 @@ function elide_string($string,$length)
 class Executor_Dictionary extends CommandExecutor
 {
 	
-	function Executor_Dictionary($trigger="define")
+	function __construct($trigger="define")
 	{
 		parent::__construct($trigger,null,"$trigger Term...",
 		'Find the definition of Term (using Urban Dictionary)');

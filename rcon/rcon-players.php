@@ -127,11 +127,7 @@ class PlayerManager
 	
 	function all()
 	{
-		$players = array();
-		foreach($this->players as $id => $player)
-			if ( $player )
-				$players[]=$player;
-		return $players;
+		return array_values($this->players);
 	}
 	
 	

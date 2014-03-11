@@ -143,7 +143,7 @@ class Executor_Wiki extends CommandExecutor
 	public $api_url;
 	
 	
-	function Executor_Wiki($trigger,$service,$api_url)
+	function __construct($trigger,$service,$api_url)
 	{
 		parent::__construct($trigger,null,"$trigger Term...","Search the term on $service");
 		$this->api_url = $api_url;
@@ -165,7 +165,7 @@ class Executor_Wiki_Opensearch extends CommandExecutor
 	public $api_url;
 	
 	
-	function Executor_Wiki_Opensearch($trigger,$service,$api_url)
+	function __construct($trigger,$service,$api_url)
 	{
 		parent::__construct($trigger,null,"$trigger Term...","Search the term on $service");
 		$this->api_url = $api_url;

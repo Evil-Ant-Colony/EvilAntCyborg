@@ -6,7 +6,7 @@ class Rcon_Server
 {
 	public $host, $port;
 	
-	function Rcon_Server($host="", $port="")
+	function __construct($host="", $port="")
 	{
 		$this->host = $host;
 		$this->port = $port;
@@ -27,7 +27,7 @@ class Rcon_Packet
 	// darkplaces/console.c: char log_dest_buffer[1400]; (NUL-terminated)
 	const MAX_READ_LENGTH = 1399;
 	
-	function Rcon_Packet($payload=null, $server=null)
+	function __construct($payload=null, $server=null)
 	{
 		$this->payload = $payload;
 		$this->server = $server;
@@ -61,7 +61,7 @@ class Rcon
 	//public $secure = 0;
 	public $socket;
 	
-	function Rcon($host,$port,$password)
+	function __construct($host,$port,$password)
 	{
 		$this->write = new Rcon_Server ( $host, $port );
 		$this->read = new Rcon_Server ( $host, $port );

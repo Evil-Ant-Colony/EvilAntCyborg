@@ -7,7 +7,7 @@ class Executor_YandexTranslate extends CommandExecutor
     public $language_codes = array();
     public $language_directions = array();
     
-    function Executor_YandexTranslate($key)
+    function __construct($key)
     {
 		parent::__construct("translate",null,'translate [from Language] [into Language] Phrase...',
 			'Make the bot translate the given Phrase (using Yandex)');

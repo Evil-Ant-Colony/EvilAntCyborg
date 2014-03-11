@@ -35,7 +35,7 @@ class MessageQueue
 class Executor_Message extends CommandExecutor
 {
 	public $queue;
-	function Executor_Message(MessageQueue $queue)
+	function __construct(MessageQueue $queue)
 	{
 		parent::__construct("message",null,'message','Read the first stored message the bot has for you');
 		$this->queue = $queue;
@@ -59,7 +59,7 @@ class Executor_Message extends CommandExecutor
 class Executor_Tell extends CommandExecutor
 {
 	public $queue;
-	function Executor_Tell(MessageQueue $queue)
+	function __construct(MessageQueue $queue)
 	{
 		parent::__construct("tell",null,'tell User Message...','Store a message for User');
 		$this->queue = $queue;
@@ -101,7 +101,7 @@ class Executor_Tell extends CommandExecutor
 class Executor_NotifyMessages extends CommandExecutor
 {
 	public $queue;
-	function Executor_NotifyMessages(MessageQueue $queue,$irc_cmd='PRIVMSG')
+	function __construct(MessageQueue $queue,$irc_cmd='PRIVMSG')
 	{
 		parent::__construct("hello",null,'hello','List messages');
 		$this->queue = $queue;

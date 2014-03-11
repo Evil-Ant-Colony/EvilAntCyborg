@@ -10,7 +10,7 @@ class Logger
 	public  $pad_size=3;
 	public  $verbosity = 1;
 	
-	private function Logger() {}
+	private function __construct() {}
 	
 	function register_source($id,$color)
 	{

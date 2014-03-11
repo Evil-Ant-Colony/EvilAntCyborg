@@ -15,7 +15,7 @@ class MelanoBotServer
 	private $socket;
 	 
 	
-	function MelanoBotServer($server, $port=6667)
+	function __construct($server, $port=6667)
 	{
 		$this->server = $server;
 		$this->port = $port;
@@ -119,7 +119,7 @@ class MelanoBot extends DataSource
     public $buffer;
     
     
-    function MelanoBot($servers, $nick, $password, 
+    function __construct($servers, $nick, $password, 
                  $channels, $blacklist=array())
     {
 		if ( !is_array($servers) )

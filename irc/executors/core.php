@@ -5,7 +5,7 @@ require_once("irc/bot-driver.php");
 
 class Executor_Help extends CommandExecutor
 {
-	function Executor_Help()
+	function __construct()
 	{
 		parent::__construct("help",null,'help [command]','Guess what this does...');
 	}
@@ -54,7 +54,7 @@ class Executor_Help extends CommandExecutor
 
 class Executor_Quit extends CommandExecutor
 {
-	function Executor_Quit($cmd="quit")
+	function __construct($cmd="quit")
 	{
 		parent::__construct($cmd,'owner',$cmd,'Shut down the bot');
 	}
@@ -69,7 +69,7 @@ class Executor_Quit extends CommandExecutor
 
 class Executor_Reconnect extends CommandExecutor
 {
-	function Executor_Reconnect()
+	function __construct()
 	{
 		parent::__construct('reconnect','owner','reconnect','Reconnect to a different server');
 	}
@@ -82,7 +82,7 @@ class Executor_Reconnect extends CommandExecutor
 
 class Executor_Server extends CommandExecutor
 {
-	function Executor_Server()
+	function __construct()
 	{
 		parent::__construct('server','owner','server','Show server name');
 	}
@@ -96,7 +96,7 @@ class Executor_Server extends CommandExecutor
 class Executor_Restart extends CommandExecutor
 {
 	public $massage;
-	function Executor_Restart($message="See y'all in a sec")
+	function __construct($message="See y'all in a sec")
 	{
 		$this->message = $message;
 		parent::__construct("restart",'owner',"restart",'Restart the bot (quit and rejoin)');
@@ -113,7 +113,7 @@ class Post_Restart extends StaticExecutor
 {
 	public $restart_file;
 	
-	function Post_Restart($restart_file = null)
+	function __construct($restart_file = null)
 	{
 		if ( !$restart_file )
 		{
@@ -134,7 +134,7 @@ class Post_Restart extends StaticExecutor
 
 class Executor_Join extends CommandExecutor
 {
-	function Executor_Join()
+	function __construct()
 	{
 		parent::__construct('join','owner','join #Channel','Make the bot join a channel');
 		$this->reports_error = true;
@@ -151,7 +151,7 @@ class Executor_Join extends CommandExecutor
 
 class Executor_Part extends CommandExecutor
 {
-	function Executor_Part()
+	function __construct()
 	{
 		parent::__construct('part','owner','part [#Channel]','Make the bot part the current channel or the one specified');
 		$this->reports_error = true;
@@ -171,7 +171,7 @@ class Executor_Part extends CommandExecutor
 
 class Executor_Nick extends CommandExecutor
 {
-	function Executor_Nick()
+	function __construct()
 	{
 		parent::__construct('nick','owner','nick Nickname','Change nickname');
 	}
@@ -191,7 +191,7 @@ class Executor_UserList extends CommandExecutor
 {
 	public $list, $exclude;
 	
-	function Executor_UserList($list, $auth,$exclude=array(), $listener="")
+	function __construct($list, $auth,$exclude=array(), $listener="")
 	{
 		if ( !$listener )
 			$listener = $list;
@@ -276,7 +276,7 @@ class Executor_UserList extends CommandExecutor
 class Filter_UserList extends Filter
 {
 	public $list;
-	function Filter_UserList($list)
+	function __construct($list)
 	{
 		$this->list = $list;
 	}
@@ -290,7 +290,7 @@ class Filter_UserList extends Filter
 class Filter_ChanHax extends Filter
 {
 	
-	function Filter_ChanHax($name,$auth)
+	function __construct($name,$auth)
 	{
 		$this->auth = $auth;
 		$this->name = $name;
@@ -319,7 +319,7 @@ class Filter_ChanHax extends Filter
 
 class Executor_RawIRC extends CommandExecutor
 {
-	function Executor_RawIRC($trigger)
+	function __construct($trigger)
 	{
 		parent::__construct($trigger,'owner',"$trigger IRC_CMD [irc_options...]",'Execute an arbitrary IRC command');
 	}
@@ -342,7 +342,7 @@ class Executor_Multi extends CommandExecutor
 {
 	public $executors;
 	
-	function Executor_Multi($trigger,$executors)
+	function __construct($trigger,$executors)
 	{
 		parent::__construct($trigger,null);
 		$this->executors = $executors;
@@ -391,7 +391,7 @@ class Executor_Multi extends CommandExecutor
 
 class Executor_StdoutDump extends CommandExecutor
 {
-	function Executor_StdoutDump($trigger='debug')
+	function __construct($trigger='debug')
 	{
 		parent::__construct($trigger,'owner',"$trigger",'Print the object structure on stdout');
 	}

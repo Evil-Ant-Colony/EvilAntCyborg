@@ -9,7 +9,7 @@ class CachedCupManager extends CupManager
 {
 	public $cups, $current_cup, $map_picking_status, $map_picker;
 	
-	function CachedCupManager($api_key,$organization=null)
+	function __construct($api_key,$organization=null)
 	{
 		parent::__construct($api_key,$organization);
 		$this->cups = $this->tournaments();
@@ -62,7 +62,7 @@ abstract class Executor_Cup extends CommandExecutor
 	public $cup_manager;
 	public $on_picking;
 	
-	function Executor_Cup(CachedCupManager $cup_manager, 
+	function __construct(CachedCupManager $cup_manager, 
 						$name,$auth,$synopsis="",$description="",$irc_cmd='PRIVMSG')
 	{
 		parent::__construct($name,$auth,$synopsis,$description,$irc_cmd);
@@ -112,7 +112,7 @@ abstract class Executor_Multi_Cup extends Executor_Cup
 {
 	private $multiple_inheritance;
 	
-	function Executor_Multi_Cup(CachedCupManager $cup_manager,$name,$auth,$executors,
+	function __construct(CachedCupManager $cup_manager,$name,$auth,$executors,
 		$synopsis="",$description="",$irc_cmd='PRIVMSG' )
 	{
 		parent::__construct($cup_manager,$name,$auth,$synopsis,$description,$irc_cmd);
@@ -149,7 +149,7 @@ abstract class Executor_Multi_Cup extends Executor_Cup
 
 class Executor_Cup_Next extends Executor_Cup
 {
-	function Executor_Cup_Next(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'next',null,'next [n]','Show the next (n) scheduled matches');
 	}
@@ -185,7 +185,7 @@ class Executor_Cup_Next extends Executor_Cup
 
 class Executor_Cup_Cups extends Executor_Cup
 {
-	function Executor_Cup_Cups(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'cups','admin','cups','Show the available cups');
 	}
@@ -213,7 +213,7 @@ class Executor_Cup_Cups extends Executor_Cup
 
 class Executor_Cup_Results extends Executor_Cup
 {
-	function Executor_Cup_Results(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'results',null,'results',
 			'Show a URL where you can view the cup details');
@@ -229,7 +229,7 @@ class Executor_Cup_Results extends Executor_Cup
 
 class Executor_Cup_CupReadonly extends Executor_Cup
 {
-	function Executor_Cup_CupReadonly(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'cup',null,'cup',
 			'Show the current cup name and ID');
@@ -250,7 +250,7 @@ class Executor_Cup_CupReadonly extends Executor_Cup
 
 class Executor_Cup_CupSelect extends Executor_Cup
 {
-	function Executor_Cup_CupSelect(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'cup','admin',"cup [cup_name|cup_id]",
 			'Change the current cup');
@@ -284,7 +284,7 @@ class Executor_Cup_CupSelect extends Executor_Cup
 
 class Executor_Cup_Cup extends Executor_Multi_Cup
 {
-	function Executor_Cup_Cup(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'cup',null,array(
 			new Executor_Cup_CupSelect($cup_manager),
@@ -296,7 +296,7 @@ class Executor_Cup_Cup extends Executor_Multi_Cup
 
 class Executor_Cup_DescriptionReadonly extends Executor_Cup
 {
-	function Executor_Cup_DescriptionReadonly(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'description',null,'description',
 			'Show the description of the current cup');
@@ -319,7 +319,7 @@ class Executor_Cup_DescriptionReadonly extends Executor_Cup
 
 class Executor_Cup_DescriptionSet extends Executor_Cup
 {
-	function Executor_Cup_DescriptionSet(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'description','admin','description [new_description]',
 			'Change the description for the current cup');
@@ -345,7 +345,7 @@ class Executor_Cup_DescriptionSet extends Executor_Cup
 
 class Executor_Cup_Description extends Executor_Multi_Cup
 {
-	function Executor_Cup_Description(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'description',null,array(
 			new Executor_Cup_DescriptionSet($cup_manager),
@@ -356,7 +356,7 @@ class Executor_Cup_Description extends Executor_Multi_Cup
 
 class Executor_Cup_TimeReadonly extends Executor_Cup
 {
-	function Executor_Cup_TimeReadonly(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'time',null,'time',
 			'Display the scheduled start time for the current cup');
@@ -375,7 +375,7 @@ class Executor_Cup_TimeReadonly extends Executor_Cup
 
 class Executor_Cup_TimeSet extends Executor_Cup
 {
-	function Executor_Cup_TimeSet(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'time','admin','time [new_time]',
 			'Change the scheduled start time for the current cup');
@@ -407,7 +407,7 @@ class Executor_Cup_TimeSet extends Executor_Cup
 class Executor_Cup_Time extends Executor_Multi_Cup
 {
 
-	function Executor_Cup_Time(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'time',null,array(
 			new Executor_Cup_TimeSet($cup_manager),
@@ -448,7 +448,7 @@ class Executor_Cup_Time extends Executor_Multi_Cup
 class Executor_Cup_Maps extends Executor_Multi_Cup
 {
 	
-	function Executor_Cup_Maps(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'maps',null,array(
 			new Executor_MiscListEdit('maps','admin'),
@@ -482,7 +482,7 @@ class Executor_Cup_Maps extends Executor_Multi_Cup
 
 class Executor_Cup_Start extends Executor_Cup
 {
-	function Executor_Cup_Start(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'start','admin','start',
 			'Start the cup');
@@ -506,7 +506,7 @@ class Executor_Cup_Start extends Executor_Cup
 
 class Executor_Cup_ScoreReadonly extends CommandExecutor
 {
-	function Executor_Cup_ScoreReadonly()
+	function __construct()
 	{
 		parent::__construct('score',null,'score match_id',
 			'Show the scores for match_id');
@@ -520,7 +520,7 @@ class Executor_Cup_ScoreReadonly extends CommandExecutor
 
 class Executor_Cup_ScoreSet extends CommandExecutor
 {
-	function Executor_Cup_ScoreSet()
+	function __construct()
 	{
 		parent::__construct('score','admin','score match_id score_1 score_2',
 			'Appends the given scores to the score list in the given match');
@@ -536,7 +536,7 @@ class Executor_Cup_Score extends Executor_Cup
 {
 	private $ro, $rw;
 	
-	function Executor_Cup_Score(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'score',null);
 		$this->ro = new Executor_Cup_ScoreReadonly();
@@ -595,7 +595,7 @@ class Executor_Cup_Score extends Executor_Cup
 
 class Executor_Cup_End extends Executor_Cup
 {
-	function Executor_Cup_End(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'end','admin','end match_id',
 			'End the given match and save score changes to challonge');
@@ -633,7 +633,7 @@ class Executor_Cup_End extends Executor_Cup
 
 class Executor_Cup_Pick_Setup extends Executor_Cup
 {
-	function Executor_Cup_Pick_Setup(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'setup','admin','setup match_id',
 			'Start a map picking session');
@@ -686,7 +686,7 @@ class Executor_Cup_Pick_Setup extends Executor_Cup
 
 class Executor_Cup_Pick_Pick extends Executor_Cup
 {
-	function Executor_Cup_Pick_Pick(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'pick','admin','pick n',
 			'Set the number of maps to pick (ie: not drop)');
@@ -711,7 +711,7 @@ class Executor_Cup_Pick_Pick extends Executor_Cup
 
 class Executor_Cup_Pick_Stop extends Executor_Cup
 {
-	function Executor_Cup_Pick_Stop(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'stop','admin','stop',
 			'Interrupt the current picking session and show the result');
@@ -736,7 +736,7 @@ class Executor_Cup_Pick_Stop extends Executor_Cup
 
 class Executor_Cup_Pick_Begin extends Executor_Cup
 {
-	function Executor_Cup_Pick_Begin(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'begin','admin','begin',
 			'Start the actual map picking (after setup)');
@@ -760,7 +760,7 @@ class Executor_Cup_Pick_Begin extends Executor_Cup
 
 class Executor_Cup_Pick_Nick extends Executor_Cup
 {
-	function Executor_Cup_Pick_Nick(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'nick','admin','nick [old new]',
 			'Change IRC nick to listen for map picking');
@@ -791,7 +791,7 @@ class Executor_Cup_Pick_Nick extends Executor_Cup
 class Executor_Cup_Pick_Turn extends Executor_Cup
 {
 
-	function Executor_Cup_Pick_Turn(CachedCupManager $cup_manager)
+	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'turn','player-admin','turn',
 			'Show the current map picking turn');
@@ -808,7 +808,7 @@ class Executor_Cup_Pick_Turn extends Executor_Cup
 class Executor_Pick_Raw extends Executor_Cup
 {
 
-	function Executor_Pick_Raw(CachedCupManager $cup_manager, 
+	function __construct(CachedCupManager $cup_manager, 
 		$auth='player',$synopsis="",$description="",$irc_cmd='PRIVMSG')
 	{
 		parent::__construct($cup_manager,null,$auth,$synopsis,$description,$irc_cmd);

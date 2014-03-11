@@ -65,7 +65,7 @@ class BotDriver
 			$this->extarnal_comm = array_merge($this->extarnal_comm,$ex);
 	}
 	
-	function BotDriver(MelanoBot $bot)
+	function __construct(MelanoBot $bot)
 	{
 		$this->bot = $bot;
 		$this->data = new BotData($this);

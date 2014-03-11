@@ -6,7 +6,7 @@ class Executor_Echo extends CommandExecutor
 {
 	public $action;
 	
-	function Executor_Echo($trigger,$action=false,$auth=null)
+	function __construct($trigger,$action=false,$auth=null)
 	{
 		$this->action = $action;
 		parent::__construct($trigger,$auth,"$trigger Text...","Make the bot $trigger something");
@@ -25,7 +25,7 @@ class Executor_Echo extends CommandExecutor
 class Executor_Action extends CommandExecutor
 {
 	
-	function Executor_Action($trigger="please",$auth=null)
+	function __construct($trigger="please",$auth=null)
 	{
 		parent::__construct($trigger,$auth,"$trigger Action...",'Make the bot perform a chat action (Roleplaying)');
 		$this->reports_error = true;
@@ -63,7 +63,7 @@ class Executor_Action extends CommandExecutor
 class Executor_RespondKick extends CommandExecutor
 {
 	
-	function Executor_RespondKick()
+	function __construct()
 	{
 		parent::__construct(null,null);
 		$this->irc_cmd = 'KICK';
@@ -99,7 +99,7 @@ class Raw_Echo extends RawCommandExecutor
 		return strtolower(trim(trim($string),$this->trim));
 	}
 	
-	function Raw_Echo($phrase, $trim, $auth)
+	function __construct($phrase, $trim, $auth)
 	{
 		$this->phrase = $phrase;
 		$this->trim = $trim;
@@ -122,7 +122,7 @@ class Raw_Echo extends RawCommandExecutor
 class Executor_GreetingAllUsers extends CommandExecutor
 {
 	public $message;
-	function Executor_GreetingAllUsers($message)
+	function __construct($message)
 	{
 		parent::__construct(null,null);
 		$this->irc_cmd = 'JOIN';
@@ -144,7 +144,7 @@ class Executor_GreetingAllUsers extends CommandExecutor
 class Executor_GreetingUsers extends CommandExecutor
 {
 	public $messages;
-	function Executor_GreetingUsers($messages)
+	function __construct($messages)
 	{
 		parent::__construct(null,null);
 		$this->irc_cmd = 'JOIN';
@@ -165,7 +165,7 @@ class Executor_GreetingUsers extends CommandExecutor
 class Executor_GreetingSelf extends CommandExecutor
 {
 	public $message;
-	function Executor_GreetingSelf($message)
+	function __construct($message)
 	{
 		parent::__construct(null,null);
 		$this->irc_cmd = 'JOIN';
@@ -188,7 +188,7 @@ class Executor_MiscListReadonly extends CommandExecutor
 	public $list_name;
 	public $list;
 	
-	function Executor_MiscListReadonly($list_name, $auth=null,&$list_ref=null)
+	function __construct($list_name, $auth=null,&$list_ref=null)
 	{
 		parent::__construct($list_name,$auth,"$list_name",
 			"Show the values in the $list_name list");
@@ -221,7 +221,7 @@ class Executor_MiscListEdit extends CommandExecutor
 	
 	public $list;
 	
-	function Executor_MiscListEdit($list_name, $auth='admin',&$list_ref=null)
+	function __construct($list_name, $auth='admin',&$list_ref=null)
 	{
 		parent::__construct($list_name,$auth,"$list_name [+|add|-|rm value]|[clear]",
 			"Add a value to the $list_name list");
@@ -305,7 +305,7 @@ class Executor_MiscListEdit extends CommandExecutor
 
 class Executor_MiscList extends Executor_Multi
 {
-	function Executor_MiscList($list_name, $auth_edit='admin',$auth_read=null,&$list_ref=null)
+	function __construct($list_name, $auth_edit='admin',$auth_read=null,&$list_ref=null)
 	{
 		parent::__construct($list_name,array(
 			new Executor_MiscListEdit($list_name,$auth_edit,$list_ref),

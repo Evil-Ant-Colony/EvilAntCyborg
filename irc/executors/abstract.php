@@ -39,7 +39,7 @@ abstract class CommandExecutor extends ExecutorBase
 	public $reports_error;
 	public $irc_cmd;
 	
-	function CommandExecutor($name,$auth,$synopsis="",$description="",$irc_cmd='PRIVMSG')
+	function __construct($name,$auth,$synopsis="",$description="",$irc_cmd='PRIVMSG')
 	{
 		$this->name = $name;
 		$this->auth = $auth;

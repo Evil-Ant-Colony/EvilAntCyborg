@@ -8,7 +8,7 @@ class Irc2Rcon_RawSay extends RawCommandExecutor
 	public $action_command;
 	public $rcon;
 	
-	function Irc2Rcon_RawSay(Rcon $rcon, $say_command='_ircmessage %s ^7: %s',$action_command='_ircmessage "^4*^3 %s" ^3 %s')
+	function __construct(Rcon $rcon, $say_command='_ircmessage %s ^7: %s',$action_command='_ircmessage "^4*^3 %s" ^3 %s')
 	{
 		$this->say_command=$say_command;
 		$this->action_command = $action_command;
@@ -28,7 +28,7 @@ class Irc2Rcon_RawSay extends RawCommandExecutor
 
 class Irc2Rcon_Who extends Irc2Rcon_Executor
 {
-	function Irc2Rcon_Who(Rcon $rcon, $trigger="who", $auth=null)
+	function __construct(Rcon $rcon, $trigger="who", $auth=null)
 	{
 		parent::__construct($rcon,$trigger,$auth,"$trigger","List players on {$rcon->read}");
 	}

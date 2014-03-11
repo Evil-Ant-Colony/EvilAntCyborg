@@ -22,7 +22,7 @@ class Color
 	private static $irc_regex = "{(\3([0-9][0-9]?)?(,[0-9][0-9]?)?)|\xf|\1|\2|\x16|\x1f}";
 	private static $dp_regex = "/(\^\^)|(\^[0-9])|(\^x[0-9a-fA-F]{3})/";
 	
-	function Color($code, $bright=false)
+	function __construct($code, $bright=false)
 	{
 		$this->code = (int)$code;
 		$this->bright = $bright;
