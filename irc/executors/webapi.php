@@ -1,5 +1,5 @@
 <?php
-require_once("bot-driver.php");
+require_once("irc/bot-driver.php");
 
 /*class Helper_JSON_API
 {

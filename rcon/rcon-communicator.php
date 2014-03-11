@@ -1,9 +1,12 @@
 <?php
 
-require_once("rcon.php");
-require_once("data-source.php");
-require_once("executors-abstract.php");
-require_once("rcon-players.php");
+require_once("rcon/rcon.php");
+require_once("irc/data-source.php");
+require_once("irc/executors/abstract.php");
+require_once("rcon/rcon-players.php");
+require_once("irc/dispatcher.php");
+require_once("rcon/executors/rcon2irc-core.php");
+require_once("rcon/executors/irc2rcon-core.php");
 
 class Rcon_Command
 {
@@ -20,32 +23,6 @@ class Rcon_Command
 	}
 }
 
-abstract class Rcon2Irc_Executor
-{
-	public $regex;
-	
-	function Rcon2Irc_Executor($regex)
-	{
-		$this->regex = $regex;
-	}
-	
-	/**
-	 * \return True if you want to prevent further processing
-	 */
-	abstract function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data);
-	
-	function step(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
-	{
-		if ( preg_match($this->regex,$cmd->data, $cmd->params) )
-			return $this->execute($cmd,$bot,$data,$rcon_data);
-		return false;
-	}
-	
-	function install_on(Rcon_Communicator $comm)
-	{
-		$comm->rcon_executors []= $this;
-	}
-}
 
 class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunicator
 {
@@ -57,6 +34,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	public $channel;
 	public $rcon;
 	public $rcon_executors = array();
+	public $rcon_filters = array();
 	public $poll_commands = array();
 	public $poll_interval = 30;
 	private $poll_time = 0;
@@ -142,8 +120,6 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 			$this->rcon->send("addtolist log_dest_udp {$this->rcon->read}");
 			$this->rcon->send("echo :melanorcon:ok");
 			
-			// unknown command hax to call setup_server, use Data to notify when coming online/offline
-			
 			foreach($this->poll_commands as $pc )
 				$this->rcon->send($pc);
 			$this->poll_time = $time + $this->poll_interval;
@@ -217,149 +193,5 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		$this->rcon->send("sv_logscores_bots 1");
 		$this->rcon->send("sv_eventlog 1");
 		$this->rcon->send("sv_eventlog_console 1");
-	}
-}
-
-abstract class Irc2Rcon_Executor extends CommandExecutor
-{
-	public $rcon;
-	
-	function Irc2Rcon_Executor(Rcon $rcon, $name,$auth=null,$synopsis="",$description="",$irc_cmd='PRIVMSG')
-	{
-		parent::__construct($name,$auth,$synopsis,$description,$irc_cmd);
-		$this->rcon = $rcon;
-	}
-}
-
-
-class Irc2Rcon_RawSay extends RawCommandExecutor
-{
-	public $say_command;
-	public $action_command;
-	public $rcon;
-	
-	function Irc2Rcon_RawSay(Rcon $rcon, $say_command='_ircmessage %s ^7: %s',$action_command='_ircmessage "^4*^3 %s" ^3 %s')
-	{
-		$this->say_command=$say_command;
-		$this->action_command = $action_command;
-		$this->rcon = $rcon;
-	}
-	
-	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
-	{
-		$text = str_replace(array('\\','"'),array('\\\\','\"'),$cmd->param_string());
-		if ( preg_match("{^\1ACTION ([^\1]*)\1$}", $text, $match) )
-			$this->rcon->send(sprintf($this->action_command,$cmd->from,Color::irc2dp($match[1])));
-		else
-			$this->rcon->send(sprintf($this->say_command,$cmd->from,Color::irc2dp($text)));
-	}
-}
-
-class Irc2Rcon_Who extends Irc2Rcon_Executor
-{
-	function Irc2Rcon_Who(Rcon $rcon, $trigger="who", $auth=null)
-	{
-		parent::__construct($rcon,$trigger,$auth,"$trigger","List players on {$rcon->read}");
-	}
-	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
-	{
-		$player_manager = $data->rcon["{$this->rcon->read}"]->player;
-		$players = array();
-		foreach($player_manager->all_no_bots() as $player)
-		{
-			$players[]= Color::dp2irc($player->name);
-		}
-				
-		if ( !empty($players) )
-			$bot->say($cmd->channel,"\00304".count($players)."\xf/\00304{$player_manager->max}\xf: ".implode(", ",$players));
-		else
-			$bot->say($cmd->channel,"Server is empty");
-	}
-}
-
-
-class Rcon2Irc_Say extends Rcon2Irc_Executor
-{
-	function Rcon2Irc_Say()
-	{
-		parent::__construct("{\1(.*?)\^7: (.*)}");
-	}
-	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
-	{
-		$nick = Color::dp2irc($cmd->params[1]);
-		$text = Color::dp2irc($cmd->params[2]);
-		$bot->say($cmd->channel,"<$nick\xf> $text");
-		return true;
-	}
-}
-
-abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
-{
-	public $format;
-	
-	function Rcon2Irc_JoinPart_Base($regex,$format)
-	{
-		parent::__construct($regex);
-		$this->format = $format;
-	}
-	
-	/// \todo show only non-bots in total
-	protected function send_message($bot,$channel,$player,$rcon_data)
-	{
-		if ( !$player || $player->is_bot() )
-			return;
-		$values = array(
-			'%name%'   => Color::dp2irc($player->name),
-			'%ip%'    => $player->ip,
-			'%slot%'  => $player->slot,
-			'%count%' => $rcon_data->player->count,
-			'%max%'   => $rcon_data->player->max,
-			'%map%'   => $rcon_data->map,
-		);
-		$bot->say($channel,str_replace(array_keys($values),array_values($values),$this->format));
-	}
-}
-
-class Rcon2Irc_Join extends Rcon2Irc_JoinPart_Base
-{
-	
-	function Rcon2Irc_Join($format="\00309+ join\xf: %name% \00304%map%\xf [\00304%count%\xf/\00304%max%\xf]")
-	{
-		parent::__construct("{:join:(\d+):(\d+):([^:]*):(.*)}", $format);
-	}
-	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
-	{
-		$player = new RconPlayer();
-		list ($player->id, $player->slot, $player->ip, $player->name) = array_splice($cmd->params,1);
-		$rcon_data->player->add($player);
-		
-		$this->send_message($bot,$cmd->channel,$player,$rcon_data);
-		
-		return true;
-	}
-}
-class Rcon2Irc_Part extends Rcon2Irc_JoinPart_Base
-{
-	
-	function Rcon2Irc_Part($format="\00304- part\xf: %name% \00304%map%\xf [\00304%count%\xf/\00304%max%\xf]")
-	{
-		parent::__construct("{:part:(\d+)}",$format);
-	}
-	
-	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, BotData $data, $rcon_data)
-	{
-		$player = $rcon_data->player->find_by_id($cmd->params[1]);
-		if ( $player && !$player->is_bot() )
-		{
-			$rcon_data->player->remove($player->slot);
-			
-			$this->send_message($bot,$cmd->channel,$player,$rcon_data);
-		}
-		return true;
 	}
 }

@@ -1,6 +1,6 @@
 <?php
 
-require_once("logger.php");
+require_once("misc/logger.php");
 
 class MelanoBotCommand
 {

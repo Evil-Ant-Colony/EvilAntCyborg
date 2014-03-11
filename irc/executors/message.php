@@ -1,7 +1,7 @@
 <?php
 
-require_once("bot-driver.php");
-require_once("logger.php");
+require_once("irc/bot-driver.php");
+require_once("misc/logger.php");
 
 class MessageQueue
 {

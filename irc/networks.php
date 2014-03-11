@@ -1,5 +1,5 @@
 <?php
-require_once("melanobot.php");
+require_once("irc/melanobot.php");
 
 $network_quakenet = array(
 	new MelanoBotServer('euroserv.fr.quakenet.org',6667),

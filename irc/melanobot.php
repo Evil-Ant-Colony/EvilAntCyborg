@@ -1,7 +1,7 @@
 <?php
-require_once("color.php");
-require_once("data-source.php");
-require_once("logger.php");
+require_once("misc/color.php");
+require_once("irc/data-source.php");
+require_once("misc/logger.php");
 
 function irc_action($msg)
 {

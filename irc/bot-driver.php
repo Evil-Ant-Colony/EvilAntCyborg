@@ -1,8 +1,8 @@
 <?php
 
-require_once("melanobot.php");
-require_once("executors-abstract.php");
-require_once("logger.php");
+require_once("irc/melanobot.php");
+require_once("irc/executors/abstract.php");
+require_once("misc/logger.php");
 
 /**
  * \brief Get and execute commands

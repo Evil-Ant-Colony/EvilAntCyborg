@@ -1,5 +1,5 @@
 <?php
-require_once("executors-webapi.php");
+require_once("irc/executors/webapi.php");
 
 function parse_wikitext(&$wikitext)
 {

@@ -1,5 +1,5 @@
 <?php
-require_once("color.php");
+require_once("misc/color.php");
 
 
 class Logger

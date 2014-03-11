@@ -1,6 +1,6 @@
 <?php
 
-require_once('cupmanager.php');
+require_once('misc/cupmanager.php');
 
 /**
  * \brief cup manager that keeps some off-line info

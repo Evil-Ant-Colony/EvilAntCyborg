@@ -1,6 +1,6 @@
 <?php
 
-require("inflector.php");
+require("misc/inflector.php");
 
 class Executor_Echo extends CommandExecutor
 {
