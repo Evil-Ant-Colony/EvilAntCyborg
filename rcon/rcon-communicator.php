@@ -40,6 +40,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	private $poll_time = 0;
 	private $rcon_data;
 	private $connection_status;
+	private $cache = "";
 	
 	function Rcon_Communicator($channel,Rcon $rcon,$prefix=null)
 	{
@@ -121,8 +122,15 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		
 		if ( !$packet->valid || !$packet->payload )
 			return;
-
+		
+		if ( $this->cache )
+		{
+			$packet->payload = $this->cache.$packet->payload;
+			$this->cache = "";
+		}
 		$lines = explode ("\n",$packet->payload);
+		if ( strlen($packet->contents) >= Rcon_Packet::MAX_READ_LENGTH )
+			$this->cache = array_pop($lines);
 		
 		// update data status
 		if ( preg_match("{host:\s+(.*)}",$packet->payload,$matches) )

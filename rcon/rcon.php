@@ -21,8 +21,11 @@ class Rcon_Server
 class Rcon_Packet
 {
 	public $contents, $payload, $server, $valid = false;
+	
 	static $read_header ="\xff\xff\xff\xffn";
 	static $send_header="\xff\xff\xff\xff";
+	// darkplaces/console.c: char log_dest_buffer[1400]; (NUL-terminated)
+	const MAX_READ_LENGTH = 1399;
 	
 	function Rcon_Packet($payload=null, $server=null)
 	{
@@ -94,7 +97,7 @@ class Rcon
 	
 	function read()
 	{
-		$packet = Rcon_Packet::read($this->socket,32768);
+		$packet = Rcon_Packet::read($this->socket,Rcon_Packet::MAX_READ_LENGTH);
 		/*if ( $packet->valid && $packet->payload )
 			Logger::log("dp",">",Color::dp2ansi($packet->payload),0);*/
 		return $packet;
