@@ -13,7 +13,7 @@ class Rcon2Irc_Say extends Rcon2Irc_Executor
 {
 	function __construct()
 	{
-		parent::__construct("{\1(.*?)\^7: (.*)}");
+		parent::__construct("{^\1(.*?)\^7: (.*)}");
 	}
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
@@ -57,7 +57,7 @@ class Rcon2Irc_Join extends Rcon2Irc_JoinPart_Base
 	
 	function __construct($format="\00309+ join\xf: %name% \00304%map%\xf [\00304%count%\xf/\00304%max%\xf]")
 	{
-		parent::__construct("{:join:(\d+):(\d+):([^:]*):(.*)}", $format);
+		parent::__construct("{^:join:(\d+):(\d+):([^:]*):(.*)}", $format);
 	}
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
@@ -76,7 +76,7 @@ class Rcon2Irc_Part extends Rcon2Irc_JoinPart_Base
 	
 	function __construct($format="\00304- part\xf: %name% \00304%map%\xf [\00304%count%\xf/\00304%max%\xf]")
 	{
-		parent::__construct("{:part:(\d+)}",$format);
+		parent::__construct("{^:part:(\d+)}",$format);
 	}
 	
 	
@@ -108,6 +108,8 @@ class Rcon2Irc_Filter_BlahBlah extends Rcon2Irc_Filter
 		"^Shader '.*' already defined.*",
 		"^PRVM_LoadProgs: no cvar for autocvar global .*",
 		"^plane [-0-9. ]* mismatches dist .*",
+		"^Couldn't select .*",
+		"^SHUFFLE: insert pos .*",
 	);
 	
 	
@@ -135,21 +137,26 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 	{
 		$re=array("(:end)",// 1
 				  "(:teamscores:see-labels:(-?\d+)[-0-9,]*:(\d+))", // 2 - score=3 id=4
-				  "(:player:see-labels:(-?\d+)[-0-9,]*:(\d+):([^:]+):(\d+):(.*))");// 5 - score=6 time=7 team=8 id=9 name=10
+				  "(:player:see-labels:(-?\d+)[-0-9,]*:(\d+):([^:]+):(\d+):(.*))",// 5 - score=6 time=7 team=8 id=9 name=10
+				  "(:scores:([a-z]+)_(.*)):",//11 gametype=12 map=13
+				  );
 
-		parent::__construct("{".implode("|",$re)."}");
+		parent::__construct("{^".implode("|",$re)."}");
 	}
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot,  Rcon_Communicator $rcon)
 	{
 		if ( $this->matches($cmd->params,1) )
 		{
-			$gametype = "TODO Gametype";
+			$gametype = "";
+			if ( isset($rcon->data->gametype) )
+				$gametype = "\00310".$rcon->gametype_name($rcon->data->gametype)."\xf on ";
 			$map = isset($rcon->data->map) && $rcon->data->map ? $rcon->data->map : "?";
-			$bot->say($cmd->channel,"\00304$gametype\017 on \00304$map\017 ended:");
+			$bot->say($cmd->channel,"$gametype\00304$map\017 ended:");
 			$this->print_scores($cmd,$bot);
 			$this->player_scores= array();
 			$this->team_scores  = array();
+			$rcon->data->gametype=null;
 		}
 		else if ( $this->matches($cmd->params,2) )
 		{
@@ -158,6 +165,11 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 		else if ( $this->matches($cmd->params,5) )
 		{
 			$this->gather_player($cmd,$rcon);
+		}
+		else if ( $this->matches($cmd->params,11) )
+		{
+			$rcon->data->map = $cmd->params[13];
+			$rcon->data->gametype = $cmd->params[12];
 		}
 		
 		return false;
@@ -185,6 +197,8 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 	
 	private function print_scores(Rcon_Command $cmd, MelanoBot $bot)
 	{
+		if ( empty($this->player_scores) )
+			return;
 		usort($this->player_scores,'Rcon2Irc_Score::score_compare');
 		if ( empty($this->team_scores) )
 		{
@@ -232,5 +246,26 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 			$existing_player->merge($player);
 		}
 		$this->player_scores []= $player;
+	}
+}
+
+
+class Rcon2Irc_MatchStart extends Rcon2Irc_Executor
+{
+	
+	function __construct()
+	{
+		parent::__construct("{^:gamestart:([a-z]+)_(.*):[0-9.]*}");
+	}
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		$rcon->data->gametype=$cmd->params[1];
+		
+		$bot->say($cmd->channel,"Playing \00310".$rcon->gametype_name($cmd->params[1]).
+			"\xf on \00304{$cmd->params[2]}\xf (".
+			($rcon->data->player->max-$rcon->data->player->count).
+			" free slots); join now: \2xonotic +connect {$rcon->write_server}" );
+		return true;
 	}
 }

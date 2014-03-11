@@ -9,7 +9,7 @@ class Rcon2Irc_SayAction extends Rcon2Irc_Executor
 {
 	function __construct()
 	{
-		parent::__construct("{\1\^4\* \^7(.*)}");
+		parent::__construct("{^\1\^4\* \^7(.*)}");
 	}
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)

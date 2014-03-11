@@ -42,6 +42,29 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	private $connection_status;
 	private $cache = "";
 	
+	static function gametype_name($gametype_shortname)
+	{
+		static $gametype_names = array(	
+			"as"  => "assault",
+			"ca"  => "clan arena",
+			"ctf" => "capture the flag",
+			"cts" => "race cts",
+			"dom" => "domination",
+			"dm"  => "deathmatch",
+			"ft"  => "freezetag",
+			"inf" => "infection",
+			"inv" => "invasion",
+			"jb"  => "jailbreak",
+			"ka"  => "keepaway",
+			"kh"  => "key hunt",
+			"lms" => "last man standing",
+			"nb"  => "nexball",
+			"ons" => "onslaught",
+			"rc"  => "race",
+			"tdm" => "team deathmatch",
+		);
+		return isset($gametype_names[$gametype_shortname])?$gametype_names[$gametype_shortname]:$gametype_shortname;
+	}
 	
 	function send($command)
 	{
