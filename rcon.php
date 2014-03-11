@@ -96,8 +96,8 @@ class Rcon
 	function read()
 	{
 		$packet = Rcon_Packet::read($this->socket,32768);
-		if ( $packet->valid && $packet->payload )
-			Logger::log("dp",">",Color::dp2ansi($packet->payload),0);
+		/*if ( $packet->valid && $packet->payload )
+			Logger::log("dp",">",Color::dp2ansi($packet->payload),0);*/
 		return $packet;
 	}
 	

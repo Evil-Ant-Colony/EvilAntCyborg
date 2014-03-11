@@ -33,6 +33,7 @@ class RconPlayer
 			return $this;
 			
 		if ( isset($other->name) ) $this->name = $other->name;
+		if ( isset($other->id) ) $this->id = $other->id;
 		if ( isset($other->ip) ) $this->ip = $other->ip;
 		if ( isset($other->ping) ) $this->ping = $other->ping;
 		if ( isset($other->pl) ) $this->pl = $other->pl;
@@ -57,12 +58,14 @@ class PlayerManager
 		$player->normalize();
 		if ( !$player->slot )
 			return;
-		
+
 		Logger::log("dp","!","\x1b[32mAdding\x1b[0m player #\x1b[31m{$player->slot}\x1b[0m ".
 			Color::dp2ansi($player->name)." @ \x1b[36m$player->ip\x1b[0m",3);
-
+			
 		if ( isset($this->players[$player->slot]) )
+		{
 			$this->players[$player->slot]->merge($player);
+		}
 		else
 		{
 			$this->count++;
@@ -91,6 +94,7 @@ class PlayerManager
 		$this->clear();
 		foreach($players as $player)
 		{
+			$player->normalize();
 			if ( isset($old[$player->slot]) )
 				$this->add($old[$player->slot]->merge($player));
 			else

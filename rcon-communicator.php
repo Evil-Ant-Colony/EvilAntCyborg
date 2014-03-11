@@ -151,14 +151,15 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		
 		$packet = $this->rcon->read();
 		
-		if ( !$packet->valid )
+		if ( !$packet->valid || !$packet->payload )
 			return;
 
+		$lines = explode ("\n",$packet->payload);
+		
 		// update data status
 		if ( preg_match("{host:\s+(.*)}",$packet->payload,$matches) )
 		{
 			$this->rcon_data->hostname =  $matches[1];
-			$lines = explode ("\n",$packet->payload);
 			$this->rcon_data->version = substr($lines[1],10);
 			$this->rcon_data->protocol = substr($lines[2],10);
 			$this->rcon_data->map = substr($lines[3],10);
@@ -180,7 +181,6 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 						list ($player->ip, $player->pl, $player->ping, 
 							$player->time, $player->frags, $player->slot, 
 							$player->name) = array_splice($matches,1);
-						print_r($player);
 						$players[]=$player;
 					}
 				}
@@ -196,10 +196,17 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		// run commands
 		if ( $this->connection_status != self::WAITING_IRC )
 		{
-			$cmd = new Rcon_Command($packet->payload, $packet->server,$this->channel);
-			foreach($this->rcon_executors as $executor)
-				if ( $executor->step($cmd, $bot, $data, $this->rcon_data) )
-					return;
+			foreach ( $lines as $line ) 
+			{
+				Logger::log("dp",">",Color::dp2ansi($line),0);
+				if ( $line )
+				{
+					$cmd = new Rcon_Command($line, $packet->server,$this->channel);
+					foreach($this->rcon_executors as $executor)
+						if ( $executor->step($cmd, $bot, $data, $this->rcon_data) )
+							break;
+				}
+			}
 		}
 	}
 	
@@ -210,7 +217,6 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		$this->rcon->send("sv_logscores_bots 1");
 		$this->rcon->send("sv_eventlog 1");
 		$this->rcon->send("sv_eventlog_console 1");
-		$this->rcon->send('alias melanorcon_ircmessage "sv_cmd ircmsg \"$1\" \"$2-\""');
 	}
 }
 
@@ -232,7 +238,7 @@ class Irc2Rcon_RawSay extends RawCommandExecutor
 	public $action_command;
 	public $rcon;
 	
-	function Irc2Rcon_RawSay(Rcon $rcon, $say_command='melanorcon_ircmessage %s ^7: %s',$action_command='melanorcon_ircmessage "^4*^3 %s" ^3 %s')
+	function Irc2Rcon_RawSay(Rcon $rcon, $say_command='_ircmessage %s ^7: %s',$action_command='_ircmessage "^4*^3 %s" ^3 %s')
 	{
 		$this->say_command=$say_command;
 		$this->action_command = $action_command;
