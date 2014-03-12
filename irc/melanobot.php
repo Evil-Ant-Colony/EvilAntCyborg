@@ -237,7 +237,7 @@ class MelanoBot extends DataSource
 
 	private $server_index;
     public $servers, $real_name, $nick, $auth_nick, $password;
-    public $blacklist, $listen_to;
+    public $listen_to;
     public $mode = null;
     private $connection_status = self::DISCONNECTED; 
     private $names = array();
@@ -248,8 +248,7 @@ class MelanoBot extends DataSource
     public $buffer;
     
     
-    function __construct($servers, $nick, $password, 
-                 $channels, $blacklist=array())
+    function __construct($servers, $nick, $password, $channels )
     {
 		if ( !is_array($servers) )
 			$this->servers = array($servers);
@@ -259,7 +258,6 @@ class MelanoBot extends DataSource
         $this->auth_nick = $nick;
         $this->nick = $nick;
         $this->password = $password;
-        $this->blacklist = $blacklist;
         $this->join_list = $channels;
         $this->listen_to = "$nick:";
         $this->buffer = new BotOutBuffer();
@@ -521,11 +519,7 @@ class MelanoBot extends DataSource
         $from = substr(strstr($inarr[0],"!",true),1);
         $from_host = substr(strstr($inarr[0],"@"),1);
         
-        if ( in_array($from,$this->blacklist) )
-        {
-            Logger::log("irc","!","Blacklist message from $from");
-        }
-        else if ( $insize > 1 )
+        if ( $insize > 1 )
         {
             $irc_cmd = $inarr[1];
             $chan = $insize > 2 ? $inarr[2] : null;

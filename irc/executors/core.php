@@ -287,6 +287,23 @@ class Filter_UserList extends Filter
 	}
 }
 
+/**
+ * \brief Sinmple filter by IRC nick
+ */
+class Filter_UserArray extends Filter
+{
+	public $list;
+	function __construct($list)
+	{
+		$this->list = $list;
+	}
+	
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	{
+		return !in_array($cmd->from,$this->list);
+	}
+}
+
 class Filter_ChanHax extends Filter
 {
 	
