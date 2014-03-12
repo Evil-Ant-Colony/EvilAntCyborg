@@ -154,7 +154,11 @@ class BotDriver
 		while($this->check_status())
 		{
 			$time = microtime(true);
+			
 			$this->loop_step();
+			
+			$this->bot->buffer->flush_nonblock(0,$delay*1000000);
+			
 			// computer programs are weird, they need to get some sleep if they have not been awake long enough :3
 			$delta = microtime(true) - $time;
 			if ( $delta < $delay )

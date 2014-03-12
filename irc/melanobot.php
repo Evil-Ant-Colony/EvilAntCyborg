@@ -3,12 +3,17 @@ require_once("misc/color.php");
 require_once("irc/data-source.php");
 require_once("misc/logger.php");
 
+/**
+ * \brief Convert \c $msg in an IRC Action
+ */
 function irc_action($msg)
 {
-	return "\x01ACTION $msg\x01";
+	return "\1ACTION $msg\1";
 }
 
-
+/**
+ * \brief Non-blocking TCP connection
+ */
 class MelanoBotServer
 {
 	public $server, $port;
@@ -60,43 +65,161 @@ class MelanoBotServer
 	}
 }
 
+/**
+ * \brief Buffer messages to an IRC server preventing flooding
+ */
 class BotOutBuffer
 {
-	public $flood_time_start = 0.2;
-	private $flood_time_counter = 1;
-	private $flood_next_time = 0;
-	public $flood_max_bytes = 512;
-	public $server = null;
-	private $buffer = array();
-	private $buffer_max_size = 128;
+	public $flood_time_start = 0.2; ///< Minimum delay between messages (in seconds)
+	public $flood_max_bytes = 512;  ///< Maximum nuber of bytes in a message (longer messages will be truncated)
+	public $server = null;          ///< MelanoBotServer to send the data to
+	private $flood_time_counter = 1;///< Internal counter to increase delay between messages
+	private $flood_next_time = 0;   ///< When it will be possible to send the next message (in seconds)
+	private $buffer = array();      ///< Store messages when it's not possible to send them
+	private $buffer_max_size = 128; ///< \todo Maximum number of messages in the buffer
 	
-	function send($data)
+	/**
+	 * \brief Number of microseconds it has to wait before sending a message
+	 * if the value is negative, it can send right now
+	 */
+	function can_send_in()
 	{
-		$time = microtime(true);
-		/// \todo buffer
-		if ( $time < $this->flood_next_time )
-			usleep(($this->flood_next_time - $time) * 1000000 );
+		return ( $this->flood_next_time - microtime(true) ) * 1000000;
+	}
+	
+	/**
+	 * \brief Block and sleep (if needed) and send data
+	 */
+	private function send_wait($data)
+	{
+		$wait = $this->can_send_in();
+		
+		if ( $wait > 0 )
+			usleep( $wait );
 		else
 			$this->flood_time_counter = 1;
 
-		$time = microtime(true);
-		$this->flood_next_time = $time + $this->flood_time_start * $this->flood_time_counter;
-		$this->flood_time_counter++;
-		
-		/*echo "Wait: ".($this->flood_next_time-$time).
-			", Time: $time, Next: {$this->flood_next_time}, #{$this->flood_time_counter}\n";*/
-		
-		$this->write($data);
+		$this->send_raw($data);
 	}
 	
-	private function write($data)
+	/**
+	 * \brief Send data only if it can
+	 * \return \c true if data has been sent
+	 */
+	private function send_no_wait($data)
 	{
+		if ( $this->can_send_in() > 0 )
+			return false;
+		
+		if ( $this->flood_time_counter > 1 )
+			$this->flood_time_counter--;
+			
+		$this->send_raw($data);
+		
+		return true;
+	}
+	
+	
+	/**
+	 * \brief Send data if it can
+	 * \param $data Data to send
+	 * \param $microseconds Maximum sleeping time
+	 * \return \c true if data has been sent
+	 */
+	private function send_wait_some($data,$microseconds)
+	{
+		$wait = $this->can_send_in();
+		
+		if ( $wait > 0 && $wait < $microseconds)
+			usleep( $wait );
+		else if ( $wait > 0 )
+			return false;
+		else if ( $this->flood_time_counter > 1 )
+			$this->flood_time_counter--;
+
+		$this->send_raw($data);
+		
+		return true;
+	}
+	
+	/**
+	 * \brief Schedule data to be sent
+	 *
+	 *  May not send right away to avoid flooding
+	 *
+	 * \todo Policy on full buffer, message priority to choose whether to:
+	 *  * Discard the message
+	 *  * Overwrite some previous one (and which one)
+	 *  * Blockingly send right away (?)
+	 */
+	function send($data)
+	{
+		if ( !$this->send_no_wait($data) )
+			$this->buffer[]= $data;
+	}
+	
+	/**
+	 * \brief Send a message immediately
+	 * \note Increases internal time counter for the next message
+	 */
+	private function send_raw($data)
+	{
+		Logger::log("irc","<",Color::irc2ansi("$data"),0);
 		$data = substr($data,0,$this->flood_max_bytes-2)."\n\r";
 		$this->server->write($data);
+		$this->flood_next_time = microtime(true) + $this->flood_time_start * $this->flood_time_counter;
+		$this->flood_time_counter++;
+	}
+	
+	/**
+	 * \brief Flush at most \c $count buffered messages ensuring they are sent
+	 * \param $count Number of messages to be sent, if 0 send all
+	 */
+	function flush_block($count=0)
+	{
+		if ( $count <= 0 )
+			$count = count($this->buffer);
+		else
+			$count = min($count,count($this->buffer));
+			
+		for ( $i = 0; $i < $count; $i++ )
+			$this->send_wait(array_shift($this->buffer));
+	}
+	
+	
+	/**
+	 * \brief Flush at most \c $count buffered messages while it doesn't require too much sleeping
+	 * \param $count Number of messages to be sent, if 0 send all
+	 * \param $microseconds Maximum sleeping time
+	 * \return Number of sent messages
+	 */
+	function flush_nonblock($count=0,$microseconds=0)
+	{
+		if ( $count <= 0 )
+			$count = count($this->buffer);
+		else
+			$count = min($count,count($this->buffer));
+			
+		for ( $i = 0; $i < $count; $i++ )
+		{
+			$data = array_shift($this->buffer);
+			if ( !$this->send_wait_some($data,$microseconds) )
+			{
+				array_unshift($this->buffer,$data);
+				return $i;
+			}
+		}
+		if ( $this->can_send_in() <= 0 && $this->flood_time_counter > 1 )
+			$this->flood_time_counter--;
+
+		return $i;
 	}
 	
 }
 
+/**
+ * \brief IRC Bot connection
+ */
 class MelanoBot extends DataSource
 {
 
@@ -294,7 +417,6 @@ class MelanoBot extends DataSource
         {
             $data = str_replace(array("\n","\r")," ",$data);
             $this->buffer->send("$command $data");
-            Logger::log("irc","<",Color::irc2ansi("$command $data"),0);
         }
     }
     
@@ -489,6 +611,8 @@ class MelanoBot extends DataSource
     
     function say($channel,$msg,$action=false)
     {
+		if ( strlen($msg) == 0 )
+			return;
         if ( $channel != $this->nick )
         {
 			if ( $action )
