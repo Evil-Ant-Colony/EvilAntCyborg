@@ -2,6 +2,7 @@
 require_once("misc/color.php");
 require_once("irc/data-source.php");
 require_once("misc/logger.php");
+require_once("misc/list.php");
 
 /**
  * \brief Convert \c $msg in an IRC Action
@@ -75,8 +76,13 @@ class BotOutBuffer
 	public $server = null;          ///< MelanoBotServer to send the data to
 	private $flood_time_counter = 1;///< Internal counter to increase delay between messages
 	private $flood_next_time = 0;   ///< When it will be possible to send the next message (in seconds)
-	private $buffer = array();      ///< Store messages when it's not possible to send them
+	private $buffer = null;         ///< Store messages when it's not possible to send them
 	private $buffer_max_size = 128; ///< \todo Maximum number of messages in the buffer
+	
+	function __construct()
+	{
+		$this->buffer = new StablePriorityQueue;
+	}
 	
 	/**
 	 * \brief Number of microseconds it has to wait before sending a message
@@ -147,15 +153,15 @@ class BotOutBuffer
 	 *
 	 *  May not send right away to avoid flooding
 	 *
-	 * \todo Policy on full buffer, message priority to choose whether to:
-	 *  * Discard the message
-	 *  * Overwrite some previous one (and which one)
-	 *  * Blockingly send right away (?)
+	 * \return \c false if the message can't be sent (full buffer)
 	 */
-	function send($data)
+	function send($data, $priority)
 	{
 		if ( !$this->send_no_wait($data) )
-			$this->buffer[]= $data;
+		{
+			$this->buffer->push($data,$priority);
+		}
+		return true;
 	}
 	
 	/**
@@ -183,7 +189,9 @@ class BotOutBuffer
 			$count = min($count,count($this->buffer));
 			
 		for ( $i = 0; $i < $count; $i++ )
-			$this->send_wait(array_shift($this->buffer));
+		{
+			$this->send_wait($this->buffer->pop());
+		}
 	}
 	
 	
@@ -202,12 +210,10 @@ class BotOutBuffer
 			
 		for ( $i = 0; $i < $count; $i++ )
 		{
-			$data = array_shift($this->buffer);
-			if ( !$this->send_wait_some($data,$microseconds) )
-			{
-				array_unshift($this->buffer,$data);
+			$message = $this->buffer->top();
+			if ( !$this->send_wait_some($message,$microseconds) )
 				return $i;
-			}
+			$this->buffer->pop();
 		}
 		if ( $this->can_send_in() <= 0 && $this->flood_time_counter > 1 )
 			$this->flood_time_counter--;
@@ -411,12 +417,12 @@ class MelanoBot extends DataSource
         }
     }
     
-    function command($command, $data)
+    function command($command, $data, $priority=0)
     {
         if ( $this->buffer->server->connected() )
         {
             $data = str_replace(array("\n","\r")," ",$data);
-            $this->buffer->send("$command $data");
+            $this->buffer->send("$command $data",$priority);
         }
     }
     
@@ -431,7 +437,7 @@ class MelanoBot extends DataSource
         {
             if (($key = array_search($channel,$this->join_list)) !== false)
                 array_splice($this->join_list,$key,1);
-            $this->command('JOIN',$channel);
+            $this->command('JOIN',$channel,256);
         }
     }
     
@@ -470,7 +476,7 @@ class MelanoBot extends DataSource
         $insize = count($inarr);
         if ( $inarr[0] == 'PING' )
         {
-            $this->command('PONG',$inarr[1]);
+            $this->command('PONG',$inarr[1],1024);
         }
         else if ( $inarr[0] == 'ERROR' )
         {
@@ -609,15 +615,13 @@ class MelanoBot extends DataSource
         
     }
     
-    function say($channel,$msg,$action=false)
+    function say($channel,$msg,$priority=0)
     {
 		if ( strlen($msg) == 0 )
 			return;
         if ( $channel != $this->nick )
         {
-			if ( $action )
-				$msg = irc_action($msg);
-            $this->command("PRIVMSG","$channel :$msg");
+            $this->command("PRIVMSG","$channel :$msg",$priority);
 		}
         else
             Logger::log("irc","!","ERROR: trying to send a message to myself",1);

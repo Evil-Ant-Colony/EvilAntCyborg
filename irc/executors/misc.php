@@ -4,7 +4,7 @@ require("misc/inflector.php");
 
 class Executor_Echo extends CommandExecutor
 {
-	public $action;
+	public $action;///< Either \c false or a 3rd person verb to trigger an action (eg: "does")
 	
 	function __construct($trigger,$action=false,$auth=null)
 	{
@@ -16,8 +16,8 @@ class Executor_Echo extends CommandExecutor
 	{
 		$text = $cmd->param_string();
 		if ( $this->action )
-			$text = "{$this->action} $text";
-		$bot->say($cmd->channel,$text,!!$this->action);
+			$text = irc_action("{$this->action} $text");
+		$bot->say($cmd->channel,$text);
 	}
 }
 
