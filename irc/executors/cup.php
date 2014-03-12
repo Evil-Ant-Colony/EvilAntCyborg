@@ -75,9 +75,9 @@ abstract class Executor_Cup extends CommandExecutor
 		return $this->on_picking == $this->cup_manager->map_picking_status;
 	}
 	
-	function check_auth($nick,$host,BotData $driver)
+	function check_auth($nick,$host,MelanoBot $bot, BotData $driver)
 	{
-		return $this->check_picking() && parent::check_auth($nick,$host,$driver);
+		return $this->check_picking() && parent::check_auth($nick,$host,$bot, $driver);
 	}
 	
 	function check_cup(MelanoBotCommand $cmd, MelanoBot $bot)
@@ -120,9 +120,9 @@ abstract class Executor_Multi_Cup extends Executor_Cup
 	}
 	
 	
-	function check_auth($nick,$host,BotData $driver)
+	function check_auth($nick,$host,MelanoBot $bot, BotData $driver)
 	{
-		return $this->check_picking() && $this->multiple_inheritance->check_auth($nick,$host,$driver);
+		return $this->check_picking() && $this->multiple_inheritance->check_auth($nick,$host,$bot,$driver);
 	}
 	
 	
@@ -159,7 +159,7 @@ class Executor_Cup_Next extends Executor_Cup
 		if ( $this->check_cup($cmd,$bot) )
 		{
 			$num = isset($cmd->params[0]) ? (int)$cmd->params[0] : 1;
-			if ( $num > 5 && !$driver->user_in_list('admin',$cmd->from,$cmd->host) )
+			if ( $num > 5 && !$driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) )
 				$num = 5;
 			$bot->say($cmd->channel,"Fetching...");
 			$matches = $this->cup_manager->current_open_matches();
@@ -237,7 +237,7 @@ class Executor_Cup_CupReadonly extends Executor_Cup
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$cmd->from,$cmd->host) ;
+		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) ;
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
@@ -258,7 +258,7 @@ class Executor_Cup_CupSelect extends Executor_Cup
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
+		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$driver) ;
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
@@ -304,7 +304,7 @@ class Executor_Cup_DescriptionReadonly extends Executor_Cup
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$cmd->from,$cmd->host) ;
+		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) ;
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
@@ -327,7 +327,7 @@ class Executor_Cup_DescriptionSet extends Executor_Cup
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
+		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$driver) ;
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
@@ -364,7 +364,7 @@ class Executor_Cup_TimeReadonly extends Executor_Cup
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$cmd->from,$cmd->host) ;
+		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) ;
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
@@ -383,7 +383,7 @@ class Executor_Cup_TimeSet extends Executor_Cup
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
+		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$driver) ;
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
@@ -470,7 +470,7 @@ class Executor_Cup_Maps extends Executor_Multi_Cup
 					break;
 				}
 			
-			if ( count($cmd->params) > 0 && $driver->user_in_list('admin',$cmd->from,$cmd->host) )
+			if ( count($cmd->params) > 0 && $driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) )
 			{			
 				$this->cup_manager->update_cup($cup);
 			}
@@ -546,7 +546,7 @@ class Executor_Cup_Score extends Executor_Cup
 	
 	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		if ( $this->rw->check_auth($cmd->from,$cmd->host,$driver) )
+		if ( $this->rw->check_auth($cmd->from,$cmd->host,$bot,$driver) )
 		{
 			$this->rw->help($cmd,$bot,$driver);
 		}
@@ -574,7 +574,7 @@ class Executor_Cup_Score extends Executor_Cup
 			}
 			
 			// matchID score1 score2
-			if ( count($cmd->params) == 3 && $driver->user_in_list('admin',$cmd->from,$cmd->host)  ) 
+			if ( count($cmd->params) == 3 && $driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) ) 
 			{
 				$match->team1->add_score($cmd->params[1]);
 				$match->team2->add_score($cmd->params[2]);
@@ -818,7 +818,7 @@ class Executor_Pick_Raw extends Executor_Cup
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return  $this->check_auth($cmd->from,$cmd->host,$driver)
+		return  $this->check_auth($cmd->from,$cmd->host,$bot,$driver)
 				&& $this->map_picker() && $cmd->from == $this->map_picker()->current_player();
 	}
 	

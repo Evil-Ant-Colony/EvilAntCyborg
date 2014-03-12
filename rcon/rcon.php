@@ -105,11 +105,6 @@ class Rcon
 	{
 		$this->send("addtolist log_dest_udp {$this->read->host}:{$this->read->port}");
 	}
-	
-	function irc_name()
-	{
-		return ":RCON:{$this->write}";
-	}
 }
 
 /*

@@ -240,7 +240,7 @@ class MelanoBot extends DataSource
     public $listen_to;
     public $mode = null;
     private $connection_status = self::DISCONNECTED; 
-    private $names = array();
+    private $users = array();
     public $join_list = array();
     public $strip_colors = false; ///< whether IRC colors should be removed before command interpretation
     public $auto_restart = false;
@@ -286,7 +286,7 @@ class MelanoBot extends DataSource
     function disconnect()
     {
 		$this->channels = array();
-		$this->names = array();
+		$this->users = array();
 		if ( $this->buffer->server->connected() )
 		{
 			Logger::log("irc","!","Disconnecting {$this->buffer->server}",1);
@@ -337,57 +337,77 @@ class MelanoBot extends DataSource
     /// Apply the new nick (after the server has accepted it)
     private function apply_nick($nick)
     {
-        $this->change_name($this->nick, $nick);
+        $this->change_nick($this->nick, $nick);
         $this->nick = $nick;
         $this->listen_to = "$nick:";
         Logger::log("irc","!","Nick changed to $nick");
     }
     
-    /**
-     * \brief find if $name is available
-     * \return 0 if not found, 1 if found, 2 if found in $chan
-     */
-    function find_name($name,$chan)
+	/**
+	* \brief Get a reference to an existing user or create a new object if not found
+	*/
+	function get_user($nick,$host=null)
+	{
+		$user = $this->find_user_by_nick($nick,$host);
+		if ( $user )
+			return $user;
+		return new IRC_User(null,$nick,$host);
+	}
+     
+    function find_user_by_nick($nick,$host=null)
     {
-        if ( isset($this->names[$chan]) && in_array($name, $this->names[$chan]) )
-            return 2;
-        foreach($this->names as $ch => $names)
-            if (  in_array($name, $names) )
-                return 1;
-        return 0;
+		foreach ( $this->users as $user )
+			if ( ( $host && $user->host == $host ) || $user->nick == $nick )
+				return $user;
+		return null;
     }
     
-    private function add_name($chan,$name)
+    private function add_user_to_channel($chan,$nick,$host)
     {
-        $this->names[$chan][]= $name;
-        Logger::log("irc","!","Updated names for $chan (+$name)");
-        Logger::log("irc","!",print_r($this->names[$chan],true));
+		$u = $this->find_user_by_nick($nick,$host);
+		if ( !$u )
+		{
+			$u = new IRC_User(null,$nick,$host);
+			$this->users []= $u;
+		}
+		else
+		{
+			// ensure data is consistent
+			$u->nick = $nick;
+			$u->host = $host;
+		}
+		$u->add_channel($chan);
+		Logger::log("irc","!","$nick \x1b[32mjoined \x1b[36m$chan\x1b[0m");
     }
     
-    private function remove_name($chan,$name)
+    private function remove_user(IRC_User $user)
     {
-        if (($key = array_search($name, $this->names[$chan])) !== false) 
-        {
-            Logger::log("irc","!","Updated names for $chan (-$name)");
-            array_splice($this->names[$chan],$key,1);
-            Logger::log("irc","!",print_r($this->names[$chan],true));
-        }
-        else
-        {
-            Logger::log("irc","!","Not removing $name from $chan");
-        }
+		for ( $i = 0; $i < count($this->users); $i++ )
+			if ( $this->users[$i]->check_trust($user) )
+			{
+				array_splice($this->users,$i,1);
+				Logger::log("irc","!","{$user->nick} has been removed");
+				return;
+			}
     }
     
-    private function change_name($name_old,$name_new)
+    private function remove_user_from_channel($chan,$nick,$host)
     {
-        foreach($this->names as $chan => &$names )
-        {
-            foreach($names as &$name)
-                if ( $name == $name_old )
-                    $name = $name_new;
-        }
-        Logger::log("irc","!","Updated names ($name_old->$name_new)");
-        Logger::log("irc","!",print_r($this->names,true));
+		$u = $this->find_user_by_nick($nick,$host);
+		$u->remove_channel($chan);
+		Logger::log("irc","!","$nick \x1b[31mparted \x1b[36m$chan\x1b[0m");
+		if ( empty($u->channels) )
+			$this->remove_user($u);
+    }
+    
+    private function change_nick($old,$new)
+    {
+		$u = $this->find_user_by_nick($old);
+		if ( $u )
+		{
+			$u->nick = $new;
+			Logger::log("irc","!","Updated nick ($old->$new)");
+		}
     }
     
     function login()
@@ -501,12 +521,12 @@ class MelanoBot extends DataSource
         
         if ( $insize > 5 && $inarr[1] == 353 )
         {
-            $chan = $inarr[4];
-            $this->names[$chan] = array();
-            for ( $i = 5; $i < $insize; $i++ )
-                 $this->names[$chan] []= trim($inarr[$i],"\n\r:+@");
-            Logger::log("irc","!","Updated names for $chan");
-            Logger::log("irc","!",print_r($this->names[$chan],true));
+			$chan = $inarr[4];
+			foreach ( $this->users as $u )
+				$u->remove_channel($chan);
+				
+			for ( $i = 5; $i < $insize; $i++ )
+				$u = $this->add_user_to_channel($chan,trim($inarr[$i],"\n\r:+@"),null);
                 
         }
         else if ( $insize > 1 && $inarr[1] == 433 )
@@ -528,7 +548,7 @@ class MelanoBot extends DataSource
             {
                 case 'JOIN':
                     $chan = trim($chan,":");
-                    $this->add_name($chan,$from);
+                    $this->add_user_to_channel($chan,$from,$from_host);
                     if ( $from == $this->nick )
 						$this->add_channel($chan);
                     return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
@@ -539,28 +559,22 @@ class MelanoBot extends DataSource
                 case 'PART':
                     if ( $from == $this->nick )
 						$this->remove_channel($chan);
-                    $this->remove_name($chan,$from);
+                    $this->remove_user_from_channel($chan,$from,$from_host);
                     return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
                 case 'NICK':
                     $nick = trim($inarr[2],"\n\r!:");
                     if ( $from == $this->nick )
                         $this->apply_nick($nick);
                     else
-                        $this->change_name($from, $nick);
+                        $this->change_nick($from, $nick);
                     break;
                 case 'QUIT':
-                    $chans = array();
-                    foreach($this->names as $chan => $names)
-                    {
-                        if ( in_array($from,$names) )
-                        {
-                            $chans[] = $chan;
-                            $this->remove_name($chan,$from);
-                        }
-                    }
-                    if ( $from == $this->nick )
+					$user = $this->find_user_by_nick($from,$from_host);
+					$chans = $user->channels;
+					$this->remove_user($user);
+					if ( $from == $this->nick )
 						$this->channels = array();
-                    return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chans, $data, $irc_cmd);
+					return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chans, $data, $irc_cmd);
                 case 'PRIVMSG':
                     $query = trim(substr($data,strpos($data,':',1)+1));
                     $query_params = explode(' ',$query);
@@ -575,6 +589,12 @@ class MelanoBot extends DataSource
                         }
                         else if ( $from != "" && ( $chan == $this->nick || $inarr[3] == $this->listen_to ) )
                         {
+							// update the host/nick for the user issuing the command
+							/// \todo decide whether it's useful to perform this with every input and not just direct PRIVMSG
+							$user = $this->find_user_by_nick($from,$from_host);
+							$user->nick = $from;
+							$user->host = $from_host;
+							
                             if ( $chan == $this->nick )
                                 $chan = $from;
                             if ( $inarr[3] == $this->listen_to )

@@ -1,6 +1,7 @@
 <?php
 
 require_once("misc/logger.php");
+require_once("irc/irc-user.php");
 
 class MelanoBotCommand
 {
@@ -40,7 +41,7 @@ class Stdin_Data_Source extends DataSource
 	{
 		stream_set_blocking(STDIN,0);
 		stream_set_timeout(STDIN,10);
-		$data->add_to_list('owner',':STDIN:',':STDIN:');
+		$data->add_to_list('owner',new IRC_User(null,':STDIN:',':STDIN:'));
 	}
 	
 	function get_command()
@@ -75,23 +76,41 @@ class BotData
 	}
 	
 	/// Add/update an IRC user to a user list
-	function add_to_list($list,$nick,$host=null)
+	function add_to_list($list,IRC_User $user)
 	{
 		if ( !isset($this->lists[$list]) )
 			$this->lists[$list] = array();
-		$this->lists[$list][$nick] = $host;
+		$this->lists[$list][] = $user;
 	}
 	
 	/**
 	* \brief Remove a user from a list
 	* \return FALSE if the user isn't in the list
 	*/
-	function remove_from_list($list,$nick)
+	function remove_from_list($list,IRC_User $user)
 	{
-		if ( isset($this->lists[$list]) && array_key_exists($nick,$this->lists[$list]) ) 
+		if ( isset($this->lists[$list]) ) 
 		{
-			unset($this->lists[$list][$nick]);
-			return true;
+			for( $i = 0; $i < count($this->lists[$list]); $i++ )
+				if ( $this->lists[$list][$i]->check_trust($user) )
+				{
+					array_splice($this->lists[$list],$i,1);
+					return true;
+				}
+		}
+		return false;
+	}
+	
+	function remove_from_list_nick($list,$nick)
+	{
+		if ( isset($this->lists[$list]) ) 
+		{
+			for( $i = 0; $i < count($this->lists[$list]); $i++ )
+				if ( $this->lists[$list][$i]->nick == $nick )
+				{
+					array_splice($this->lists[$list],$i,1);
+					return true;
+				}
 		}
 		return false;
 	}
@@ -99,25 +118,18 @@ class BotData
 	/**
 	* \brief Check whether a user is in a list
 	*/
-	function user_in_list($list,$nick,$host)
+	function user_in_list($list,IRC_User $user)
 	{
 		if ( isset($this->lists[$list]) )
 		{
-			foreach ( $this->lists[$list] as $l_nick => $l_host )
-			{
-				if ( $l_host == null )
-				{
-					if ( $l_nick == $nick )
-						return true;
-				}
-				else if ( $l_host == $host ) 
+			foreach ( $this->lists[$list] as $l )
+				if ( $l->check_trust($user) )
 					return true;
-			}
 		}
 		
 		if ( isset($this->grant_access[$list]) )
 			foreach($this->grant_access[$list] as $l)
-				if ( $this->user_in_list($l,$nick,$host) )
+				if ( $this->user_in_list($l,$user) )
 					return true;
 		return false;
 	}

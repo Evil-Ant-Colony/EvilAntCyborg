@@ -18,13 +18,13 @@ class Executor_Help extends CommandExecutor
 			if ( $disp->matches_channel($cmd->channel) )
 			{
 				foreach($disp->executors as $name => $ex)
-					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$data) )
+					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$bot,$data) )
 						$list[$ex->name] = $ex;
 				foreach($disp->raw_executors as $ex)
-					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$data) )
+					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$bot,$data) )
 						$list[$ex->name] = $ex;
 				foreach($disp->filters as $ex)
-					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$data) )
+					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$bot,$data) )
 						$list[$ex->name] = $ex;
 			}
 		}
@@ -142,7 +142,7 @@ class Executor_Join extends CommandExecutor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
-		if ( $this->check_auth($cmd->from,$cmd->host,$driver)  && isset($cmd->params[0]))
+		if ( $this->check_auth($cmd->from,$cmd->host,$bot,$driver)  && isset($cmd->params[0]))
 			$bot->join($cmd->params[0]);
 		else
 			$bot->say($cmd->channel,"No!");
@@ -159,7 +159,7 @@ class Executor_Part extends CommandExecutor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
-		if ( $this->check_auth($cmd->from,$cmd->host,$driver) )
+		if ( $this->check_auth($cmd->from,$cmd->host,$bot,$driver) )
 		{
 			$chan = isset($cmd->params[0]) ? $cmd->params[0] : $cmd->channel;
 			$bot->command('PART',$chan);
@@ -209,7 +209,7 @@ class Executor_UserList extends CommandExecutor
 		}
 		foreach($this->exclude as $list => $msg)
 		{
-			if ( $driver->user_in_list($list,$nick,$host) )
+			if ( $driver->user_in_list($list,$bot->get_user($nick,$host)) )
 			{
 				$bot->say($cmd->channel,str_replace("%",$nick,$msg));
 				return false;
@@ -249,14 +249,14 @@ class Executor_UserList extends CommandExecutor
 				{
 					if ( $remove )
 					{
-						if ( $driver->remove_from_list($this->list,$nick) )
+						if ( $driver->remove_from_list_nick($this->list,$nick) )
 							$bot->say($cmd->channel,"OK, $nick is no longer in {$this->list}");
 						else
                             $bot->say($cmd->channel,"But...");
 					}
 					else
 					{
-						$driver->add_to_list($this->list,$nick,$host);
+						$driver->add_to_list($this->list,$bot->get_user($nick,$host));
 						$bot->say($cmd->channel,"OK, $nick is in {$this->list}");
 					}
 				}
@@ -283,7 +283,7 @@ class Filter_UserList extends Filter
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return !$driver->user_in_list($this->list,$cmd->from,$cmd->host);
+		return !$driver->user_in_list($this->list,$bot->get_user($cmd->from,$cmd->host));
 	}
 }
 
@@ -318,7 +318,7 @@ class Filter_ChanHax extends Filter
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		$n_params=count($cmd->params);
-		if ( $n_params > 2 && $cmd->params[$n_params-2] == $this->name && $this->check_auth($cmd->from,$cmd->host,$driver) )
+		if ( $n_params > 2 && $cmd->params[$n_params-2] == $this->name && $this->check_auth($cmd->from,$cmd->host,$bot,$driver) )
 		{
 			$cmd->channel = array_pop($cmd->params);
 			$chanhax = true;
@@ -365,10 +365,10 @@ class Executor_Multi extends CommandExecutor
 		$this->executors = $executors;
 	}
 	
-	function check_auth($nick,$host,BotData $driver)
+	function check_auth($nick,$host,MelanoBot $bot,BotData $driver)
 	{
 		foreach($this->executors as $ex )
-			if ( $ex->check_auth($nick,$host,$driver) )
+			if ( $ex->check_auth($nick,$host,$bot,$driver) )
 				return true;
 		return false;
 	}
@@ -395,7 +395,7 @@ class Executor_Multi extends CommandExecutor
 	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
 		foreach($this->executors as $ex )
-			if ( $ex->check_auth($cmd->from,$cmd->host,$driver) )
+			if ( $ex->check_auth($cmd->from,$cmd->host,$bot,$driver) )
 			{
 				$ex->help($cmd,$bot,$driver);
 				return;

@@ -363,7 +363,7 @@ class Raw_Annoy extends RawCommandExecutor
 		return ( $cmd->cmd == null && $this->enabled && count($cmd->params) == 1 
 				&& in_array(strtoupper($cmd->params[0]),$this->terms) )
 				|| ( strtoupper($cmd->cmd) == $this->toggler && 
-				$this->check_auth($cmd->from,$cmd->host,$driver) );
+				$this->check_auth($cmd->from,$cmd->host,$bot,$driver) );
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)

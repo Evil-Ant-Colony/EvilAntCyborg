@@ -33,7 +33,7 @@ class Executor_Action extends CommandExecutor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
-		if ( $this->check_auth($cmd->from,$cmd->host,$driver) && count($cmd->params)>0 )
+		if ( $this->check_auth($cmd->from,$cmd->host,$bot,$driver) && count($cmd->params)>0 )
 		{
 			global $english_verb;
 			$ps = new PronounSwapper($cmd->from,$bot->nick);
@@ -109,7 +109,8 @@ class Raw_Echo extends RawCommandExecutor
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return $cmd->cmd == null && $this->normalize($cmd->param_string(true)) == $this->phrase_norm && $this->check_auth($cmd->from,$cmd->host,$driver);
+		return $cmd->cmd == null && $this->normalize($cmd->param_string(true)) == $this->phrase_norm && 
+			$this->check_auth($cmd->from,$cmd->host,$bot,$driver);
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
@@ -200,7 +201,7 @@ class Executor_MiscListReadonly extends CommandExecutor
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return count($cmd->params) == 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
+		return count($cmd->params) == 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$driver) ;
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
@@ -248,7 +249,7 @@ class Executor_MiscListEdit extends CommandExecutor
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$driver) ;
+		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$driver) ;
 	}
 	
 	

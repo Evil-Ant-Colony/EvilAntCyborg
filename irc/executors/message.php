@@ -76,15 +76,19 @@ class Executor_Tell extends CommandExecutor
 			$bot->say($cmd->channel, "Poor $who, talking to themselves...");
 		else
 		{
-			$found = $bot->find_name($who,$cmd->channel);
+			$found = $bot->find_user_by_nick($who);
 			array_shift($cmd->params);
 			$text = implode(' ',$cmd->params);
-			if ( $found == 2 )
-				$bot->say($cmd->channel, "$who is right here, you can talk to them right now...");
-			else if ( $found == 1 )
+			
+			if ( $found )
 			{
-				$bot->say($who,"<{$cmd->from}> $text");
-				$bot->say($cmd->channel, "Done!");
+				if ( in_array($cmd->channel, $found->channels) )
+					$bot->say($cmd->channel, "$who is right here, you can talk to them right now...");
+				else
+				{
+					$bot->say($who,"<{$cmd->from}> $text");
+					$bot->say($cmd->channel, "Done!");
+				}
 			}
 			else
 			{

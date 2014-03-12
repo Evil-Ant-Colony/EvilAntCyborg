@@ -6,9 +6,9 @@ abstract class ExecutorBase
 	public $auth;
 	
 	/// Check that the user can run the executor
-	function check_auth($nick,$host,BotData $driver)
+	function check_auth($nick,$host,MelanoBot $bot, BotData $driver)
 	{
-		return !$this->auth || $driver->user_in_list($this->auth,$nick,$host);
+		return !$this->auth || $driver->user_in_list($this->auth,$bot->get_user($nick,$host));
 	}
 	
 	/// Show help about this command
@@ -51,7 +51,7 @@ abstract class CommandExecutor extends ExecutorBase
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return $this->check_auth($cmd->from,$cmd->host,$driver);
+		return $this->check_auth($cmd->from,$cmd->host,$bot,$driver);
 	}
 	
 	/// Show help about this command
