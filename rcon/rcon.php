@@ -1,5 +1,6 @@
 <?php
 
+require_once("misc/logger.php");
 
 class Rcon_Server
 {
@@ -88,6 +89,7 @@ class Rcon
 		}
 		else
 			$payload = "rcon {$this->password} $command";*/
+		Logger::log("dp","<",Color::dp2ansi($command),0);
 		$packet = new Rcon_Packet("rcon {$this->password} $command",$this->write);
 		$packet->send($this->socket);
 		return $packet;

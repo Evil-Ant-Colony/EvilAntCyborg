@@ -49,7 +49,8 @@ class RconPlayer
 class PlayerManager
 {
 	private $players=array();
-	public $count = 0;
+	private $count_players = 0;
+	private $count_bots = 0;
 	public $max = 0;
 	
 	function add(RconPlayer $player)
@@ -67,6 +68,10 @@ class PlayerManager
 		}
 		else
 		{
+			if ( $player->is_bot() )
+				$this->count_bots++;
+			else
+				$this->count_players++;
 			$this->count++;
 			$this->players [$player->slot] = $player;
 		}
@@ -113,7 +118,10 @@ class PlayerManager
 			Logger::log("dp","!","\x1b[31mRemoving\x1b[0m player #\x1b[31m{$player->slot}\x1b[0m ".
 				Color::dp2ansi($player->name)." @ \x1b[36m$player->ip\x1b[0m",3);
 			unset($this->players[$slot]);
-			$this->count--;
+			if ( $player->is_bot() )
+				$this->count_bots--;
+			else
+				$this->count_players--;
 			return $player;
 		}
 		return null;
@@ -122,7 +130,22 @@ class PlayerManager
 	function clear()
 	{
 		$this->players = array();
-		$this->count = 0;
+		$this->count_bots = $this->count_players = 0;
+	}
+	
+	function count_players()
+	{
+		return $this->count_players;
+	}
+	
+	function count_bots()
+	{
+		return $this->count_bots;
+	}
+	
+	function count_all()
+	{
+		return $this->count_players + $this->count_bots;
 	}
 	
 	function all()

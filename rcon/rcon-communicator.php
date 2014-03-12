@@ -68,7 +68,6 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	
 	function send($command)
 	{
-		Logger::log("dp","<",Color::dp2ansi($command),0);
 		$this->rcon->send($command);
 	}
 	
@@ -173,7 +172,6 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 			if ( preg_match("{players:  (\d+) active \((\d+) max\)}",$lines[5],$matches) )
 			{
 				$this->data->player->max = $matches[2];
-				$this->data->player->count = $matches[1];
 			}
 			if (preg_match("{IP\s+%pl\s+ping\s+time\s+frags\s+no\s+name}",$lines[7]) )
 			{
