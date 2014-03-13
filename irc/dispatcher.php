@@ -51,7 +51,20 @@ class BotCommandDispatcher
 	 */
 	function matches(MelanoBotCommand $cmd )
 	{
-		return $this->matches_channel($cmd->channel ) && ( !$this->prefix || 
+		$chan_ok = false;
+		if ( is_array($cmd->channel) )
+		{
+			foreach($cmd->channel as $chan)
+				if ( $this->matches_channel($chan) )
+				{
+					$chan_ok = true;
+					break;
+				}
+		}
+		else
+			$chan_ok = $this->matches_channel( $cmd->channel ); 
+		
+		return $chan_ok && ( !$this->prefix || 
 				( $cmd->cmd == null && count($cmd->params) > 0 && $cmd->params[0] == $this->prefix ) );
 	}
 	
