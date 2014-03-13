@@ -11,6 +11,7 @@ class BotCommandDispatcher
 	public $on_error = null;          ///< Function called when a user doesn't have the right to fire a direct executor
 	public $channel_filter = array(); ///< List of channels this dispatcher is allowed to work on, empty == all channels
 	public $prefix = null;            ///< Customized prefix for this dispatcher, empty == bot default
+	public $executors_irc = array();
 	
 	function __construct($channel_filter = array(), $prefix = null)
 	{

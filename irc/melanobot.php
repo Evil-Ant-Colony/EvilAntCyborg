@@ -661,9 +661,16 @@ class MelanoBot extends DataSource
 						$this->add_channel($chan);
                     return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
                 case 'KICK':
-                    if ( $insize > 3 ) $from = $inarr[3];
-                    if ( $from == $this->nick )
+                    $who = $insize > 3 ? $inarr[3] : null;
+                    if ( $who == $this->nick )
+                    {
                         $this->join_list []= $chan;
+						$this->remove_channel($chan);
+					}
+					else if ( $who != null && $user = $this->find_user_by_nick($who) )
+						$this->remove_user_from_channel($chan,$user);
+                    return new MelanoBotCommand($irc_cmd, array($who), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
+                
                 case 'PART':
                     if ( $from == $this->nick )
 						$this->remove_channel($chan);
