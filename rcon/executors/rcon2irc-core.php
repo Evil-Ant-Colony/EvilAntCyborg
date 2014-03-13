@@ -54,6 +54,9 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 	}
 }
 
+/**
+ * \brief Show +join messages
+ */
 class Rcon2Irc_Join extends Rcon2Irc_JoinPart_Base
 {
 	
@@ -73,6 +76,9 @@ class Rcon2Irc_Join extends Rcon2Irc_JoinPart_Base
 		return true;
 	}
 }
+/**
+ * \brief Show -part messages
+ */
 class Rcon2Irc_Part extends Rcon2Irc_JoinPart_Base
 {
 	
@@ -128,7 +134,9 @@ class Rcon2Irc_Filter_BlahBlah extends Rcon2Irc_Filter
 }
 
 
-
+/**
+ * \brief Show score table at the end of each match
+ */
 class Rcon2Irc_Score extends Rcon2Irc_Executor
 {
 	private $player_scores= array();
@@ -151,7 +159,7 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot,  Rcon_Communicator $rcon)
 	{
-		if ( $this->matches($cmd->params,1) )
+		if ( !empty($cmd->params[1]) )
 		{
 			if ( !empty($this->player_scores) )
 			{
@@ -164,17 +172,18 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 				$this->player_scores= array();
 				$this->team_scores  = array();
 				$rcon->data->gametype=null;
+				return true;
 			}
 		}
-		else if ( $this->matches($cmd->params,2) )
+		else if ( !empty($cmd->params[2]) )
 		{
 			$this->gather_team($cmd,$rcon);
 		}
-		else if ( $this->matches($cmd->params,5) )
+		else if ( !empty($cmd->params[5]) )
 		{
 			$this->gather_player($cmd,$rcon);
 		}
-		else if ( $this->matches($cmd->params,11) )
+		else if ( !empty($cmd->params[11]) )
 		{
 			$rcon->data->map = $cmd->params[13];
 			$rcon->data->gametype = $cmd->params[12];
@@ -200,6 +209,9 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 	
 	private function score_compare($a,$b)
 	{
+		if ( $a->team == 'spectator' && $b->team == 'spectator' ) return 0;
+		if ( $a->team == 'spectator' ) return 1;
+		if ( $b->team == 'spectator' ) return -1;
 		return $a->frags == $b->frags ? 0 : ( $a->frags > $b->frags ? -1 : +1 );
 	}
 	
@@ -233,11 +245,6 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 		}
 	}
 	
-	private function matches($array,$n)
-	{
-		return isset($array[$n]) && $array[$n];
-	}
-	
 	private function gather_team(Rcon_Command $cmd, Rcon_Communicator $rcon)
 	{
 		$this->team_scores[ $cmd->params[4] ] = $cmd->params[3];
@@ -255,7 +262,9 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 	}
 }
 
-
+/**
+ * \brief Notify that a new match has started 
+ */
 class Rcon2Irc_MatchStart extends Rcon2Irc_Executor
 {
 	
@@ -276,6 +285,123 @@ class Rcon2Irc_MatchStart extends Rcon2Irc_Executor
 			"\xf on \00304{$cmd->params[2]}\xf (".
 			($rcon->data->player->max-$rcon->data->player->count_players()).
 			" free slots); join now: \2xonotic +connect {$rcon->write_server}" );
+		return true;
+	}
+}
+
+/**
+ * \brief instead of polling regularly only poll on game start
+ * \note Install before Rcon2Irc_MatchStart
+ */
+class Rcon2Irc_SlowPolling extends Rcon2Irc_Executor
+{
+	public $commands;
+	
+	function __construct($commands)
+	{
+		parent::__construct("{^:gamestart:.*}");
+		$this->commands = $commands;
+	}
+	
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		foreach($this->commands as $pc )
+			$rcon->send($pc);
+		return false;
+	}
+}
+
+/**
+ * \brief Detect cvar changes and save them to data
+ * \note  it won't work properly for cvars that have " in their value
+ */
+class Rcon2Irc_GetCvars extends Rcon2Irc_Executor
+{	
+	function __construct()
+	{
+		parent::__construct('{^"([^"]+)" is "([^"]*)"}');
+	}
+	
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		$rcon->data->cvar[$cmd->params[1]] = $cmd->params[2];
+		return false;
+	}
+}
+
+class Rcon2Irc_Votes extends Rcon2Irc_Executor
+{	
+	function __construct()
+	{
+		$re=array("(vcall:(\d+):(.*))",// 1 - userid=2 vote=3
+					// 4 - result=5 yes=6 no=7 abstain=8 not=9 min=10
+				  "(v(yes|no|timeout):(\d+):(\d+):(\d+):(\d+):(-?\d+))", 
+				  "(vstop:(\d+))",   // 11 - userid=12
+				  "(vlogin:(\d+))",  // 13 - userid=14
+				  "(vdo:(\d+):(.*))",// 15 - userid=16 vote=17
+				  );
+
+		parent::__construct("{^:vote:".implode("|",$re)."}");
+	}
+	
+	function id2nick($id,Rcon_Communicator $rcon)
+	{
+		$name = "(unknown)";
+		if ( $id == 0 )
+		{
+			if ( !empty($rcon->data->cvar["sv_adminnick"]) )
+				$name = $rcon->data->cvar["sv_adminnick"];
+			else
+				$name = "(server admin)";
+		}
+		else if ( $player = $rcon->data->player->find_by_id($id) )
+			$name = Color::dp2irc($player->name);
+		return $name;
+	}
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		$p="\00312*\xf";
+		if ( !empty($cmd->params[1]) )
+		{
+			$name = $this->id2nick($cmd->params[2],$rcon);
+			$vote = Color::dp2irc($cmd->params[3]);
+			$bot->say($cmd->channel,"$p $name calls a vote for $vote");
+		}
+		else if ( !empty($cmd->params[4]) )
+		{
+			list($result,$yes,$no,$abstain,$not,$min) = array_slice($cmd->params,5);
+			$msg = "$p vote ";
+			switch($result)
+			{
+				case "yes":     $msg.="\00303passed\xf"; break;
+				case "no":      $msg.="\00304failed\xf"; break;
+				case "timeout": $msg.="\00307timed out\xf"; break;
+			}
+			$msg .= ": \00303$yes\xf:\00304$no\xf";
+			if ( $abstain+=$not ) $msg .= ", $abstain didn't vote";
+			if ( $min > 0 ) $msg .= " ($min needed)";
+			
+			$bot->say($cmd->channel,$msg);
+			
+		}
+		else if ( !empty($cmd->params[11]) )
+		{
+			$name = $this->id2nick($cmd->params[12],$rcon);
+			$bot->say($cmd->channel,"$p $name stopped the vote");
+		}
+		else if ( !empty($cmd->params[13]) )
+		{
+			$name = $this->id2nick($cmd->params[14],$rcon);
+			$bot->say($cmd->channel,"$p $name logged in as \00307master\xf");
+		}
+		else if ( !empty($cmd->params[15]) )
+		{
+			$name = $this->id2nick($cmd->params[16],$rcon);
+			$bot->say($cmd->channel,"$p $name used their master status to do ".Color::dp2irc($cmd->params[17]));
+		}
 		return true;
 	}
 }

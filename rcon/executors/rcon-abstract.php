@@ -8,6 +8,9 @@ abstract class Rcon2Irc_Executor
 	
 	/**
 	 * \return True if you want to prevent further processing
+	 * \note Best if returns \b true if something has been sent to IRC, to avoid multiple
+	 * messages regarding the same thing; \b false if it has just gathered some data,
+	 * so other executors can do the same.
 	 */
 	abstract function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon);
 	
