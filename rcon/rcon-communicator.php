@@ -244,4 +244,26 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		else if ( $name == 'write_server' )
 			return $this->rcon->write;
 	}
+	
+	static function restore_sv_adminnick($rcon_data)
+	{
+		if ( isset($rcon_data->sv_adminnick_vote_restore) )
+		{
+			$nick = $rcon_data->sv_adminnick_vote_restore;
+			unset($rcon_data->sv_adminnick_vote_restore);
+			$rcon_data->cvar["sv_adminnick"] = $nick;
+			$rcon_data->rcon->send("sv_adminnick \"$nick\"");
+		}
+	}
+	
+	static function set_sv_adminnick($rcon_data, $irc_nick)
+	{
+	
+		if ( !isset($rcon_data->cvar["sv_adminnick"]) )
+			$rcon_data->cvar["sv_adminnick"] = "";
+		if ( !isset($rcon_data->sv_adminnick_vote_restore) )
+			$rcon_data->sv_adminnick_vote_restore = $rcon_data->cvar["sv_adminnick"];
+		$rcon_data->cvar["sv_adminnick"] = $irc_nick;
+		$rcon_data->rcon->send("sv_adminnick \"$irc_nick\"");
+	}
 }

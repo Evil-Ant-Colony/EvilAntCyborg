@@ -402,6 +402,7 @@ class Rcon2Irc_Votes extends Rcon2Irc_Executor
 			$name = $this->id2nick($cmd->params[16],$rcon);
 			$bot->say($cmd->channel,"$p $name used their master status to do ".Color::dp2irc($cmd->params[17]));
 		}
+		Rcon_Communicator::restore_sv_adminnick($rcon->data);
 		return true;
 	}
 }
