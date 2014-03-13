@@ -270,6 +270,7 @@ class Rcon2Irc_MatchStart extends Rcon2Irc_Executor
 			return false;
 			
 		$rcon->data->gametype=$cmd->params[1];
+		$rcon->data->map = $cmd->params[2];
 		
 		$bot->say($cmd->channel,"Playing \00310".$rcon->gametype_name($cmd->params[1]).
 			"\xf on \00304{$cmd->params[2]}\xf (".

@@ -72,7 +72,6 @@ class PlayerManager
 				$this->count_bots++;
 			else
 				$this->count_players++;
-			$this->count++;
 			$this->players [$player->slot] = $player;
 		}
 	}

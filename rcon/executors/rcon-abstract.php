@@ -53,6 +53,11 @@ abstract class Irc2Rcon_Executor extends CommandExecutor
 		parent::__construct($name,$auth,$synopsis,$description,$irc_cmd);
 		$this->rcon = $rcon;
 	}
+	
+	function data(BotData $data)
+	{
+		return $data->rcon["{$this->rcon->read}"];
+	}
 }
 
 
