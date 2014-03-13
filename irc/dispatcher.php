@@ -21,11 +21,17 @@ class BotCommandDispatcher
 		$this->prefix = $prefix;
 	}
 	
+	/**
+	 * \brief Check if the channel is one of those allowed by the dispatcher
+	 */
 	function matches_channel($channel)
 	{
 		return empty($this->channel_filter) || in_array($channel,$this->channel_filter) ;
 	}
 	
+	/**
+	 * \return A string representing the dispatcher
+	 */
 	function id()
 	{
 		if ( !$this->channel_filter && !$this->prefix )
@@ -39,14 +45,18 @@ class BotCommandDispatcher
 		return $id;
 	}
 	
-	/// Whether the channel and prefix match this dispatcher
+	/**
+	 * \brief Whether the channel and prefix match this dispatcher
+	 */
 	function matches(MelanoBotCommand $cmd )
 	{
 		return $this->matches_channel($cmd->channel ) && ( !$this->prefix || 
 				( $cmd->cmd == null && count($cmd->params) > 0 && $cmd->params[0] == $this->prefix ) );
 	}
 	
-	// Convert the command (ie remove prefix)
+	/** 
+	 * \brief Convert the command (ie handle the customized prefix)
+	 */
 	function convert(MelanoBotCommand $cmd)
 	{
 		if ( $this->prefix && count($cmd->params) > 0 && $cmd->params[0] == $this->prefix )
@@ -89,6 +99,9 @@ class BotCommandDispatcher
 		$this->filters []= $ex;
 	}
 	
+	/**
+	 * \brief Install executors, calling the correct add_* function
+	 */
 	function install($executors)
 	{
 		if ( !is_array($executors) )
@@ -98,6 +111,9 @@ class BotCommandDispatcher
 				$ex->install_on($this);
 	}
 	
+	/**
+	 * \brief Check filters
+	 */
 	function filter(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
 		foreach($this->filters as $f )
@@ -109,13 +125,19 @@ class BotCommandDispatcher
 		
 	}
 	
-	function log($bot,$executor)
+	/**
+	 * \brief Log that the executor has handled the command
+	 */
+	private function log($executor)
 	{
 		Logger::log("irc","!","\x1b[34mHandled by \x1b[1m".get_class($executor).
 			"\x1b[22m via \x1b[1m".$this->id()."\x1b[0m",3);
 	}
 	
-	
+	/**
+	 * \brief Send \c $cmd to the right executor
+	 * \return \b true if the command has been executed and no other dispatcher can do any futher processing
+	 */
 	function loop_step(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
 		if ( !$this->matches($cmd) )
@@ -137,7 +159,7 @@ class BotCommandDispatcher
 						$on_error($cmd,$bot,$data);
 					}
 					$keep_running = $ex->keep_running();
-					$this->log($bot,$ex);
+					$this->log($ex);
 				}
 				else
 				{
@@ -146,7 +168,7 @@ class BotCommandDispatcher
 						{
 							$ex->execute($cmd,$bot,$data);
 							$keep_running = $ex->keep_running();
-							$this->log($bot,$ex);
+							$this->log($ex);
 							break;
 						}
 				}
@@ -158,7 +180,7 @@ class BotCommandDispatcher
 					{
 						$ex->execute($cmd,$bot,$data);
 						$keep_running = $ex->keep_running();
-						$this->log($bot,$ex);
+						$this->log($ex);
 					}
 			}
 		}

@@ -17,8 +17,9 @@ function irc_action($msg)
  */
 class MelanoBotServer
 {
-	public $server, $port;
-	private $socket;
+	public $server; ///< Address or host name
+	public $port;   ///< Port number
+	private $socket;///< Internal connection socket
 	 
 	
 	function __construct($server, $port=6667)
@@ -28,11 +29,17 @@ class MelanoBotServer
 		$this->socket = false;
 	}
 	
+	/**
+	 * \brief Conver to the string "host:port"
+	 */
 	public function __toString()
     {
         return "{$this->server}:{$this->port}";
     }
 	
+	/**
+	 * \brief Begin a TCP connection
+	 */
 	function connect()
 	{
 		$this->socket = fsockopen($this->server,$this->port);
@@ -41,11 +48,17 @@ class MelanoBotServer
 		return $this->socket;
 	}
 	
+	/**
+	 * \brief Check whether the server is connected
+	 */
 	function connected()
 	{
 		return !($this->socket === false || feof($this->socket));
 	}
 	
+	/**
+	 * \brief End the connection
+	 */
 	function disconnect()
 	{
 		if ( $this->socket )
@@ -55,11 +68,18 @@ class MelanoBotServer
 		}
 	}
 	
+	/**
+	 * \brief Send some data to the server
+	 */
 	function write($data)
 	{
 		fputs($this->socket,$data);
 	}
 	
+	/**
+	 * \brief Read data from the server
+	 * \param $len Maximum length
+	 */
 	function read($len=512)
 	{
 		return fgets($this->socket,$len);
@@ -229,23 +249,27 @@ class BotOutBuffer
 class MelanoBot extends DataSource
 {
 
-	const DISCONNECTED = 0;
-	const SERVER_CONNECTED = 1;
-	const PROTOCOL_CONNECTING = 2;
-	const PROTOCOL_CONNECTED = 3;
+	const DISCONNECTED        = 0; ///< Bot is not conneced
+	const SERVER_CONNECTED    = 1; ///< Connected to a server but the IRC protocol has not been initialized
+	const PROTOCOL_CONNECTING = 2; ///< Connected to a server and establishing the IRC protocol
+	const PROTOCOL_CONNECTED  = 3; ///< IRC fully connected, can send data
 
 
-	private $server_index;
-    public $servers, $real_name, $nick, $auth_nick, $password;
-    public $listen_to;
-    public $mode = null;
+	private $server_index;///< Internal index to the currently connected server
+    public $servers;      ///< Array of server
+    public $real_name;    ///< IRC bot real name
+    public $nick;         ///< Current bot NICK
+    public $auth_nick;    ///< Nick to use during AUTH
+    public $password;     ///< AUTH password
+    public $listen_to;    ///< Base for explicit commands, defaults to "$nick:"
+    public $modes = null; ///< String for MODE +
     private $connection_status = self::DISCONNECTED; 
-    private $users = array();
-    public $join_list = array();
-    public $strip_colors = false; ///< whether IRC colors should be removed before command interpretation
-    public $auto_restart = false;
-    public $channels=array(); ///< Channels the bot is currently connected to
-    public $buffer;
+    private $users = array();  ///< Internal structure handling users seen by the bot (see below for access to this data)
+    public $join_list =array();///< List of channels scheduled to be joined
+    public $strip_colors=false;///< Whether IRC colors should be removed before command interpretation
+    public $auto_restart=false;///< Whether the bot always restarts on network quit. \todo only used elsewhere, maybe worth moving to data
+    private $channels =array();///< Channels the bot is currently connected to
+    public $buffer; ///< Buffer message to the server
     
     
     function __construct($servers, $nick, $password, $channels )
@@ -264,6 +288,9 @@ class MelanoBot extends DataSource
         $this->connect();
     }
     
+    /**
+     * \brief Connect to the $i^th server
+     */
     function connect($i = 0)
     {
 		if ( isset($this->servers[$i]) )
@@ -283,6 +310,9 @@ class MelanoBot extends DataSource
 		}
     }
     
+    /**
+     * \brief Disconnect from server
+     */
     function disconnect()
     {
 		$this->channels = array();
@@ -295,6 +325,9 @@ class MelanoBot extends DataSource
 		$this->connection_status = self::DISCONNECTED;
     }
     
+    /**
+     * \brief Quit and disconnect from current server and try to cycle server looking for a connection
+     */
     function reconnect($message="reconnect")
     {
 		$this->connection_status = self::DISCONNECTED;
@@ -315,26 +348,39 @@ class MelanoBot extends DataSource
 		print_r($this);
     }
     
-    function add_channel($chan)
+    /**
+     * \brief Add a channel to the internal structure
+     */
+    private function add_channel($chan)
     {
 		$this->channels []= $chan;
 		$this->channels = array_unique($this->channels);
     }
     
-    function remove_channel($chan)
+    /**
+     * \brief Remove a channel from the internal structure
+     */
+    private function remove_channel($chan)
     {
 		if (($key = array_search($chan, $this->channels)) !== false) 
 		{
 			array_splice($this->channels,$key,1);
 		}
+		foreach($this->users_in_channel($chan) as $user)
+			$this->remove_user_from_channel($chan,$user);
     }
     
-    /// send a request to change the nick
+    /**
+     * \brief send a request to change the nick
+     */
     function set_nick($nick)
     {
         $this->command('NICK',$nick);
     }
-    /// Apply the new nick (after the server has accepted it)
+    
+    /**
+     * \brief Apply the new nick (after the server has accepted it)
+     */
     private function apply_nick($nick)
     {
         $this->change_nick($this->nick, $nick);
@@ -343,9 +389,21 @@ class MelanoBot extends DataSource
         Logger::log("irc","!","Nick changed to $nick");
     }
     
+    /**
+     * \brief Get a list of users seen by the bot in the given channel
+     */
+	function users_in_channel($channel)
+	{
+		$list = array();
+		foreach($this->users as $u)
+			if ( in_array($channel,$u->channels) )
+				$list []= $u;
+		return $list;
+	}
+    
 	/**
-	* \brief Get a reference to an existing user or create a new object if not found
-	*/
+	 * \brief Get a reference to an existing user or create a new object if not found
+	 */
 	function get_user($nick,$host=null)
 	{
 		$user = $this->find_user_by_nick($nick,$host);
@@ -354,6 +412,10 @@ class MelanoBot extends DataSource
 		return new IRC_User(null,$nick,$host);
 	}
      
+     /**
+      * \brief Find a user by nick (and optionally host)
+      * \return A reference to the found user or null if that user is not know to the bot
+      */
     function find_user_by_nick($nick,$host=null)
     {
 		foreach ( $this->users as $user )
@@ -362,6 +424,9 @@ class MelanoBot extends DataSource
 		return null;
     }
     
+    /**
+     * \brief Update the user structure to keep track that a user has joined a channel
+     */
     private function add_user_to_channel($chan,$nick,$host)
     {
 		$u = $this->find_user_by_nick($nick,$host);
@@ -377,29 +442,39 @@ class MelanoBot extends DataSource
 			$u->host = $host;
 		}
 		$u->add_channel($chan);
-		Logger::log("irc","!","$nick \x1b[32mjoined \x1b[36m$chan\x1b[0m");
+		Logger::log("irc","!","\x1b[36m$nick \x1b[32mjoined\x1b[0m $chan");
     }
     
+    /**
+     * \brief Remove a user from the bot's data structure
+     */
     private function remove_user(IRC_User $user)
     {
 		for ( $i = 0; $i < count($this->users); $i++ )
 			if ( $this->users[$i]->check_trust($user) )
 			{
 				array_splice($this->users,$i,1);
-				Logger::log("irc","!","{$user->nick} has been removed");
+				Logger::log("irc","!","\x1b[36m{$user->nick}\x1b[0m has been \x1b[31mremoved\x1b[0m");
 				return;
 			}
     }
     
-    private function remove_user_from_channel($chan,$nick,$host)
+    /**
+     * \brief Update the user data structure, removing user from the channel
+     * \note If the user is no longer connected to any channel known by the bot, this user is removed
+     */
+    private function remove_user_from_channel($chan,IRC_User $user)
     {
-		$u = $this->find_user_by_nick($nick,$host);
-		$u->remove_channel($chan);
-		Logger::log("irc","!","$nick \x1b[31mparted \x1b[36m$chan\x1b[0m");
-		if ( empty($u->channels) )
-			$this->remove_user($u);
+		$user->remove_channel($chan);
+		Logger::log("irc","!","\x1b[36m{$user->nick} \x1b[31mparted\x1b[0m $chan");
+		if ( empty($user->channels) )
+			$this->remove_user($user);
+			
     }
     
+    /**
+     * \brief Update user nick
+     */
     private function change_nick($old,$new)
     {
 		$u = $this->find_user_by_nick($old);
@@ -410,6 +485,9 @@ class MelanoBot extends DataSource
 		}
     }
     
+    /**
+     * \brief Set up IRC USER and NICK and update connection status
+     */
     function login()
     {
         if ( $this->connection_status == self::SERVER_CONNECTED )
@@ -419,12 +497,18 @@ class MelanoBot extends DataSource
 		}
     }
     
-    function login_ext($real_name, $nick)
+    /**
+     * \brief Set up IRC USER and NICK
+     */
+    private function login_ext($real_name, $nick)
     {
         $this->command('USER',"$nick localhost $nick :$real_name");
         $this->command('NICK', $nick);
     }
     
+    /**
+     * \brief AUTH and set MODEs
+     */
     function auth()
     {
         if ( !is_null($this->password) && !is_null($this->auth_nick) )
@@ -435,6 +519,13 @@ class MelanoBot extends DataSource
         }
     }
     
+    /**
+     * \brief Execute an irc command
+     * \param $command  IRC command like PRIVMSG, JOIN etc.
+     * \param $data     Parameters to the command (as a string)
+     * \param $priority Messages with higher priority may be sent before than others
+     * \see say() for a simpler interface to PRIVMSG
+     */
     function command($command, $data, $priority=0)
     {
         if ( $this->buffer->server->connected() )
@@ -444,6 +535,10 @@ class MelanoBot extends DataSource
         }
     }
     
+    /**
+     * \brief JOIN a list of channels
+     * \param $channels A single channel string or an array
+     */
     function join($channels)
     {
         if ( !is_array($channels) )
@@ -459,6 +554,9 @@ class MelanoBot extends DataSource
         }
     }
     
+    /**
+     * \brief IRC QUIT and disconnect
+     */
     function quit($message="bye!")
     {
         $this->command('QUIT',":$message");
@@ -467,9 +565,13 @@ class MelanoBot extends DataSource
         $this->disconnect();
     }
     
+    /// noop, abstract override
+    function initialize(BotData $data) {}
     
-	function initialize(BotData $data){}
-    
+    /**
+     * \brief Get a MelanoBotCommand
+     * \return A valid command or \b null if there's no command available
+     */
     function get_command()
     {
         if ( !$this->buffer->server->connected() )
@@ -524,9 +626,15 @@ class MelanoBot extends DataSource
 			$chan = $inarr[4];
 			foreach ( $this->users as $u )
 				$u->remove_channel($chan);
-				
+			
+			$nicks = array();
 			for ( $i = 5; $i < $insize; $i++ )
-				$u = $this->add_user_to_channel($chan,trim($inarr[$i],"\n\r:+@"),null);
+			{
+				$nick = trim($inarr[$i],"\n\r:+@");
+				$nicks[] = $nick;
+				$u = $this->add_user_to_channel($chan,$nick,null);
+			}
+			return new MelanoBotCommand(353,$nicks,null,null,$chan,$data,353);
                 
         }
         else if ( $insize > 1 && $inarr[1] == 433 )
@@ -559,7 +667,8 @@ class MelanoBot extends DataSource
                 case 'PART':
                     if ( $from == $this->nick )
 						$this->remove_channel($chan);
-                    $this->remove_user_from_channel($chan,$from,$from_host);
+					else if ( $user = $this->find_user_by_nick($from,$from_host) )
+						$this->remove_user_from_channel($chan,$user);
                     return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
                 case 'NICK':
                     $nick = trim($inarr[2],"\n\r!:");
@@ -575,6 +684,9 @@ class MelanoBot extends DataSource
 					if ( $from == $this->nick )
 						$this->channels = array();
 					return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chans, $data, $irc_cmd);
+				case 'NOTICE':
+					$query = trim(substr($data,strpos($data,':',1)+1));
+					return new MelanoBotCommand($irc_cmd,array($query), $from, $from_host, null, $data, $irc_cmd);
                 case 'PRIVMSG':
                     $query = trim(substr($data,strpos($data,':',1)+1));
                     $query_params = explode(' ',$query);
@@ -629,6 +741,10 @@ class MelanoBot extends DataSource
         
     }
     
+    /**
+     * \brief Send a message to the given channel (or user)
+     * \see command() for generic IRC commands
+     */
     function say($channel,$msg,$priority=0)
     {
 		if ( strlen($msg) == 0 )
@@ -641,11 +757,17 @@ class MelanoBot extends DataSource
             Logger::log("irc","!","ERROR: trying to send a message to myself",1);
     }
     
+    /**
+     * \brief Check whether the bot is connected to a server
+     */
     function server_connected()
     {
 		return $this->buffer->server && $this->buffer->server->connected();
     }
     
+    /**
+     * \brief Get connection status
+     */
     function connection_status()
     {
 		if ( !$this->server_connected() )

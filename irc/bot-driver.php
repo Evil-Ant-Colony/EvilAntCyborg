@@ -5,24 +5,35 @@ require_once("irc/executors/abstract.php");
 require_once("misc/logger.php");
 
 /**
- * \brief Get and execute commands
+ * \brief Handle the bot connection as well as external data sources and comminicators
+ * 
+ * Ensures that the bot is properly connected, 
+ * receives commands from he bot or other sources and sends them to 
+ * the dispatchers for execution
  */
 class BotDriver
 {
 	public $bot;                      ///< IRC listener
 	public $data = null;              ///< Shared bot data
-	public $dispatchers = array();
-	public $data_sources = array();
+	public $dispatchers = array();    ///< Dispatchers, they handle different executors on different sets of channels
+	public $data_sources = array();   ///< Command sources other than the bot itself (eg: standard input)
 	public $post_executors = array(); ///< List of executors applied before the bot quits
 	public $pre_executors = array();  ///< List of executors applied before the bot starts
 	public $filters = array();        ///< Stuff to be applied to each command before checking for execution
-	public $extarnal_comm = array();///< Connect external processes to irc
+	public $extarnal_comm = array();  ///< Connect external processes to irc
 	
+	/**
+	 * \brief Install data source
+	 * \todo Uniform install function like the dispacher has
+	 */
 	function install_source(DataSource $source)
 	{
 		$this->data_sources []= $source;
 	}
 	
+	/**
+	 * \brief Install a single dispatcher or an array of them
+	 */
 	function install($dispatchers)
 	{
 		if ( !is_array($dispatchers) )
@@ -32,7 +43,10 @@ class BotDriver
 	}
 	
 	
-	/// Append an executor to the list
+	/**
+	 * \brief Append executors to the list
+	 * These executors are executed after the bot has disconnected
+	 */
 	function install_post_executor($ex)
 	{
 		if ( !is_array($ex) )
@@ -40,7 +54,10 @@ class BotDriver
 		else
 			$this->post_executors = array_merge($this->post_executors,$ex);
 	}
-	/// Append an executor to the list
+	/**
+	 * \brief Append executors to the list
+	 * These executors are executed before the bot has connected
+	 */
 	function install_pre_executor($ex)
 	{
 		if ( !is_array($ex) )
@@ -49,6 +66,9 @@ class BotDriver
 			$this->pre_executors = array_merge($this->pre_executors,$ex);
 	}
 	
+	/**
+	 * \brief Install global filters, applied to a command before being forwarded to the dispatchers
+	 */
 	function install_filter($ex)
 	{
 		if ( !is_array($ex) )
@@ -57,6 +77,9 @@ class BotDriver
 			$this->filters = array_merge($this->filters,$ex);
 	}
 	
+	/**
+	 * \brief Install external communicator
+	 */
 	function install_external($ex)
 	{
 		if ( !is_array($ex) )
@@ -73,6 +96,10 @@ class BotDriver
 	}
 	
 	
+	/**
+	 * \brief Check if the filters allow the execution of the given command
+	 * \return \b false if at least a filter has discarded the message, \b true if it can be executed
+	 */
 	function filter(MelanoBotCommand $cmd)
 	{
 		foreach($this->filters as $f )
@@ -84,6 +111,11 @@ class BotDriver
 		
 	}
 	
+	/**
+	 * \brief A step in the process loop
+	 * 
+	 * Execute communicators, get a command and forward it.
+	 */
 	function loop_step()
 	{
 		foreach ( $this->extarnal_comm as $c )
@@ -105,6 +137,10 @@ class BotDriver
 		}
 	}
 	
+	/**
+	 * \brief Check the bot connection status
+	 * \return \b false if the loop has to be stopped, \b true if commands can be processed
+	 */
 	function check_status()
 	{
 		switch ( $this->bot->connection_status() )
@@ -122,6 +158,11 @@ class BotDriver
 		}
 	}
 	
+	/**
+	 * \brief Run the bot
+	 *
+	 * Initializes resources, while the bot is connected executes commands, then finalize
+	 */
 	function run()
 	{
 		if ( !$this->bot )
@@ -141,7 +182,7 @@ class BotDriver
 		foreach($this->dispatchers as $disp)
 			if ( is_array($disp->channel_filter) )
 				$chans = array_merge($chans,$disp->channel_filter);
-		/// \todo skip fake channels (rcon)
+		
 		$this->bot->join_list = array_unique($chans);
 		
 		
