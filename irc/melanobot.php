@@ -459,6 +459,11 @@ class MelanoBot extends DataSource
 			}
     }
     
+    function all_users()
+    {
+		return $this->users;
+    }
+    
     /**
      * \brief Update the user data structure, removing user from the channel
      * \note If the user is no longer connected to any channel known by the bot, this user is removed

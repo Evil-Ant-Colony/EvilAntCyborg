@@ -133,5 +133,14 @@ class BotData
 					return true;
 		return false;
 	}
+	
+	function active_users_in_list( MelanoBot $bot, $list )
+	{
+		$maybe = array();
+		foreach($bot->all_users() as $user)
+			if ( $this->user_in_list($list,$user) )
+				$maybe[]= $user;
+		return $maybe;
+	}
 
 }

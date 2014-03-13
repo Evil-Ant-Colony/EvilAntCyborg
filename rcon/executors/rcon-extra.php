@@ -76,3 +76,25 @@ class Irc2Rcon_UserKicked extends Irc2Rcon_Executor
 		$this->rcon->send(sprintf($this->command,$cmd->from,$cmd->params[0]));
 	}
 }
+
+
+class Rcon2Irc_NotifyAdmin extends Rcon2Irc_Executor
+{
+	public $list;
+	function __construct($list='rcon-admin')
+	{
+		parent::__construct("{^\1(.*?)\^7:\s*!admin\s*(.*)}");
+		$this->list =$list;
+	}
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		$nick = Color::dp2irc($cmd->params[1]);
+		$message = Color::dp2irc($cmd->params[2]);
+		$bot->say($cmd->channel,"<$nick\017> on \00304{$rcon->data->map}\017: \00304!admin\017 $message");
+		$admin_msg = "{$cmd->channel} (\00304{$rcon->data->map}\017) <$nick\017> $message";
+		foreach($rcon->bot_data->active_users_in_list($bot,$this->list) as $admin)
+			$bot->say($admin->nick,$admin_msg);
+		return true;
+	}
+}

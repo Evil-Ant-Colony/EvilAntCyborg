@@ -41,6 +41,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	private $poll_time = 0;
 	private $connection_status;
 	private $cache = "";
+	public $bot_data = null;
 	
 	static function gametype_name($gametype_shortname)
 	{
@@ -121,6 +122,8 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	
 	function step(MelanoBot $bot, BotData $data)
 	{
+		$this->bot_data = $data;
+		
 		if ( $this->connection_status == self::WAITING_IRC && $bot->connection_status() == MelanoBot::PROTOCOL_CONNECTED )
 		{
 			$this->connection_status = self::DISCONNECTED;
@@ -217,6 +220,8 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 				}
 			}
 		}
+		
+		$this->bot_data = null;
 	}
 	
 	function rcon_filter(Rcon_Command $cmd)
