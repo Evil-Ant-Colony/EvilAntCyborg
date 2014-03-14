@@ -20,7 +20,7 @@ class Rcon2Irc_Say extends Rcon2Irc_Executor
 	{
 		$nick = Color::dp2irc($cmd->params[1]);
 		$text = Color::dp2irc($cmd->params[2]);
-		$bot->say($cmd->channel,"{$rcon->out_prefix}<$nick\xf> $text");
+		$bot->say($cmd->channel,"{$rcon->out_prefix}<$nick\xf> $text",-16);
 		return true;
 	}
 }
@@ -51,7 +51,7 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 			'%map%'    => $rcon->data->map,
 			'%country%'=> $player->country(),
 		);
-		$bot->say($channel,$rcon->out_prefix.str_replace(array_keys($values),array_values($values),$this->format));
+		$bot->say($channel,$rcon->out_prefix.str_replace(array_keys($values),array_values($values),$this->format),-8);
 	}
 }
 
@@ -222,7 +222,7 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 		if ( empty($this->team_scores) )
 		{
 			foreach($this->player_scores as $p )
-				$bot->say($cmd->channel,$this->player_score($p,null));
+				$bot->say($cmd->channel,$this->player_score($p,null),-1);
 		}
 		else
 		{
@@ -240,7 +240,7 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 				foreach($this->player_scores as $p )
 				{
 					if ( $p->team == $team )
-						$bot->say($cmd->channel,$this->player_score($p,$color));
+						$bot->say($cmd->channel,$this->player_score($p,$color),-1);
 				}
 			}
 		}
@@ -285,7 +285,7 @@ class Rcon2Irc_MatchStart extends Rcon2Irc_Executor
 		$bot->say($cmd->channel,"{$rcon->out_prefix}Playing \00310".$rcon->gametype_name($cmd->params[1]).
 			"\xf on \00304{$cmd->params[2]}\xf (".
 			($rcon->data->player->max-$rcon->data->player->count_players()).
-			" free slots); join now: \2xonotic +connect {$rcon->write_server}" );
+			" free slots); join now: \2xonotic +connect {$rcon->write_server}",-1 );
 		return true;
 	}
 }
@@ -462,7 +462,7 @@ class Rcon2Irc_Name extends Rcon2Irc_Executor
 		if ( $player && !$player->is_bot() )
 		{
 			$bot->say($cmd->channel,"{$rcon->out_prefix}\00312*\xf ".Color::dp2irc($player->name).
-				" is now known as ".Color::dp2irc($cmd->params[2]));
+				" is now known as ".Color::dp2irc($cmd->params[2]),-16);
 			$player->name = $cmd->params[2];
 		}
 		return true;

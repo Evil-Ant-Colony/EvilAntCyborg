@@ -278,6 +278,7 @@ class MelanoList implements IteratorAggregate, Countable
 class StablePriorityQueue implements IteratorAggregate, Countable
 {
 	private $list;
+	public $max_size = 0; ///< Maximum number of elements, if 0 unlimited
 	
 	function __construct()
 	{
@@ -339,6 +340,10 @@ class StablePriorityQueue implements IteratorAggregate, Countable
 			$this->push_top($e);
 		else
 			$this->push_bottom($e);
+			
+		if ( $this->max_size )
+			while($this->list->count() > $this->max_size )
+				$this->list->pop_back();
 		
 	}
 	

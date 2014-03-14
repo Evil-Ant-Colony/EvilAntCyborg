@@ -14,7 +14,7 @@ class Rcon2Irc_SayAction extends Rcon2Irc_Executor
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
-		$bot->say($cmd->channel,"{$this->out_prefix}\00312*\xf ".Color::dp2irc($cmd->params[1]));
+		$bot->say($cmd->channel,"{$this->out_prefix}\00312*\xf ".Color::dp2irc($cmd->params[1]),-16);
 		return true;
 	}
 }

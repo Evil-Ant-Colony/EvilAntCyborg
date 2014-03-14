@@ -94,14 +94,26 @@ class BotOutBuffer
 	public $flood_time_start = 0.2; ///< Minimum delay between messages (in seconds)
 	public $flood_max_bytes = 512;  ///< Maximum nuber of bytes in a message (longer messages will be truncated)
 	public $server = null;          ///< MelanoBotServer to send the data to
+	public $flood_max_delay = 12;    ///< Messages older than this many seconds will be discarded
+	public $dicard_threshold = 1;   ///< Messages with at least this priority won't be discarded
 	private $flood_time_counter = 1;///< Internal counter to increase delay between messages
 	private $flood_next_time = 0;   ///< When it will be possible to send the next message (in seconds)
 	private $buffer = null;         ///< Store messages when it's not possible to send them
-	private $buffer_max_size = 128; ///< \todo Maximum number of messages in the buffer
 	
 	function __construct()
 	{
 		$this->buffer = new StablePriorityQueue;
+		//$this->buffer->max_size = 32;
+	}
+	
+	/// Maximum number of messages in the buffer
+	function max_size()
+	{
+		return $this->buffer->max_size;
+	}
+	function set_max_size($n)
+	{
+		$this->buffer->max_size = $n;
 	}
 	
 	/**
@@ -116,7 +128,7 @@ class BotOutBuffer
 	/**
 	 * \brief Block and sleep (if needed) and send data
 	 */
-	private function send_wait($data)
+	private function send_wait($message)
 	{
 		$wait = $this->can_send_in();
 		
@@ -125,14 +137,14 @@ class BotOutBuffer
 		else
 			$this->flood_time_counter = 1;
 
-		$this->send_raw($data);
+		$this->send_raw($message);
 	}
 	
 	/**
 	 * \brief Send data only if it can
 	 * \return \c true if data has been sent
 	 */
-	private function send_no_wait($data)
+	private function send_no_wait($message)
 	{
 		if ( $this->can_send_in() > 0 )
 			return false;
@@ -140,7 +152,7 @@ class BotOutBuffer
 		if ( $this->flood_time_counter > 1 )
 			$this->flood_time_counter--;
 			
-		$this->send_raw($data);
+		$this->send_raw($message);
 		
 		return true;
 	}
@@ -148,11 +160,11 @@ class BotOutBuffer
 	
 	/**
 	 * \brief Send data if it can
-	 * \param $data Data to send
+	 * \param $message Message to send
 	 * \param $microseconds Maximum sleeping time
 	 * \return \c true if data has been sent
 	 */
-	private function send_wait_some($data,$microseconds)
+	private function send_wait_some($message,$microseconds)
 	{
 		$wait = $this->can_send_in();
 		
@@ -163,7 +175,7 @@ class BotOutBuffer
 		else if ( $this->flood_time_counter > 1 )
 			$this->flood_time_counter--;
 
-		$this->send_raw($data);
+		$this->send_raw($message);
 		
 		return true;
 	}
@@ -177,9 +189,13 @@ class BotOutBuffer
 	 */
 	function send($data, $priority)
 	{
-		if ( !$this->send_no_wait($data) )
+		$message = new StdClass;
+		$message->data = $data;
+		$message->time = microtime(true);
+		$message->priority = $priority;
+		if ( !$this->send_no_wait($message) )
 		{
-			$this->buffer->push($data,$priority);
+			$this->buffer->push($message,$priority);
 		}
 		return true;
 	}
@@ -188,10 +204,18 @@ class BotOutBuffer
 	 * \brief Send a message immediately
 	 * \note Increases internal time counter for the next message
 	 */
-	private function send_raw($data)
+	private function send_raw($message)
 	{
-		Logger::log("irc","<",Color::irc2ansi("$data"),0);
-		$data = substr($data,0,$this->flood_max_bytes-2)."\n\r";
+		if ( $this->flood_max_delay && 
+				$message->time + $this->flood_max_delay < microtime(true) &&
+				$message->priority < $this->dicard_threshold )
+		{
+			Logger::log("irc","!","\x1b[31mDISCARDING MESSAGE\x1b[0m ".Color::irc2ansi($message->data),0);
+			$this->flood_next_time = microtime(true) + $this->flood_time_start;
+			return;
+		}
+		Logger::log("irc","<",Color::irc2ansi($message->data),0);
+		$data = substr($message->data,0,$this->flood_max_bytes-2)."\n\r";
 		$this->server->write($data);
 		$this->flood_next_time = microtime(true) + $this->flood_time_start * $this->flood_time_counter;
 		$this->flood_time_counter++;
@@ -566,7 +590,12 @@ class MelanoBot extends DataSource
      */
     function quit($message="bye!")
     {
-        $this->command('QUIT',":$message");
+		if ( $this->buffer->server->connected() )
+		{
+			// send right away
+			Logger::log("irc","<","\x1b[31mQUIT\x1b[0m :$message",0);
+			$this->buffer->server->write("QUIT :$message\n\r");
+		}
         if ( $this->connection_status > self::SERVER_CONNECTED )
 			$this->connection_status = self::SERVER_CONNECTED;
         $this->disconnect();
