@@ -37,7 +37,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	public $rcon_executors = array();
 	public $rcon_filters = array();
 	public $poll_commands = array();
-	public $poll_interval = 30;
+	public $poll_interval = 60;
 	private $poll_time = 0;
 	private $connection_status;
 	private $cache = "";

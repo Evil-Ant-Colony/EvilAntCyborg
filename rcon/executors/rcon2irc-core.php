@@ -442,3 +442,29 @@ class Rcon2Irc_UpdateBans extends Rcon2Irc_Executor
 		return false;
 	}
 }
+
+
+/**
+ * \brief Show nick changes
+ */
+class Rcon2Irc_Name extends Rcon2Irc_Executor
+{
+	
+	function __construct()
+	{
+		parent::__construct("{^:name:(\d+):(.*)}");
+	}
+	
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		$player = $rcon->data->player->find_by_id($cmd->params[1]);
+		if ( $player && !$player->is_bot() )
+		{
+			$bot->say($cmd->channel,"\00312*\xf ".Color::dp2irc($player->name).
+				" is now known as ".Color::dp2irc($cmd->params[2]));
+			$player->name = $cmd->params[2];
+		}
+		return true;
+	}
+}

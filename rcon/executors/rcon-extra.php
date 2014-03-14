@@ -61,21 +61,32 @@ class Irc2Rcon_UserEvent extends Irc2Rcon_Executor
 
 class Irc2Rcon_UserKicked extends Irc2Rcon_Executor
 {
-	public $command;
+	public $message;
 	
-	function __construct(Rcon $rcon, $command='_ircmessage "^4*^3 %s" ^3 has kicked %s')
+	function __construct(Rcon $rcon, $message='_ircmessage "^4*^3 %s" ^3 has kicked %s')
 	{
 		parent::__construct($rcon,null,null);
-		$this->command=$command;
+		$this->message=$message;
 		$this->irc_cmd = "KICK";
 	}
 	
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
-		$this->rcon->send(sprintf($this->command,$cmd->from,$cmd->params[0]));
+		$this->rcon->send(sprintf($this->message,$cmd->from,$cmd->params[0]));
 	}
 }
+
+class Irc2Rcon_UserNick extends Irc2Rcon_UserKicked
+{
+	function __construct(Rcon $rcon, $message='_ircmessage "^4*^3 %s" ^3 is now known as %s')
+	{
+		parent::__construct($rcon,$message);
+		$this->irc_cmd = "NICK";
+	}
+	
+}
+
 
 
 class Rcon2Irc_NotifyAdmin extends Rcon2Irc_Executor

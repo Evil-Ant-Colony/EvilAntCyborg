@@ -487,7 +487,9 @@ class MelanoBot extends DataSource
 		{
 			$u->nick = $new;
 			Logger::log("irc","!","Updated nick ($old->$new)");
+			return $u;
 		}
+		return null;
     }
     
     /**
@@ -684,10 +686,15 @@ class MelanoBot extends DataSource
                     return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
                 case 'NICK':
                     $nick = trim($inarr[2],"\n\r!:");
+                    $chans = array();
                     if ( $from == $this->nick )
+                    {
                         $this->apply_nick($nick);
-                    else
-                        $this->change_nick($from, $nick);
+                        $chans = $this->channels;
+					}
+                    else if ( $user = $this->change_nick($from, $nick) )
+						$chans = $user->channels;
+					return new MelanoBotCommand($irc_cmd, array($nick), $from, $from_host, $chans, $data, $irc_cmd);
                     break;
                 case 'QUIT':
 					$user = $this->find_user_by_nick($from,$from_host);
