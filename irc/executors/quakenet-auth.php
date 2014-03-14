@@ -12,7 +12,7 @@ abstract class Executor_Whois_base extends CommandExecutor
 			$user = $bot->find_user_by_nick($nick);
 			if ( empty($user->name) )
 			{
-				$bot->say("Q","whois $nick");
+				$bot->say("Q","whois $nick",64);
 				$data->whois_queue []= $nick;
 			}
 		}
