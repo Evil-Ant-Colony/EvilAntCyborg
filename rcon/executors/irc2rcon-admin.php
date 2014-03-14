@@ -37,6 +37,33 @@ class Irc2Rcon_SingleCommand extends Irc2Rcon_Executor
 
 
 /**
+ * \brief Execute the given rcon command with arguments from irc, then follow with a list of fixed commands
+ * 
+ * This can be used to send a command that makes some server changes which need to be detected right away
+ * An alternative is to use Irc2Rcon_SingleCommand + polling
+ */
+class Irc2Rcon_Command_Update extends Irc2Rcon_Executor
+{
+	public $other_commands;
+	function __construct(Rcon $rcon, $main_command, $other_commands, $auth='rcon-admin')
+	{
+		if ( !is_array($other_commands) )
+			$other_commands = array($other_commands);
+		parent::__construct($rcon,$main_command,$auth,"$main_command [params]",
+			"Execute $main_command; ".implode("; ",$other_commands)." on rcon");
+		$this->other_commands = $other_commands;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		$this->rcon->send($this->name." ".$cmd->param_string());
+		foreach($this->other_commands as $cmd)
+			$this->rcon->send($cmd);
+	}
+}
+
+
+/**
  * \brief Call a vote
  */
 class Irc2Rcon_VCall extends Irc2Rcon_Executor

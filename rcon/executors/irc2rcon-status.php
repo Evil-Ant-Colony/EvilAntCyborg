@@ -127,3 +127,29 @@ class Irc2Rcon_Maps extends Irc2Rcon_Executor
 		}
 	}
 }
+
+/**
+ * \note requires Rcon2Irc_UpdateBans, banlist (slow) polling is reccommended
+ */
+class Irc2Rcon_Banlist extends Irc2Rcon_Executor
+{
+	
+	function __construct(Rcon $rcon, $trigger="banlist", $auth='rcon-admin')
+	{
+		parent::__construct($rcon,$trigger,$auth,"$trigger [refresh]","Show active bans");
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		$rcon_data = $this->data($data);
+		if ( isset($cmd->params[0]) && $cmd->params[0] == 'refresh')
+			$this->rcon->send("banlist");
+		else if ( empty($rcon_data->bans) )
+			$bot->say($cmd->channel,"No active bans");
+		else
+			foreach ( $rcon_data->bans as $id => $ban )
+				$bot->say($cmd->channel,sprintf(
+					"#\00304%-3s \00310%-21s\xf %s seconds",
+					$id,$ban->ip,$ban->time));
+	}
+}

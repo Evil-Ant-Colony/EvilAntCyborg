@@ -407,3 +407,38 @@ class Rcon2Irc_Votes extends Rcon2Irc_Executor
 		return true;
 	}
 }
+
+
+class Rcon2Irc_UpdateBans extends Rcon2Irc_Executor
+{	
+	function __construct()
+	{
+		$re=array("(\^2Listing all existing active bans:)",// 1 
+				  // 2 - banid=3 ip=4 time=5
+				  "\s*(#([0-9]+): ([./0-9]+) is still banned for (inf|[0-9]+)(?:\.[0-9]+)? seconds)"
+				  );
+
+		parent::__construct("{^".implode("|",$re)."}");
+	}
+	
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		if ( !empty($cmd->params[1]) )
+		{
+			$rcon->data->bans = array();
+			Logger::log("dp","!", "Ban list \x1b[31mcleared\x1b[0m",3);
+		}
+		else if ( !empty($cmd->params[2]) )
+		{
+			$b = new StdClass;
+			$b->ip = $cmd->params[4];
+			$b->time = $cmd->params[5];
+			$rcon->data->bans[$cmd->params[3]] = $b;
+			
+			Logger::log("dp","!",
+				"\x1b[32mAdding\x1b[0m ban #\x1b[31m{$cmd->params[3]}\x1b[0m: \x1b[36m$b->ip\x1b[0m",3);
+		}
+		return false;
+	}
+}
