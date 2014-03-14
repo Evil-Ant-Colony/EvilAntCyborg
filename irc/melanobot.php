@@ -516,7 +516,7 @@ class MelanoBot extends DataSource
      */
     function auth()
     {
-        if ( !is_null($this->password) && !is_null($this->auth_nick) )
+        if ( $this->password && $this->auth_nick )
         {
             $this->command('AUTH', $this->auth_nick." ".$this->password);
             if ( strlen($this->modes) > 0 )
