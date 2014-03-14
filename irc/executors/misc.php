@@ -85,7 +85,7 @@ class Raw_What extends RawCommandExecutor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
-		$bot->say($cmd->channel, "What?" );
+		$bot->say($cmd->channel, "What?",-1 );
 	}
 }
 
@@ -180,7 +180,7 @@ class Executor_GreetingSelf extends CommandExecutor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
-		$bot->say($cmd->channel,$this->message);
+		$bot->say($cmd->channel,$this->message,1);
 	}
 }
 

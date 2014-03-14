@@ -106,11 +106,11 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		{
 			if ( $status == self::DISCONNECTED )
 			{
-				$bot->say($this->channel,"{$this->out_prefix}\2Warning!\xf server \00304{$this->data->hostname}\xf disconnected!");
+				$bot->say($this->channel,"{$this->out_prefix}\2Warning!\xf server \00304{$this->data->hostname}\xf disconnected!",16);
 			}
 			else if ( $status == self::CONNECTED && $this->connection_status != self::CHECKING_CONNECTION )
 			{
-				$bot->say($this->channel,"{$this->out_prefix}Server \00309{$this->data->hostname}\xf connected.");
+				$bot->say($this->channel,"{$this->out_prefix}Server \00309{$this->data->hostname}\xf connected.",16);
 				$this->setup_server();
 			}
 		}
