@@ -12,6 +12,20 @@ class RconPlayer
 	public $pl;
 	public $frags;
 	public $time;
+	static $geoip;
+	
+	function country()
+	{
+		if ( self::$geoip && $this->ip )
+		{
+			$p = strpos($this->ip,':');
+			$ip = $p ? substr($this->ip,0,$p) : $this->ip;
+			if ( self::$geoip === true )
+				return @geoip_country_name_by_name($ip);
+			return @geoip_country_name_by_addr(self::$geoip,$ip);
+		}
+		return "";
+	}
 	
 	function is_bot()
 	{

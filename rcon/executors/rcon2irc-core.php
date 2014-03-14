@@ -49,6 +49,7 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 			'%total%'  => $rcon->data->player->count_all(),
 			'%max%'    => $rcon->data->player->max,
 			'%map%'    => $rcon->data->map,
+			'%country%'=> $player->country(),
 		);
 		$bot->say($channel,str_replace(array_keys($values),array_values($values),$this->format));
 	}
