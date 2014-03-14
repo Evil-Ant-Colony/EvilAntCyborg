@@ -98,3 +98,23 @@ class Rcon2Irc_NotifyAdmin extends Rcon2Irc_Executor
 		return true;
 	}
 }
+
+class Rcon2Irc_HostError extends Rcon2Irc_Executor
+{
+	public $list;
+	function __construct($list='rcon-admin')
+	{
+		parent::__construct("{^Host_Error:(.*)}");
+		$this->list =$list;
+	}
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		$msg = "\00304SERVER ERROR\017 on {$rcon->data->write_server}: (\00304{$rcon->data->map}\017) ".
+			Color::dp2irc($cmd->params[1]);
+		$bot->say($cmd->channel,$msg);
+		foreach($rcon->bot_data->active_users_in_list($bot,$this->list) as $admin)
+			$bot->say($admin->nick,$msg);
+		return true;
+	}
+}
