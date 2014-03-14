@@ -533,8 +533,8 @@ class MelanoBot extends DataSource
      */
     private function login_ext($real_name, $nick)
     {
-        $this->command('USER',"$nick localhost $nick :$real_name");
-        $this->command('NICK', $nick);
+        $this->internal_command('USER',"$nick localhost $nick :$real_name");
+        $this->internal_command('NICK', $nick);
     }
     
     /**
@@ -544,9 +544,9 @@ class MelanoBot extends DataSource
     {
         if ( $this->password && $this->auth_nick )
         {
-            $this->command('AUTH', $this->auth_nick." ".$this->password);
+            $this->internal_command('AUTH', $this->auth_nick." ".$this->password);
             if ( strlen($this->modes) > 0 )
-                $this->command('MODE', $this->nick." +".$this->modes);
+                $this->internal_command('MODE', $this->nick." +".$this->modes);
         }
     }
     
@@ -564,6 +564,19 @@ class MelanoBot extends DataSource
             $data = str_replace(array("\n","\r")," ",$data);
             $this->buffer->send("$command $data",$priority);
         }
+    }
+    
+    /**
+     * \brief Execute a command right away
+     */
+    private function internal_command($command,$data)
+    {
+        if ( $this->buffer->server->connected() )
+        {
+            $data = str_replace(array("\n","\r")," ",$data);
+			Logger::log("irc","<","\x1b[31m$command\x1b[0m $data",0);
+			$this->buffer->server->write("$command $data\n\r");
+		}
     }
     
     /**
@@ -590,12 +603,7 @@ class MelanoBot extends DataSource
      */
     function quit($message="bye!")
     {
-		if ( $this->buffer->server->connected() )
-		{
-			// send right away
-			Logger::log("irc","<","\x1b[31mQUIT\x1b[0m :$message",0);
-			$this->buffer->server->write("QUIT :$message\n\r");
-		}
+		$this->internal_command('QUIT',":$message");
         if ( $this->connection_status > self::SERVER_CONNECTED )
 			$this->connection_status = self::SERVER_CONNECTED;
         $this->disconnect();
@@ -632,7 +640,7 @@ class MelanoBot extends DataSource
         $insize = count($inarr);
         if ( $inarr[0] == 'PING' )
         {
-            $this->command('PONG',$inarr[1],1024);
+            $this->internal_command('PONG',$inarr[1]);
         }
         else if ( $inarr[0] == 'ERROR' )
         {
