@@ -20,7 +20,7 @@ class Rcon2Irc_Say extends Rcon2Irc_Executor
 	{
 		$nick = Color::dp2irc($cmd->params[1]);
 		$text = Color::dp2irc($cmd->params[2]);
-		$bot->say($cmd->channel,"<$nick\xf> $text");
+		$bot->say($cmd->channel,"{$rcon->out_prefix}<$nick\xf> $text");
 		return true;
 	}
 }
@@ -51,7 +51,7 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 			'%map%'    => $rcon->data->map,
 			'%country%'=> $player->country(),
 		);
-		$bot->say($channel,str_replace(array_keys($values),array_values($values),$this->format));
+		$bot->say($channel,$rcon->out_prefix.str_replace(array_keys($values),array_values($values),$this->format));
 	}
 }
 
@@ -168,7 +168,7 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 				if ( isset($rcon->data->gametype) )
 					$gametype = "\00310".$rcon->gametype_name($rcon->data->gametype)."\xf on ";
 				$map = isset($rcon->data->map) && $rcon->data->map ? $rcon->data->map : "?";
-				$bot->say($cmd->channel,"$gametype\00304$map\017 ended:");
+				$bot->say($cmd->channel,"{$rcon->out_prefix}$gametype\00304$map\017 ended:");
 				$this->print_scores($cmd,$bot);
 				$this->player_scores= array();
 				$this->team_scores  = array();
@@ -282,7 +282,7 @@ class Rcon2Irc_MatchStart extends Rcon2Irc_Executor
 		$rcon->data->gametype=$cmd->params[1];
 		$rcon->data->map = $cmd->params[2];
 		
-		$bot->say($cmd->channel,"Playing \00310".$rcon->gametype_name($cmd->params[1]).
+		$bot->say($cmd->channel,"{$rcon->out_prefix}Playing \00310".$rcon->gametype_name($cmd->params[1]).
 			"\xf on \00304{$cmd->params[2]}\xf (".
 			($rcon->data->player->max-$rcon->data->player->count_players()).
 			" free slots); join now: \2xonotic +connect {$rcon->write_server}" );
@@ -364,7 +364,7 @@ class Rcon2Irc_Votes extends Rcon2Irc_Executor
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
-		$p="\00312*\xf";
+		$p="{$rcon->out_prefix}\00312*\xf";
 		if ( !empty($cmd->params[1]) )
 		{
 			$name = $this->id2nick($cmd->params[2],$rcon);
@@ -461,7 +461,7 @@ class Rcon2Irc_Name extends Rcon2Irc_Executor
 		$player = $rcon->data->player->find_by_id($cmd->params[1]);
 		if ( $player && !$player->is_bot() )
 		{
-			$bot->say($cmd->channel,"\00312*\xf ".Color::dp2irc($player->name).
+			$bot->say($cmd->channel,"{$rcon->out_prefix}\00312*\xf ".Color::dp2irc($player->name).
 				" is now known as ".Color::dp2irc($cmd->params[2]));
 			$player->name = $cmd->params[2];
 		}

@@ -14,7 +14,7 @@ class Rcon2Irc_SayAction extends Rcon2Irc_Executor
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
-		$bot->say($cmd->channel,"\00312*\xf ".Color::dp2irc($cmd->params[1]));
+		$bot->say($cmd->channel,"{$this->out_prefix}\00312*\xf ".Color::dp2irc($cmd->params[1]));
 		return true;
 	}
 }
@@ -102,8 +102,8 @@ class Rcon2Irc_NotifyAdmin extends Rcon2Irc_Executor
 	{
 		$nick = Color::dp2irc($cmd->params[1]);
 		$message = Color::dp2irc($cmd->params[2]);
-		$bot->say($cmd->channel,"<$nick\017> on \00304{$rcon->data->map}\017: \00304!admin\017 $message");
-		$admin_msg = "{$cmd->channel} (\00304{$rcon->data->map}\017) <$nick\017> $message";
+		$bot->say($cmd->channel,"{$rcon->out_prefix}<$nick\017> on \00304{$rcon->data->map}\017: \00304!admin\017 $message");
+		$admin_msg = "{$rcon->out_prefix}{$cmd->channel} (\00304{$rcon->data->map}\017) <$nick\017> $message";
 		foreach($rcon->bot_data->active_users_in_list($bot,$this->list) as $admin)
 			$bot->say($admin->nick,$admin_msg);
 		return true;
@@ -121,7 +121,7 @@ class Rcon2Irc_HostError extends Rcon2Irc_Executor
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
-		$msg = "\00304SERVER ERROR\017 on {$rcon->data->write_server}: (\00304{$rcon->data->map}\017) ".
+		$msg = "{$rcon->out_prefix}\00304SERVER ERROR\017 on {$rcon->data->write_server}: (\00304{$rcon->data->map}\017) ".
 			Color::dp2irc($cmd->params[1]);
 		$bot->say($cmd->channel,$msg);
 		foreach($rcon->bot_data->active_users_in_list($bot,$this->list) as $admin)

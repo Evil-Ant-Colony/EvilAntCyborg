@@ -42,6 +42,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	private $connection_status;
 	private $cache = "";
 	public $bot_data = null;
+	public $out_prefix = "";
 	
 	static function gametype_name($gametype_shortname)
 	{
@@ -78,6 +79,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		$this->channel = $channel;
 		$this->rcon = $rcon;
 		$this->poll_commands []= "status 1";
+		$this->out_prefix = "$prefix ";
 	}
 	
 	function initialize(BotData $data)
@@ -104,11 +106,11 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		{
 			if ( $status == self::DISCONNECTED )
 			{
-				$bot->say($this->channel,"\2Warning!\xf server \00304{$this->data->hostname}\xf disconnected!");
+				$bot->say($this->channel,"{$this->out_prefix}\2Warning!\xf server \00304{$this->data->hostname}\xf disconnected!");
 			}
 			else if ( $status == self::CONNECTED && $this->connection_status != self::CHECKING_CONNECTION )
 			{
-				$bot->say($this->channel,"Server \00309{$this->data->hostname}\xf connected.");
+				$bot->say($this->channel,"{$this->out_prefix}Server \00309{$this->data->hostname}\xf connected.");
 				$this->setup_server();
 			}
 		}
