@@ -51,6 +51,7 @@ class BotCommandDispatcher
 	 */
 	function matches(MelanoBotCommand $cmd )
 	{
+		
 		$chan_ok = false;
 		if ( is_array($cmd->channel) )
 		{
@@ -64,8 +65,13 @@ class BotCommandDispatcher
 		else
 			$chan_ok = $this->matches_channel( $cmd->channel ); 
 		
-		return $chan_ok && ( !$this->prefix || 
+		$matches_prefix = $this->prefix && ( $cmd->cmd == $this->prefix ||
 				( $cmd->cmd == null && count($cmd->params) > 0 && $cmd->params[0] == $this->prefix ) );
+	
+		if ( $matches_prefix && !$chan_ok && is_string($cmd->channel) && $cmd->channel[0] != '#' )
+			return true;
+		
+		return $chan_ok && ( !$this->prefix || $matches_prefix  );
 	}
 	
 	/** 
@@ -73,14 +79,20 @@ class BotCommandDispatcher
 	 */
 	function convert(MelanoBotCommand $cmd)
 	{
-		if ( $this->prefix && count($cmd->params) > 0 && $cmd->params[0] == $this->prefix )
+		if ( $this->prefix && count($cmd->params) > 0)
 		{
-			$cmd = new MelanoBotCommand($cmd->cmd, $cmd->params, $cmd->from, 
-					$cmd->host, $cmd->channel, $cmd->raw, $cmd->irc_cmd);
-			array_shift($cmd->params);
-			if ( count($cmd->params) > 0  )
+			if ( $cmd->cmd == $this->prefix )
+			{
+				$cmd = clone $cmd;
 				$cmd->cmd = array_shift($cmd->params);
+			}
+			else if (  $cmd->params[0] == $this->prefix )
+			{
+				$cmd = clone $cmd;
+				array_shift($cmd->params);
+			}
 		}
+			
 		return $cmd;
 	}
 	
