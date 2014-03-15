@@ -735,8 +735,12 @@ class MelanoBot extends DataSource
                     break;
                 case 'QUIT':
 					$user = $this->find_user_by_nick($from,$from_host);
-					$chans = $user->channels;
-					$this->remove_user($user);
+					$chans = array();
+					if ( $user )
+					{
+						$chans = $user->channels;
+						$this->remove_user($user);
+					}
 					if ( $from == $this->nick )
 						$this->channels = array();
 					return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chans, $data, $irc_cmd);
