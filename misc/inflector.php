@@ -30,6 +30,7 @@ class Inflector
 
 // infinitive to 3rd person singular
 $english_verb = new Inflector( array(
+        'can'=>'can',
         'be'=>'is',
         'have'=>'has',
         'say'=>'says',
