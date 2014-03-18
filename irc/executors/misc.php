@@ -71,8 +71,12 @@ class Executor_RespondKick extends CommandExecutor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
-		if ( count($cmd->params) > 0 && $who = $cmd->params[0] && $who != $bot->nick )
-			$bot->say($cmd->channel, "We won't miss $who!" );
+		if ( count($cmd->params) > 0 )
+		{
+			$who = $cmd->params[0];
+			if ( $who != $bot->nick )
+				$bot->say($cmd->channel, "We won't miss $who!" );
+		}
 	}
 }
 
