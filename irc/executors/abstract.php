@@ -1,6 +1,9 @@
 <?php
 require_once("misc/logger.php");
 
+/**
+ * \brief Base for all the executor abstract classes
+ */
 abstract class ExecutorBase
 {
 	public $auth;
@@ -20,24 +23,30 @@ abstract class ExecutorBase
 	/// Run this executor
 	abstract function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver);
 	
+	/**
+	 * \brief name to be used in help messages and command lists
+	 * \return A string or \b null if this doesn't apply
+	 */
 	abstract function name();
 	
+	/// Install on a dispatcher
 	abstract function install_on(BotCommandDispatcher $driver);
 	
-	// whether the command may be executed again
+	/// whether the command may be executed again
 	function keep_running() { return false; }
 }
 
 /**
- * \brief Executes a command
+ * \brief Executes an explicit command
+ * \note An explicit command has <tt>bot_command->cmd != null</tt>
  */
 abstract class CommandExecutor extends ExecutorBase
 {
-	public $name;
-	public $synopsis;
-	public $description;
-	public $reports_error;
-	public $irc_cmd;
+	public $name;         ///< name/trigger
+	public $synopsis;     ///< Help synopsis (trigger and commands)
+	public $description;  ///< Help Description
+	public $reports_error;///< Whether reports error on its own
+	public $irc_cmd;      ///< IRC command to be triggered by
 	
 	function __construct($name,$auth,$synopsis="",$description="",$irc_cmd='PRIVMSG')
 	{
@@ -76,6 +85,9 @@ abstract class CommandExecutor extends ExecutorBase
 	function keep_running() { return $this->irc_cmd != 'PRIVMSG'; }
 }
 
+/**
+ * \brief Triggered when the bot is not addressed directly
+ */
 abstract class RawCommandExecutor extends ExecutorBase
 {
 	
@@ -100,9 +112,12 @@ abstract class RawCommandExecutor extends ExecutorBase
 	}
 }
 
+/**
+ * \brief Checks whether a command shall be executed or discarded
+ */
 abstract class Filter extends ExecutorBase
 {
-	
+	/// equivalent to check()
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		return $this->check($cmd,$bot,$driver);

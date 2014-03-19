@@ -1,4 +1,12 @@
 <?php
+/**
+ * \file
+ * \brief IRC network connection definitions
+ *
+ * These arrays can be used as the first argument to the MelanoBot constructor
+ * \note Far from being extensive
+ */
+
 require_once("irc/melanobot.php");
 
 $network_quakenet = array(

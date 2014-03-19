@@ -295,7 +295,13 @@ class MelanoBot extends DataSource
     private $channels =array();///< Channels the bot is currently connected to
     public $buffer; ///< Buffer message to the server
     
-    
+    /**
+     * \brief Create a bot
+     * \param $servers  MelanoBotServer instance or array
+     * \param $nick     Bot nick name
+     * \param $password Bot AUTH password
+     * \param $channels Array of channels to join on startup
+     */
     function __construct($servers, $nick, $password, $channels )
     {
 		if ( !is_array($servers) )

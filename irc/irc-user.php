@@ -1,11 +1,14 @@
 <?php
 
+/**
+ * \brief An IRC user
+ */
 class IRC_User
 {
 	public $nick;  ///< Nick
 	public $host;  ///< Host
 	public $name;  ///< Logged-in name
-	public $channels=array();
+	public $channels=array();///< Channels this user is in
 	
 	function __construct($name,$nick=null,$host=null)
 	{
