@@ -8,12 +8,15 @@ require_once("irc/dispatcher.php");
 require_once("rcon/executors/rcon2irc-core.php");
 require_once("rcon/executors/irc2rcon-core.php");
 
+/**
+ * \brief A command received from rcon
+ */
 class Rcon_Command
 {
-	public $data;
-	public $server;
-	public $channel;
-	public $params = array();
+	public $data;          ///< Raw data (1 line of rcon output)
+	public $server;        ///< Server it was received from
+	public $channel;       ///< IRC channel to send messages to
+	public $params=array();///< Regular expression captures for the executor
 	
 	function __construct($data, Rcon_Server $server, $irc_channel)
 	{
@@ -23,7 +26,9 @@ class Rcon_Command
 	}
 }
 
-
+/**
+ * \brief Connects a IRC channel and a Rcon instance
+ */
 class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunicator
 {
 	const WAITING_IRC = -2;
@@ -31,19 +36,22 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	const DISCONNECTED = 0;
 	const CONNECTED = 1;
 	
-	public $channel;
-	public $data;
-	private $rcon;
-	public $rcon_executors = array();
-	public $rcon_filters = array();
-	public $poll_commands = array();
-	public $poll_interval = 60;
-	private $poll_time = 0;
-	private $connection_status;
-	private $cache = "";
-	public $bot_data = null;
-	public $out_prefix = "";
+	public $channel;                 ///< IRC channel
+	public $data;                    ///< Rcon-related data object
+	private $rcon;                   ///< Rcon instance
+	public $rcon_executors = array();///< Rcon command executors
+	public $rcon_filters = array();  ///< Filter rcon commands
+	public $poll_commands = array(); ///< Commands to be polled periodically to rcon (as a string)
+	public $poll_interval = 60;      ///< Number of seconds between polls
+	private $poll_time = 0;          ///< When the next polling shall occur
+	private $connection_status;      ///< Status of the RCON connection, see the constants above
+	private $cache = "";             ///< Cache the last line if it has been split between multiple packets
+	public $bot_data = null;         ///< Hax :-(, used to access BotData without passing it as a parameter to the rcon executors
+	public $out_prefix = "";         ///< Prefix the rcon executors should use for IRC output
 	
+	/**
+	 * \brief Convert a gametype string identifier to a human-readable name
+	 */
 	static function gametype_name($gametype_shortname)
 	{
 		static $gametype_names = array(	
@@ -68,6 +76,9 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		return isset($gametype_names[$gametype_shortname])?$gametype_names[$gametype_shortname]:$gametype_shortname;
 	}
 	
+	/**
+	 * \brief Send a command over rcon
+	 */
 	function send($command)
 	{
 		$this->rcon->send($command);
@@ -82,6 +93,9 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		$this->out_prefix = "$prefix ";
 	}
 	
+	/**
+	 * \brief Setup the rcon connection and Rcon Data
+	 */
 	function initialize(BotData $data)
 	{
 		$this->connection_status = self::WAITING_IRC;
@@ -100,6 +114,9 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		$this->data = $data->rcon["{$this->rcon->read}"];
 	}
 	
+	/**
+	 * \brief Set the connection status to the given value and send messages to IRC when needed
+	 */
 	private function set_connection_status($status,MelanoBot $bot)
 	{
 		if ( $status != $this->connection_status )
@@ -116,12 +133,18 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		}
 		$this->connection_status = $status;
 	}
-	
+
+	/**
+	 * \brief Don't keep junk on log_dest_udp
+	 */
 	function finalize(BotData $data)
 	{
 		$this->send("removefromlist log_dest_udp {$this->rcon->read}");
 	}
 	
+	/**
+	 * \brief Read from rcon end execute commands
+	 */
 	function step(MelanoBot $bot, BotData $data)
 	{
 		$this->bot_data = $data;
@@ -226,6 +249,9 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		$this->bot_data = null;
 	}
 	
+	/**
+	 * \brief Filter out unwanted rcon commands
+	 */
 	function rcon_filter(Rcon_Command $cmd)
 	{
 		foreach ( $this->rcon_filters as $f )
@@ -234,6 +260,9 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		return true;
 	}
 	
+	/**
+	 * \brief Ensure the rcon server s properly configured to retrieve useful information
+	 */
 	private function setup_server()
 	{
 		Logger::log("dp","!","Connecting to {$this->rcon->read}",1);
@@ -252,6 +281,10 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 			return $this->rcon->write;
 	}
 	
+	/**
+	 * \brief Restore old sv_adminnick
+	 * \sa set_sv_adminnick()
+	 */
 	static function restore_sv_adminnick($rcon_data)
 	{
 		if ( isset($rcon_data->sv_adminnick_vote_restore) )
@@ -263,6 +296,10 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		}
 	}
 	
+	/**
+	 * \brief Set a temporary sv_adminnick
+	 * \sa restore_sv_adminnick()
+	 */
 	static function set_sv_adminnick($rcon_data, $irc_nick)
 	{
 	

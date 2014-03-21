@@ -1,17 +1,24 @@
 <?php
 require_once("misc/color.php");
 
-
+/**
+ * \brief Singleton class to display some nicely formatted output
+ * \note It shows a time before each output line, so you need to set the timezone to avoid PHP warnings
+ */
 class Logger
 {
-	private static $instance = null;
-	private $source_color = array();
-	private $direction_color = array();
-	public  $pad_size=3;
-	public  $verbosity = 1;
+	private static $instance = null;    ///< Singleton instance
+	private $source_color = array();    ///< Array source => Color
+	private $direction_color = array(); ///< Array direction => Color
+	public  $pad_size=3;                ///< String length for the source identifier
+	public  $verbosity = 1;             ///< Controls which messages have to be shown, messages with higher verbosity levels won't be shown
 	
 	private function __construct() {}
-	
+
+	/**
+	 * \brief Register a source name and its color
+	 * \sa log(), source_log()
+	 */
 	function register_source($id,$color)
 	{
 		if ( !is_object($color) )
@@ -19,6 +26,14 @@ class Logger
 		$this->source_color[$id] = $color->ansi();
 	}
 	
+	/**
+	 * \brief Register a direction name and its color
+	 *
+	 * A direction is to tell whether the log line represent data sent to the 
+	 * source (<), received from it (>) or a general information (!)
+	 *
+	 * \sa log(), source_log()
+	 */
 	function register_direction($direction,$color)
 	{
 		if ( !is_object($color) )
@@ -26,6 +41,9 @@ class Logger
 		$this->direction_color[$direction] = $color->ansi();
 	}
 	
+	/**
+	 * \brief Get the singleton
+	 */
 	static function instance()
 	{
 		if ( !self::$instance )
@@ -33,17 +51,37 @@ class Logger
 		return self::$instance;
 	}
 	
+	/**
+	 * \brief Basic logging function
+	 *
+	 * Calls <tt>instance()->source_log()</tt>, static to make the code less verbose
+	 *
+	 * \sa plain_log(), source_log()
+	 */
 	static function log($source,$direction,$text,$verbosity=2)
 	{
 		self::instance()->source_log($source,$direction,$text,$verbosity);
 	}
 	
+	/**
+	 * \brief Simple log, output time and the text
+	 * \param $text Output line
+	 * \param $verbosity If greater than <tt>$this->verbosity</tt>, it will be discarded
+	 * \sa log(), source_log()
+	 */
 	function plain_log($text,$verbosity)
 	{
 		if ( $verbosity <= $this->verbosity )
 			echo "\x1b[30;1m".date("[H:i:s]")."\x1b[0m".rtrim($text)."\n";
 	}
 	
+	/**
+	 * \brief Logging function
+	 *
+	 * The output contains a colored string for \c $source and \c $direction
+	 *
+	 * \sa plain_log(), log()
+	 */
 	function source_log($source,$direction,$text,$verbosity)
 	{
 		$this->plain_log( 
@@ -52,6 +90,12 @@ class Logger
 			 $verbosity );
 	}
 	
+	/**
+	 * \brief Register the default source/directions
+	 *
+	 * Sources: irc, dp, std.
+	 * Directions: < > !
+	 */
 	function default_settings()
 	{
 		$this->register_direction("<",2);

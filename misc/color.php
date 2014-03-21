@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * \brief Store a color code and convert colored strings
+ */
 class Color
 {
 	const NOCOLOR= null;
@@ -30,13 +33,16 @@ class Color
 	
 // string conversion
 	/**
-	 * \brief Strip colors from an IRC colored string
+	 * \brief Strip colors and special characters from an IRC colored string
 	 */
 	static function irc2none($string)
 	{
 		return preg_replace(self::$irc_regex,"",$string);
 	}
 	
+	/**
+	 * \brief Convert from an IRC-encoded string into an ANSI encoded one
+	 */
 	static function irc2ansi($string)
 	{
 		
@@ -49,6 +55,9 @@ class Color
 			},$string);
 	}
 	
+	/**
+	 * \brief Convert from an IRC-encoded string into a Darkplaces colored string
+	 */
 	static function irc2dp($string)
 	{
 		
@@ -61,6 +70,9 @@ class Color
 			},$string);
 	}
 	
+	/**
+	 * \brief Convert from a Darkplaces string into a string with IRC color codes
+	 */
 	static function dp2irc($string)
 	{
 		return preg_replace_callback(self::$dp_regex,
@@ -182,7 +194,7 @@ class Color
 	
 // color to string conversions
 	/**
-	 * \brief Convert a 7bit color code to an ANSI escape sequence
+	 * \brief Get the ANSI escape sequence representing this color
 	 * \note Converts black to white to display nicely on terminals with a black background
 	 */
 	function ansi()
@@ -195,6 +207,10 @@ class Color
 		return "\x1b[$c{$this->code}m";
 	}
 
+	/**
+	 * \brief Get the IRC color sequence representing this color
+	 * \note Displays bright yellow as dark yellow and white as defult color to look nicely on a bright background
+	 */
 	function irc()
 	{
 		$out = "";
@@ -227,6 +243,9 @@ class Color
 		return "\3$out";
 	}
 	
+	/**
+	 * \brief Get a 12 bit hex string (useful to convert to Darkplaces)
+	 */
 	function to12bit()
 	{
 		$m = $this->bright ? 15 : 5;
@@ -236,6 +255,10 @@ class Color
 		return dechex($r).dechex($g).dechex($b);
 	}
 	
+	/**
+	 * \brief Get the Darkplaces color code 
+	 * \note Null color results in an empty string
+	 */
 	function dp()
 	{
 		if ( !$this->code )

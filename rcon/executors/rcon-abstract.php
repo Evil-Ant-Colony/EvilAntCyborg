@@ -1,9 +1,12 @@
 <?php
 require_once("irc/executors/abstract.php");
 
+/**
+ * \brief Execute in response to a rcon line
+ */
 abstract class Rcon2Irc_Executor
 {
-	public $regex;
+	public $regex; ///< Regex to match the line against
 	
 	
 	/**
@@ -19,6 +22,10 @@ abstract class Rcon2Irc_Executor
 		$this->regex = $regex;
 	}
 	
+	/**
+	 * \brief Checks and executes the command
+	 * \return \b true if the command has been executed and should no longer be processed, \b false otherwise
+	 */
 	function step(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
 		if ( preg_match($this->regex,$cmd->data, $cmd->params) )
@@ -32,6 +39,9 @@ abstract class Rcon2Irc_Executor
 	}
 }
 
+/**
+ * \brief Filter out Rcon commands
+ */
 abstract class Rcon2Irc_Filter
 {
 	
@@ -46,7 +56,9 @@ abstract class Rcon2Irc_Filter
 	}
 } 
 
-
+/**
+ * \brief IRC Executor which may send data to rcon
+ */
 abstract class Irc2Rcon_Executor extends CommandExecutor
 {
 	public $rcon;

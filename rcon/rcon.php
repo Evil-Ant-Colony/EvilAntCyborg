@@ -2,6 +2,9 @@
 
 require_once("misc/logger.php");
 
+/**
+ * \brief Simple class holding host and port
+ */
 class Rcon_Server
 {
 	public $host, $port;
@@ -18,13 +21,21 @@ class Rcon_Server
     }
 }
 
+/**
+ * \brief A Rcon packet
+ *
+ * This class hanldes sending/receiving the packet and extracting its contents
+ */
 class Rcon_Packet
 {
-	public $contents, $payload, $server, $valid = false;
+	public $contents; ///< UDP packet payload (ie: header+payload)
+	public $payload;  ///< Meaningful string to send to/receive from rcon
+	public $server;   ///< Server this packet belongs to
+	public $valid = false; ///< Whether it's a valid packet
 	
 	static $read_header ="\xff\xff\xff\xffn";
 	static $send_header="\xff\xff\xff\xff";
-	// darkplaces/console.c: char log_dest_buffer[1400]; (NUL-terminated)
+	/// \note This 1399 values comes from darkplaces/console.c: <tt>char log_dest_buffer[1400];</tt> (NUL-terminated)
 	const MAX_READ_LENGTH = 1399;
 	
 	function __construct($payload=null, $server=null)
@@ -35,12 +46,19 @@ class Rcon_Packet
 		$this->contents = self::$send_header.$payload;
 	}
 	
+	/**
+	 * \brief Send to the given socket
+	 */
 	function send($socket)
 	{
 		socket_sendto($socket, $this->contents, strlen($this->contents), 0, 
 			$this->server->host, $this->server->port);
 	}
 	
+	/**
+	 * \brief Read mostly \c $len from the socket
+	 * \note Remove $len and use MAX_READ_LENGTH directly
+	 */
 	static function read($socket, $len)
 	{
 		$packet = new Rcon_Packet();
@@ -53,13 +71,16 @@ class Rcon_Packet
 	}
 }
 
+/**
+ * \brief Low-level class to communicate through rcon
+ */
 class Rcon
 {
-	public $read;
-	public $write;
-	public $password;
+	public $read;     ///< Read server (log_dest_udp)
+	public $write;    ///< Write server
+	public $password; ///< Password to the write server
 	//public $secure = 0;
-	public $socket;
+	public $socket;   ///< Socket used for communications
 	
 	function __construct($host,$port,$password)
 	{
@@ -72,7 +93,9 @@ class Rcon
 		socket_getsockname($this->socket,$this->read->host,$this->read->port);
 	}
 	
-	
+	/**
+	 * \brief Send the given command to rcon
+	 */
 	function send($command) 
 	{
 		/// \todo secure
@@ -95,12 +118,18 @@ class Rcon
 		return $packet;
 	}
 	
+	/**
+	 * \brief Read a packet from rcon
+	 */
 	function read()
 	{
 		$packet = Rcon_Packet::read($this->socket,Rcon_Packet::MAX_READ_LENGTH);
 		return $packet;
 	}
 	
+	/**
+	 * \brief Ensure that the socket receives output from rcon
+	 */
 	function connect()
 	{
 		$this->send("addtolist log_dest_udp {$this->read->host}:{$this->read->port}");

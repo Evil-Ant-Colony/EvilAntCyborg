@@ -2,18 +2,24 @@
 
 require_once("misc/logger.php");
 
+/**
+ * \brief A player seen on rcon
+ */
 class RconPlayer
 {
-	public $name;
-	public $slot;
-	public $ip;
-	public $id;
-	public $ping;
-	public $pl;
-	public $frags;
-	public $time;
-	static $geoip;
+	public $name; ///< Name (dp encoded)
+	public $slot; ///< Player slot (used by kick at all)
+	public $ip;   ///< IP address/port
+	public $id;   ///< Player id (used by most rcon output regarding the payer)
+	public $ping; ///< Ping
+	public $pl;   ///< Packet loss
+	public $frags;///< Score
+	public $time; ///< Time since they connected to the server
+	static $geoip;///< Whether GeoIP is installed
 	
+	/**
+	 * \brief Extract country name from the player's IP address
+	 */
 	function country()
 	{
 		if ( self::$geoip && $this->ip )
@@ -27,11 +33,17 @@ class RconPlayer
 		return "";
 	}
 	
+	/**
+	 * \brief Whether the player is a human or a bot client
+	 */
 	function is_bot()
 	{
 		return substr($this->ip,0,3) == 'bot';
 	}
 	
+	/**
+	 * \brief Convert id and slot to integers
+	 */
 	function normalize()
 	{
 		if ( isset($this->id) )
@@ -40,6 +52,10 @@ class RconPlayer
 			$this->slot = self::str2slot($this->slot);
 	}
 	
+	/**
+	 * \brief Merge information from another player into this one
+	 * \return \b $this
+	 */
 	function merge(RconPlayer $other)
 	{
 		if ( isset($other->slot) && $other->slot != $this->slot )
@@ -56,17 +72,27 @@ class RconPlayer
 		return $this;
 	}
 	
+	/**
+	 * \brief Convert from #1 into (int)1
+	 */
 	static function str2slot($slot) { return (int)trim($slot,'#'); }
 	
 }
 
+/**
+ * \brief Manages players connected to a DP server
+ */
 class PlayerManager
 {
-	private $players=array();
-	private $count_players = 0;
-	private $count_bots = 0;
-	public $max = 0;
+	private $players=array();  ///< Connected clients
+	private $count_players = 0;///< Number of actual playes
+	private $count_bots = 0;   ///< Number of bots
+	public $max = 0;           ///< Maximum number of players
 	
+	/**
+	 * \brief Add a player
+	 * \note If a player on the same slot exists, it is merged with \c $player
+	 */
 	function add(RconPlayer $player)
 	{
 		$player->normalize();
@@ -89,6 +115,11 @@ class PlayerManager
 			$this->players [$player->slot] = $player;
 		}
 	}
+	
+	/**
+	 * \brief Get the player with the given id
+	 * \return \b null if no such player exists
+	 */
 	function find_by_id ( $id )
 	{
 		foreach ( $this->players as $player ) 
@@ -97,6 +128,10 @@ class PlayerManager
 		return null;
 	}
 	
+	/**
+	 * \brief Get the player on the given slot
+	 * \return \b null if no such player exists
+	 */
 	function find ( $slot )
 	{
 		$slot = RconPlayer::str2slot($slot);
@@ -105,6 +140,11 @@ class PlayerManager
 		return null;
 	}
 	
+	/**
+	 * \brief Set the player list
+	 *
+	 * Already existsing players will be merged, new ones added, extra ones removed
+	 */
 	function set_players($players)
 	{
 		$old = $this->players;
@@ -140,33 +180,50 @@ class PlayerManager
 		return null;
 	}
 	
+	/**
+	 * \brief Remove all players
+	 */
 	function clear()
 	{
 		$this->players = array();
 		$this->count_bots = $this->count_players = 0;
 	}
 	
+	/**
+	 * \brief Number of real clients
+	 */
 	function count_players()
 	{
 		return $this->count_players;
 	}
 	
+	/**
+	 * \brief Number of bot clients
+	 */
 	function count_bots()
 	{
 		return $this->count_bots;
 	}
 	
+	/**
+	 * \brief Total number (bots*real)
+	 */
 	function count_all()
 	{
 		return $this->count_players + $this->count_bots;
 	}
 	
+	/**
+	 * \brief Get all players
+	 */
 	function all()
 	{
 		return array_values($this->players);
 	}
 	
-	
+	/**
+	 * \brief Get all the players who aren't bots
+	 */
 	function all_no_bots()
 	{
 		$players = array();
