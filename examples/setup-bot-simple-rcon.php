@@ -46,7 +46,6 @@ $disp_everywhere->install(array(
 // public commands
 	new Executor_Help(),
 // Q auth
-	new Executor_Q_SendWhois_Names(),
 	new Executor_Q_SendWhois_Join(),
 	new Executor_Q_GetWhois(),
 ));
@@ -160,3 +159,16 @@ $driver->install(array(
 
 // start the bot
 $driver->run();
+
+
+/*
+// If you want to see player countries:
+
+// Change Join/Part messages to include %country%
+
+// Something like this instead of just $driver->run()
+require_once("geoip-api-php-1.14/src/geoip.inc");
+RconPlayer::$geoip = geoip_open("/usr/share/GeoIP/GeoIP.dat");
+$driver->run();
+geoip_close(RconPlayer::$geoip);
+*/

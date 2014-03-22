@@ -43,10 +43,15 @@ class Executor_Q_SendWhois_Join extends Executor_Whois_base
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
-		$this->send_whois($cmd->from,$bot,$data);
+		if ( $cmd->from != $bot->nick )
+			$this->send_whois($cmd->from,$bot,$data);
+		else
+			$bot->say("Q","users {$cmd->channel}");
 	}
 }
 
+/*
+sending whois for each user, pretty slow
 class Executor_Q_SendWhois_Names extends Executor_Whois_base
 {
 	function __construct()
@@ -64,7 +69,7 @@ class Executor_Q_SendWhois_Names extends Executor_Whois_base
 			$this->send_whois($nick,$bot,$data);
 		}
 	}
-}
+}*/
 
 class Executor_Q_GetWhois extends Executor_Whois_base
 {
@@ -80,7 +85,14 @@ class Executor_Q_GetWhois extends Executor_Whois_base
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
+		static $nickre = "[-_A-Za-z0-9{}^<>\[\]\\\\]+";
+		// whois
 		if ( preg_match("{-Information for user ([^ ]+) \(using account ([^ )]+)\):}",$cmd->params[0],$matches) )
+		{
+			$this->get_whois($matches[1], $matches[2], $bot, $data);
+		}
+		// users
+		else if ( preg_match("{[@+ ]?($nickre)\s+($nickre)\s*(\+[a-z]+)?\s*\((.*)\)}",$cmd->params[0],$matches) )
 		{
 			$this->get_whois($matches[1], $matches[2], $bot, $data);
 		}

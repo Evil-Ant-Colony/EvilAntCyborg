@@ -80,7 +80,6 @@ $disp_everywhere->install(array(
 	new Executor_Message($message_queue),
 	new Executor_Tell($message_queue),
 // Q auth
-	new Executor_Q_SendWhois_Names(),
 	new Executor_Q_SendWhois_Join(),
 	new Executor_Q_GetWhois(),
 ));
