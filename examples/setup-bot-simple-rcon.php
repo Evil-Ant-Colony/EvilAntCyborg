@@ -45,6 +45,7 @@ $disp_everywhere->install(array(
 	new Executor_StdoutDump(),
 // public commands
 	new Executor_Help(),
+	new Executor_License(), // Note: required to comply with the AGPL
 // Q auth
 	new Executor_Q_SendWhois_Join(),
 	new Executor_Q_GetWhois(),

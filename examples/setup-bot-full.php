@@ -74,6 +74,7 @@ $disp_everywhere->install(array(
 	new Executor_UserList('blacklist','admin',array('owner'=>"But % is my daddy!")),
 // public commands
 	new Executor_Help(),
+	new Executor_License(), // Note: required to comply with the AGPL
 // message handling
 	new Executor_NotifyMessages($message_queue),
 	new Executor_NotifyMessages($message_queue,'JOIN'),

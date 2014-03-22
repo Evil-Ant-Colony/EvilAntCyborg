@@ -1,4 +1,22 @@
 <?php
+/**
+ * \file
+ * \author Mattia Basaglia
+ * \copyright Copyright 2013-2014 Mattia Basaglia
+ * \section License
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Affero General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Affero General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Affero General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 
 require_once("irc/bot-driver.php");
 
@@ -417,4 +435,25 @@ class Executor_StdoutDump extends CommandExecutor
 	{
 		print_r($driver);
 	}
+}
+
+
+/**
+ * \brief Show license and sourcecode location
+ */
+class Executor_License extends CommandExecutor
+{
+	public $sources;
+	
+	function __construct($sources='https://github.com/mbasaglia/Simple_IRC_Bot/', $trigger="license")
+	{
+		parent::__construct($trigger,null,$trigger,"Show licensing info");
+		$this->sources = $sources;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		$bot->say($cmd->channel,"AGPLv3+ (http://www.gnu.org/licenses/agpl-3.0.html), Sources: $this->sources");
+	}
+	
 }
