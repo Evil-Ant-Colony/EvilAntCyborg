@@ -96,7 +96,7 @@ class Rcon_Packet
 		$packet->server = new Rcon_Server();
 		@socket_recvfrom($socket, $packet->contents, self::MAX_READ_LENGTH, 0, $packet->server->host, $packet->server->port);
 		$head = substr($packet->contents,0,strlen(self::$challenge_header));
-		$packet->payload =substr($packet->contents,strlen(self::$challenge_header));
+		$packet->payload =substr($packet->contents,strlen(self::$challenge_header),11);
 		$packet->valid = $head == self::$challenge_header;
 		return $packet;
 	}
@@ -126,27 +126,24 @@ class Rcon
 	
 	/**
 	 * \brief Send the given command to rcon
-	 * \bug rcon_secure 2 is not working properly
 	 */
 	function send($command) 
 	{
-		/// \todo secure 2
 		$payload = "";
 		if( $this->secure > 1)
 		{
 			$packet = new Rcon_Packet("getchallenge",$this->write);
 			$packet->send($this->socket);
-			$cpacket = Rcon_Packet::read_challenge($this->socket);
+			$timeout = time() + 5; /// \todo read cvar
+			do
+				$cpacket = Rcon_Packet::read_challenge($this->socket);
+			while(!$cpacket->valid && time() < $timeout);
+			if ( !$cpacket->valid )
+				return null;
 			$challenge = $cpacket->payload;
 			Logger::log("dp",">","Challenge $challenge",5);
 			$key = hash_hmac("md4","$challenge $command", $this->password, true );
 			$payload = "srcon HMAC-MD4 CHALLENGE $key $challenge $command";
-			/*echo "$cpacket->contents\n";
-			echo "$payload\n";
-			$password = substr($payload,25,42-25);
-			$challenge = substr($payload,42);
-			$s = strchr($challenge,' ');
-			print_r(array($password,$challenge,$s));*/
 		}
 		elseif ( $this->secure == 1 )
 		{
