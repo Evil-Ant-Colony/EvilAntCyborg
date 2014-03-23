@@ -97,7 +97,7 @@ class Rcon
 	public $read;     ///< Read server (log_dest_udp)
 	public $write;    ///< Write server
 	public $password; ///< Password to the write server
-	//public $secure = 0;
+	public $secure = 0;
 	public $socket;   ///< Socket used for communications
 	
 	function __construct($host,$port,$password)
@@ -117,21 +117,21 @@ class Rcon
 	function send($command) 
 	{
 		/// \todo secure
-		/*$payload = "";
-		if( $this->secure > 1)
+		$payload = "";
+		/*if( $this->secure > 1)
 		{
 			$payload = "getchallenge";
 		}
-		else if ( $this->secure == 1 )
+		else*/if ( $this->secure == 1 )
 		{
 			$t = sprintf("%ld.%06d", time(), rand(0, 1000000));
-			$key = hash_hmac("md4","$t $command", $this->password );
+			$key = hash_hmac("md4","$t $command", $this->password, true );
 			$payload = "srcon HMAC-MD4 TIME $key $t $command";
 		}
 		else
-			$payload = "rcon {$this->password} $command";*/
+			$payload = "rcon {$this->password} $command";
 		Logger::log("dp","<",Color::dp2ansi($command),0);
-		$packet = new Rcon_Packet("rcon {$this->password} $command",$this->write);
+		$packet = new Rcon_Packet($payload,$this->write);
 		$packet->send($this->socket);
 		return $packet;
 	}
@@ -153,13 +153,3 @@ class Rcon
 		$this->send("addtolist log_dest_udp {$this->read->host}:{$this->read->port}");
 	}
 }
-
-/*
-$rcon = new Rcon ( "127.0.0.1", 26000, "foo");
-$rcon->connect();
-$rcon->send("say test");
-while(true)
-{
-	$packed = $rcon->read();
-	echo "{$packet->payload}\n";
-}*/
