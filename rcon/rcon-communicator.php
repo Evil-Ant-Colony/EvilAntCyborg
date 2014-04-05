@@ -183,9 +183,9 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 				else
 					$this->set_connection_status(self::DISCONNECTED,$bot);
 			}
-				
+			
 			// ensure we are always listening correctly
-			$this->send("addtolist log_dest_udp {$this->rcon->read}");
+			$this->setup_server(false);
 			$this->send("echo :melanorcon:ok");
 			
 			foreach($this->poll_commands as $pc )
@@ -281,10 +281,11 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	/**
 	 * \brief Ensure the rcon server s properly configured to retrieve useful information
 	 */
-	private function setup_server()
+	private function setup_server($log=true)
 	{
-		Logger::log("dp","!","Connecting to {$this->rcon->read}",1);
-		//$this->rcon->send("log_dest_udp {$this->rcon->read}");
+		if ( $log )
+			Logger::log("dp","!","Connecting to {$this->rcon->read}",1);
+		$this->send("addtolist log_dest_udp {$this->rcon->read}");
 		$this->send("sv_logscores_console 0");
 		$this->send("sv_logscores_bots 1");
 		$this->send("sv_eventlog 1");
