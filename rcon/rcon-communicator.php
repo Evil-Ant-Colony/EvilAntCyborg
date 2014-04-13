@@ -108,7 +108,8 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		$this->channel = $channel;
 		$this->rcon = $rcon;
 		$this->poll_commands []= "status 1";
-		$this->out_prefix = "$prefix ";
+		if ( $prefix )
+			$this->out_prefix = "$prefix ";
 	}
 	
 	/**

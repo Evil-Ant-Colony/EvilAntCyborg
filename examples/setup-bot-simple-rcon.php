@@ -60,7 +60,7 @@ $rcon_test = new Rcon ( "127.0.0.1", 26000, "foo");
 // you can omit the prefix and everything sent to the channel will be visible in the xonotic server
 $rcon_test_comm = new Rcon_Communicator("#rcon.channel",$rcon_test,"server");
 
-$driver->install_external($rcon_test);
+$driver->install_external($rcon_test_comm);
 $rcon_test_comm->install(array(
 	// Following commands require the ESK mod pack
 	/*
@@ -130,8 +130,14 @@ $rcon_test_comm->install(array(
 	
 	// Show joins
 	new Rcon2Irc_Join(),
+	// If you have GeoIP enabled and want to see the country, use this instead
+	//new Rcon2Irc_Join("\00309+ join\xf: %name% \00302%country% \00304%map%\xf [\00304%players%\xf/\00304%max%\xf]"),
+		
 	// Show parts
 	new Rcon2Irc_Part(),
+	// If you have GeoIP enabled and want to see the country, use this instead
+	//new Rcon2Irc_Part("\00304- part\xf: %name% \00302%country% \00304%map%\xf [\00304%players%\xf/\00304%max%\xf]"),
+	
 	// Show name changes
 	new Rcon2Irc_Name(),
 	
@@ -169,7 +175,7 @@ $driver->run();
 
 // Something like this instead of just $driver->run()
 require_once("geoip-api-php-1.14/src/geoip.inc");
-RconPlayer::$geoip = geoip_open("/usr/share/GeoIP/GeoIP.dat");
+RconPlayer::$geoip = geoip_open("/usr/share/GeoIP/GeoIP.dat",GEOIP_STANDARD);
 $driver->run();
 geoip_close(RconPlayer::$geoip);
 */
