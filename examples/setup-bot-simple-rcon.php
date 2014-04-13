@@ -17,7 +17,7 @@ date_default_timezone_set("UTC");
 Logger::instance()->default_settings();
 
 // Note: to be able to retrieve auth information, the bot must be registered to Q
-$bot = new MelanoBot($network_quakenet,'ExampleBot','Auth password'); 
+$bot = new MelanoBot($network_quakenet,'ExampleBot','Auth password',array()); 
 
 $bot->auto_restart = true;
 
@@ -65,48 +65,48 @@ $rcon_test_comm->install(array(
 	// Following commands require the ESK mod pack
 	/*
 	// better than Irc2Rcon_RawSayAdmin
-	new Irc2Rcon_RawSay($rcon),
-	new Irc2Rcon_UserEvent($rcon,"JOIN","has joined"),
-	new Irc2Rcon_UserEvent($rcon,"PART","has parted"),
-	new Irc2Rcon_UserEvent($rcon,"QUIT","has quit"),
-	new Irc2Rcon_UserKicked($rcon),
-	new Irc2Rcon_UserNick($rcon),
+	new Irc2Rcon_RawSay($rcon_test),
+	new Irc2Rcon_UserEvent($rcon_test,"JOIN","has joined"),
+	new Irc2Rcon_UserEvent($rcon_test,"PART","has parted"),
+	new Irc2Rcon_UserEvent($rcon_test,"QUIT","has quit"),
+	new Irc2Rcon_UserKicked($rcon_test),
+	new Irc2Rcon_UserNick($rcon_test),
 	*/
 	
 // IRC - public commands
 
 	// IRC->RCON using sv_adminnick and say
-	new Irc2Rcon_RawSayAdmin($rcon), 
+	new Irc2Rcon_RawSayAdmin($rcon_test), 
 	
 	// "who" to list the connected players
-	new Irc2Rcon_Who($rcon),
+	new Irc2Rcon_Who($rcon_test),
 	// "maps pattern" to find maps matching pattern
-	new Irc2Rcon_Maps($rcon),
+	new Irc2Rcon_Maps($rcon_test),
 	
 // IRC - admin commands
 
 	// (admin) "status" to view player, ip and such
-	new Irc2Rcon_Status($rcon),
+	new Irc2Rcon_Status($rcon_test),
 	// (admin) "rcon command" to execute arbitrary commands
-	new Irc2Rcon_Rcon($rcon),
+	new Irc2Rcon_Rcon($rcon_test),
 	// (admin) list of single commands forwarded to rcon
-	new Irc2Rcon_SingleCommand($rcon,"gotomap"),
-	new Irc2Rcon_SingleCommand($rcon,"chmap"),
-	new Irc2Rcon_SingleCommand($rcon,"endmatch"),
-	new Irc2Rcon_SingleCommand($rcon,"restart"),
-	new Irc2Rcon_SingleCommand($rcon,"mute"),
-	new Irc2Rcon_SingleCommand($rcon,"unmute"),
-	new Irc2Rcon_SingleCommand($rcon,"kick"),
+	new Irc2Rcon_SingleCommand($rcon_test,"gotomap"),
+	new Irc2Rcon_SingleCommand($rcon_test,"chmap"),
+	new Irc2Rcon_SingleCommand($rcon_test,"endmatch"),
+	new Irc2Rcon_SingleCommand($rcon_test,"restart"),
+	new Irc2Rcon_SingleCommand($rcon_test,"mute"),
+	new Irc2Rcon_SingleCommand($rcon_test,"unmute"),
+	new Irc2Rcon_SingleCommand($rcon_test,"kick"),
 	// (admin) vcall/vstop from IRC
-	new Irc2Rcon_VCall($rcon),
-	new Irc2Rcon_VStop($rcon),
+	new Irc2Rcon_VCall($rcon_test),
+	new Irc2Rcon_VStop($rcon_test),
 	
 	// (admin) ban management
-	new Irc2Rcon_Command_Update($rcon,"ban","defer 1 banlist"),
-	new Irc2Rcon_Command_Update($rcon,"unban","defer 1 banlist"),
-	new Irc2Rcon_Command_Update($rcon,"kickban","defer 1 banlist"),
+	new Irc2Rcon_Command_Update($rcon_test,"ban","defer 1 banlist"),
+	new Irc2Rcon_Command_Update($rcon_test,"unban","defer 1 banlist"),
+	new Irc2Rcon_Command_Update($rcon_test,"kickban","defer 1 banlist"),
 	// (admin) "banlist" to view active bans "banlist refresh" to update the banlist from the server
-	new Irc2Rcon_Banlist($rcon),
+	new Irc2Rcon_Banlist($rcon_test),
 
 // RCON - retrieve info
 	// request updating g_maplist at the end of every match (needed by Irc2Rcon_Maps)
