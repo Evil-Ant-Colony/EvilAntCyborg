@@ -395,3 +395,66 @@ class Raw_Annoy extends RawCommandExecutor
 	}
 	
 }
+
+
+class Executor_Discord extends CommandExecutor
+{
+	static $day = array("Sweetmorn", "Boomtime", "Pungenday", "Prickle-Prickle", "Setting Orange");
+	static $season = array ("Chaos", "Discord", "Confusion", "Bureaucracy", "The Aftermath");
+	static $song = array(
+		"I'm not a fan of puppeteers but I've a nagging fear someone else is pulling at the strings",
+		"Something terrible is going down through the entire town wreaking anarchy and all it brings",
+		"I can't sit idly, no, I can't move at all. I curse the name, the one behind it all...",
+		"Discord, I'm howlin' at the moon and sleepin' in the middle of a summer afternoon",
+		"Discord, whatever did we do to make you take our world away?",
+		"Discord, are we your prey alone, or are we just a stepping stone for taking back the throne?",
+		"Discord, we won't take it anymore so take your tyranny away!",
+		"I'm fine with changing status quo, but not in letting go now the world is being torn apart",
+		"A terrible catastrophe played by your symphony, what a terrifying work of art!"
+	);
+	static function get_date($time=null)
+	{
+		if ( $time == null )
+			$time = time();
+		$time = localtime($time,true);
+		$day = $time["tm_yday"];
+		$year = $time["tm_year"] + 3066;
+		$season = 0;
+		if ( $year % 4 == 2 )
+		{
+			if ( $day == 59 )
+				$day = -1;
+			else if ( $day > 59 )
+				$day -= 1;
+		}
+		$yday = $day;
+		while ( $day >= 73 )
+		{
+			$season++;
+			$day -= 73;
+		}
+		
+		global $english_ordinal;
+		return "Today is ".self::$day[$yday%5].", the ".$english_ordinal->inflect($day+1).
+			" day of ".self::$season[$season]." in the YOLD $year";
+	}
+	
+	function __construct($trigger='discord')
+	{
+		parent::__construct($trigger,null,"$trigger [time]","Show the Discordian date");
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	{
+		if ( count($cmd->params) > 0 )
+		{
+			if ( $cmd->params[0] == 'sing' )
+				$string = self::$song[rand(0,count(self::$song)-1)];
+			else
+				$string = self::get_date(strtotime($cmd->param_string()));
+		}
+		else
+			$string = self::get_date();
+		$bot->say($cmd->channel,$string);
+	}
+};

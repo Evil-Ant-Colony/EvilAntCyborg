@@ -66,6 +66,13 @@ $english_genitive = new Inflector( array(
     '(.*)' => "\\1's",
 ));
 
+$english_ordinal = new Inflector( array(
+    '([0-9]*[^1]?1)' => "\\1st",
+    '([0-9]*[^1]?2)' => "\\1nd",
+    '([0-9]*[^1]?3)' => "\\1rd",
+    '([0-9]+)' => "\\1th",
+));
+
 // you <-> me
 class PronounSwapper extends Inflector
 {
