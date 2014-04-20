@@ -43,6 +43,22 @@ class Rcon2Irc_Say extends Rcon2Irc_Executor
 	}
 }
 
+/**
+ *
+ * Format variables:
+ *   - %name%     player name (colored)
+ *   - %ip%       player IP address
+ *   - %slot%     player slot
+ *   - %country%  player country
+ *   - %players%  number of connected players (not bots)
+ *   - %bots%     number of bots
+ *   - %total%    number of clients (players+bots)
+ *   - %max%      maximum number of players
+ *   - %gametype% long gametype name (eg: deathmatch)
+ *   - %gt%       short gametype name (eg: dm)
+ *   - %sv_host%  server host name
+ *   - %sv_ip%    server IP address
+ */
 abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 {
 	public $format;
@@ -53,21 +69,24 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 		$this->format = $format;
 	}
 	
-	/// \todo show only non-bots in total
 	protected function send_message(MelanoBot $bot,$channel,$player,Rcon_Communicator $rcon)
 	{
 		if ( !$player || $player->is_bot() )
 			return;
 		$values = array(
-			'%name%'   => Color::dp2irc($player->name),
-			'%ip%'     => $player->ip,
-			'%slot%'   => $player->slot,
-			'%players%'=> $rcon->data->player->count_players(),
-			'%bots%'   => $rcon->data->player->count_bots(),
-			'%total%'  => $rcon->data->player->count_all(),
-			'%max%'    => $rcon->data->player->max,
-			'%map%'    => $rcon->data->map,
-			'%country%'=> $player->country(),
+			'%name%'    => Color::dp2irc($player->name),
+			'%ip%'      => $player->ip,
+			'%slot%'    => $player->slot,
+			'%players%' => $rcon->data->player->count_players(),
+			'%bots%'    => $rcon->data->player->count_bots(),
+			'%total%'   => $rcon->data->player->count_all(),
+			'%max%'     => $rcon->data->player->max,
+			'%map%'     => $rcon->data->map,
+			'%country%' => $player->country(),
+			'%gametype%'=> $rcon->gametype_name($rcon->data->gametype),
+			'%gt%'      => $rcon->data->gametype,
+			'%sv_host%' => $rcon->data->hostname,
+			'%sv_ip%'   => $rcon->write_server,
 		);
 		$bot->say($channel,$rcon->out_prefix.str_replace(array_keys($values),array_values($values),$this->format),-8);
 	}
