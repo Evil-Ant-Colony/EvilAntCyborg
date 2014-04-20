@@ -217,7 +217,6 @@ $driver->install(array(
 	$disp_everywhere,
 	$disp_cup,
 	$rcon_test_comm,
-	$disp_home,
 	$disp_fun, /// KEEP AS LAST
 ));
 
