@@ -20,7 +20,9 @@
 
 require_once("irc/bot-driver.php");
 
-
+/**
+ * Shows the available commands or details on a specific command
+ */
 class Executor_Help extends CommandExecutor
 {
 	function __construct()
@@ -70,6 +72,9 @@ class Executor_Help extends CommandExecutor
 	
 }
 
+/**
+ * Allows owners to shut down the bot
+ */
 class Executor_Quit extends CommandExecutor
 {
 	function __construct($cmd="quit")
@@ -85,6 +90,9 @@ class Executor_Quit extends CommandExecutor
 }
 
 
+/**
+ * Allows owners to reconnect to the network (using a different server if available)
+ */
 class Executor_Reconnect extends CommandExecutor
 {
 	function __construct()
@@ -98,6 +106,9 @@ class Executor_Reconnect extends CommandExecutor
 	}
 }
 
+/**
+ * Show the IRC server the bot is connected to
+ */
 class Executor_Server extends CommandExecutor
 {
 	function __construct()
@@ -111,6 +122,9 @@ class Executor_Server extends CommandExecutor
 	}
 }
 
+/**
+ * Quit and restart the bot (works when the bot has been launched with run-bot.sh)
+ */
 class Executor_Restart extends CommandExecutor
 {
 	public $massage;
@@ -127,6 +141,9 @@ class Executor_Restart extends CommandExecutor
 	}
 }
 
+/**
+ * Creates a temporary file so that (run-bot.sh knows whether to restart the bot)
+ */
 class Post_Restart extends StaticExecutor
 {
 	public $restart_file;
@@ -149,7 +166,9 @@ class Post_Restart extends StaticExecutor
 	}
 }
 
-
+/**
+ * Makes the bot join the given channel
+ */
 class Executor_Join extends CommandExecutor
 {
 	function __construct()
@@ -167,6 +186,9 @@ class Executor_Join extends CommandExecutor
 	}
 }
 
+/**
+ * Part from a channel (or the current channel if none is provided)
+ */
 class Executor_Part extends CommandExecutor
 {
 	function __construct()
@@ -187,6 +209,9 @@ class Executor_Part extends CommandExecutor
 	}
 }
 
+/**
+ * Changes the bot nickname
+ */
 class Executor_Nick extends CommandExecutor
 {
 	function __construct()
@@ -205,6 +230,10 @@ class Executor_Nick extends CommandExecutor
 	}
 }
 
+/**
+ * Add or remove a IRC user from a named list (eg: admin, blacklist etc).
+ * This can change the commands said user can access
+ */
 class Executor_UserList extends CommandExecutor
 {
 	public $list, $exclude;
@@ -291,6 +320,9 @@ class Executor_UserList extends CommandExecutor
 	
 }
 
+/**
+ * Prevents user in the given list to perform any command (blacklist)
+ */
 class Filter_UserList extends Filter
 {
 	public $list;
@@ -307,6 +339,8 @@ class Filter_UserList extends Filter
 
 /**
  * \brief Sinmple filter by IRC nick
+ *
+ * Prevents users in the list to trigger any command (useful to ignore other bots)
  */
 class Filter_UserArray extends Filter
 {
@@ -322,6 +356,9 @@ class Filter_UserArray extends Filter
 	}
 }
 
+/**
+ * Allows some users to execute bot commands from a channel (or private message to another)
+ */
 class Filter_ChanHax extends Filter
 {
 	
@@ -352,6 +389,9 @@ class Filter_ChanHax extends Filter
 }
 
 
+/**
+ * Executes a raw IRC command
+ */
 class Executor_RawIRC extends CommandExecutor
 {
 	function __construct($trigger)
@@ -423,7 +463,9 @@ class Executor_Multi extends CommandExecutor
 }
 
 
-
+/**
+ * Dump debugging information to stdout
+ */
 class Executor_StdoutDump extends CommandExecutor
 {
 	function __construct($trigger='debug')
