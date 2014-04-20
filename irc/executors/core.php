@@ -314,7 +314,14 @@ class Executor_UserList extends CommandExecutor
 			if ( !isset($driver->lists[$this->list]) || count($driver->lists[$this->list]) == 0 )
 				$bot->say($cmd->channel,"(Empty list)");
 			else
-				$bot->say($cmd->channel,implode(" ",array_keys($driver->lists[$this->list])));
+			{
+				$users = array();
+				foreach($driver->lists[$this->list] as $user)
+				{
+					$users []= $user->nick;
+				}
+				$bot->say($cmd->channel,implode(" ",$users));
+			}
 		}
 	}
 	
