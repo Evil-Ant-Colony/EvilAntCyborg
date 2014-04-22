@@ -14,6 +14,7 @@ require_once('irc/executors/fun.php');
 require_once('irc/executors/webapi.php');
 require_once('irc/executors/cup.php');
 require_once('irc/executors/quakenet-auth.php');
+require_once('irc/executors/ctcp.php');
 require_once('rcon/rcon-communicator.php');
 require_once('rcon/executors/rcon-extra.php');
 require_once('rcon/executors/irc2rcon-status.php');
@@ -83,6 +84,12 @@ $disp_everywhere->install(array(
 // Q auth
 	new Executor_Q_SendWhois_Join(),
 	new Executor_Q_GetWhois(),
+// CTCP
+	new Executor_CTCP_Version(),
+	new Executor_CTCP_PING(),
+	new Executor_CTCP_Time(),
+	new Executor_CTCP_Source(),
+	new Executor_CTCP_ClientInfo(),
 ));
 
 // Some fun stuff to be displayed in a single channel

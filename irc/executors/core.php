@@ -494,8 +494,10 @@ class Executor_License extends CommandExecutor
 {
 	public $sources;
 	
-	function __construct($sources='https://github.com/mbasaglia/Simple_IRC_Bot/', $trigger="license")
+	function __construct($sources=null, $trigger="license")
 	{
+		if ( !$sources )
+			$sources = MelanoBot::$source_url;
 		parent::__construct($trigger,null,$trigger,"Show licensing info");
 		$this->sources = $sources;
 	}

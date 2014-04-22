@@ -292,6 +292,10 @@ class BotOutBuffer
 class MelanoBot extends DataSource
 {
 
+	static $client_name = "MelanoBot";
+	static $version     = "v1";
+	static $source_url  = "https://github.com/mbasaglia/Simple_IRC_Bot/";
+
 	const DISCONNECTED        = 0; ///< Bot is not conneced
 	const SERVER_CONNECTED    = 1; ///< Connected to a server but the IRC protocol has not been initialized
 	const PROTOCOL_CONNECTING = 2; ///< Connected to a server and establishing the IRC protocol
@@ -380,7 +384,7 @@ class MelanoBot extends DataSource
     function reconnect($message="reconnect")
     {
 		$this->connection_status = self::DISCONNECTED;
-		$join_list = $this->channels;
+		$join_list = array_merge($this->channels,$this->join_list);
 		$this->quit($message);
 		$i = $this->server_index;
 		for ( $tries = 0; $tries < count($this->servers); $tries++ )

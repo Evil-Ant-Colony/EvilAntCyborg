@@ -27,19 +27,19 @@ abstract class ExecutorBase
 	public $auth;
 	
 	/// Check that the user can run the executor
-	function check_auth($nick,$host,MelanoBot $bot, BotData $driver)
+	function check_auth($nick,$host,MelanoBot $bot, BotData $data)
 	{
-		return !$this->auth || $driver->user_in_list($this->auth,$bot->get_user($nick,$host));
+		return !$this->auth || $data->user_in_list($this->auth,$bot->get_user($nick,$host));
 	}
 	
 	/// Show help about this command
-	abstract function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver);
+	abstract function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data);
 	
 	/// Check that with the data provided by cmd, this executor can run
-	abstract function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver);
+	abstract function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data);
 	
 	/// Run this executor
-	abstract function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver);
+	abstract function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data);
 	
 	/**
 	 * \brief name to be used in help messages and command lists
@@ -48,7 +48,7 @@ abstract class ExecutorBase
 	abstract function name();
 	
 	/// Install on a dispatcher
-	abstract function install_on(BotCommandDispatcher $driver);
+	abstract function install_on(BotCommandDispatcher $data);
 	
 	/// whether the command may be executed again
 	function keep_running() { return false; }
@@ -76,13 +76,13 @@ abstract class CommandExecutor extends ExecutorBase
 		$this->irc_cmd = $irc_cmd;
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return $this->check_auth($cmd->from,$cmd->host,$bot,$driver);
+		return $this->check_auth($cmd->from,$cmd->host,$bot,$data);
 	}
 	
 	/// Show help about this command
-	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
 		$bot->say($cmd->channel,"\x0304".$this->name()."\x03: \x0314{$this->synopsis}\x03");
 		$bot->say($cmd->channel,"\x0302{$this->description}\x03");
@@ -109,13 +109,13 @@ abstract class CommandExecutor extends ExecutorBase
 abstract class RawCommandExecutor extends ExecutorBase
 {
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
 		return $cmd->cmd == null;
 	}
 	
 	/// Show help about this command
-	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
 	}
 	
@@ -136,14 +136,14 @@ abstract class RawCommandExecutor extends ExecutorBase
 abstract class Filter extends ExecutorBase
 {
 	/// equivalent to check()
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
-		return $this->check($cmd,$bot,$driver);
+		return $this->check($cmd,$bot,$data);
 	}
 	
 	
 	/// Show help about this filter
-	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
 	}
 	
@@ -162,5 +162,5 @@ abstract class Filter extends ExecutorBase
 abstract class StaticExecutor
 {
 	
-	abstract function execute( MelanoBot $bot, BotData $driver);
+	abstract function execute( MelanoBot $bot, BotData $data);
 }

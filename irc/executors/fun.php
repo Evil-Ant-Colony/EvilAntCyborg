@@ -347,14 +347,15 @@ class Executor_RenderPony extends CommandExecutor
 		'rainbow' => 'rainbow-dash',
 		'rarity' => 'rarity',
 		'rose' => 'rose',
-		'roseluck' => 'roseluck',
+		'roseluck' => 'rose',
 		'trixie' => 'trixie-hat',
 		'twilight' => 'twilight-alicorn',
 		'unicorn' => 'twilight-unicorn',
 		'alicorn' => 'twilight-alicorn',
-		'princess' => 'twilight-alicorn',
 		'vinyl' => 'vinyl-scratch-noglasses',
 		'dj' => 'vinyl-scratch-glasses',
+		'princess' => 'celestia',
+		'celestia' => 'celestia',
 	);
 
 }
