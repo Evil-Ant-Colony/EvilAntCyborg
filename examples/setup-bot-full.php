@@ -107,6 +107,7 @@ $disp_fun->install(array(
 	new Executor_Youtube(),
 	new Executor_ReverseText(),
 	new Executor_Dictionary(),
+	new Executor_ChuckNorris(),
 // non-PRIVMSG
 	new Executor_RespondKick(),
 	new Executor_GreetingSelf("Hello!!!"),

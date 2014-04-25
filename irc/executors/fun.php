@@ -459,3 +459,27 @@ class Executor_Discord extends CommandExecutor
 		$bot->say($cmd->channel,$string);
 	}
 };
+
+class Executor_ChuckNorris extends CommandExecutor
+{
+	function __construct($trigger='joke')
+	{
+		parent::__construct($trigger,null,"$trigger [name]","Show a joke about Chuck Norris or the given name");
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	{
+		$url = "http://api.icndb.com/jokes/random";
+		
+		if ( count($cmd->params) == 1 )
+			$url .= "?firstName=&lastName=".urlencode($cmd->params[0]);
+		else if ( count($cmd->params) > 1 )
+			$url .= "?firstName=".urlencode($cmd->params[0]).
+				"&lastName=".urlencode($cmd->param_string(false,1));
+		
+		$reply=json_decode(file_get_contents($url),true);
+		$joke = @$reply["value"]["joke"];
+		$bot->say($cmd->channel,html_entity_decode($joke));
+	}
+	
+}
