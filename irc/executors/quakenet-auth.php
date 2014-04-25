@@ -64,7 +64,7 @@ class Executor_Q_SendWhois_Join extends Executor_Whois_base
 		if ( $cmd->from != $bot->nick )
 			$this->send_whois($cmd->from,$bot,$data);
 		else
-			$bot->say("Q","users {$cmd->channel}");
+			$bot->say("Q","users {$cmd->channel}",64);
 	}
 }
 
