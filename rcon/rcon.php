@@ -110,14 +110,15 @@ class Rcon
 	public $read;     ///< Read server (log_dest_udp)
 	public $write;    ///< Write server
 	public $password; ///< Password to the write server
-	public $secure = 0;
+	public $secure;   ///< Secure protocol (rcon_secure)
 	public $socket;   ///< Socket used for communications
 	
-	function __construct($host,$port,$password)
+	function __construct($host,$port,$password, $secure = 0)
 	{
 		$this->write = new Rcon_Server ( $host, $port );
 		$this->read = new Rcon_Server ( $host, $port );
 		$this->password = $password;
+		$this->secure  = $secure;
 		
 		$this->socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
 		socket_bind($this->socket, $host);

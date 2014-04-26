@@ -107,9 +107,14 @@ class Rcon2Irc_Join extends Rcon2Irc_JoinPart_Base
 	{
 		$player = new RconPlayer();
 		list ($player->id, $player->slot, $player->ip, $player->name) = array_splice($cmd->params,1);
+		
+		$already = $rcon->data->player->find($player->slot);
+		$already = $already != null && $already->name == $player->name;
+		
 		$rcon->data->player->add($player);
 		
-		$this->send_message($bot,$cmd->channel,$player,$rcon);
+		if ( !$already )
+			$this->send_message($bot,$cmd->channel,$player,$rcon);
 		
 		return true;
 	}
