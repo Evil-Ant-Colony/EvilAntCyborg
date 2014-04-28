@@ -132,7 +132,7 @@ class Color
 			}
 			,$string)."\x1b[0m";
 	}
-
+	
 // static constructors
 	/**
 	 * \brief Create a color from a 3 digit hex string
@@ -143,8 +143,45 @@ class Color
 		if ( strlen($color) < 3 )
 			return new Color(self::NOCOLOR);
 		$r = hexdec($color[0]); $g = hexdec($color[1]); $b = hexdec($color[2]);
-		$rt = $r > 3; $gt = $g > 3; $bt = $b > 3;
-		return new Color($rt|($gt<<1)|($bt<<2), $r > 9 || $b > 9 || $g > 9);
+		
+		$v = max($r,$g,$b);
+		$cmin = min($r,$g,$b);
+		$D = $v - $cmin;
+		
+		if ( $D == 0 )
+		{
+			$c = 0;
+		}
+		else 
+		{
+			if ( $r == $v )
+				$h = ($g-$b)/$D;
+			else if ( $g == $v )
+				$h = ($b-$r)/$D + 2;
+			else if ( $b == $v )
+				$h = ($r-$g)/$D + 4;
+				
+			$s = $D / $v;
+		
+			if ( $s >= 0.3 )
+			{
+				if ( $h < 0 ) $h += 6;
+				if ( $h < 0.5 )      $c = self::RED;
+				else if ( $h < 1.5 ) $c = self::YELLOW;
+				else if ( $h < 2.5 ) $c = self::GREEN;
+				else if ( $h < 3.5 ) $c = self::CYAN;
+				else if ( $h < 4.5 ) $c = self::BLUE;
+				else if ( $h < 5.5 ) $c = self::MAGENTA;
+				else $c = self::RED;
+			}
+			elseif ( $v > 7 )
+				$c = 7;
+			else
+				$c = 0;
+		}
+		return new Color($c,$v>9);
+		/*$rt = $r > 3; $gt = $g > 3; $bt = $b > 3;
+		return new Color($rt|($gt<<1)|($bt<<2), $r > 9 || $b > 9 || $g > 9);*/
 	}
 	
 	/**

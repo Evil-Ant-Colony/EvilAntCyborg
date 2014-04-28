@@ -33,6 +33,11 @@ class Irc2Rcon_RawSayAdmin extends RawCommandExecutor
 		$this->rcon = $rcon;
 	}
 	
+	function convert($text)
+	{
+		return Color::irc2dp($text);
+	}
+	
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
@@ -41,7 +46,23 @@ class Irc2Rcon_RawSayAdmin extends RawCommandExecutor
 		$text = str_replace(array('\\','"'),array('\\\\','\"'),$cmd->param_string());
 		if ( preg_match("{^\1ACTION ([^\1]*)\1$}", $text, $match) )
 			$text = $match[1];
-		$this->rcon->send($this->say_command." ".Color::irc2dp($text));
+		$this->rcon->send($this->say_command.$this->convert($text));
 		Rcon_Communicator::restore_sv_adminnick($rcon_data);
+	}
+}
+
+class Irc2Rcon_RawSayAdmin_EncodeText extends Irc2Rcon_RawSayAdmin
+{
+	public $target_encoding;
+	
+	function __construct(Rcon $rcon, $target_encoding='ASCII//TRANSLIT', $say_command='say ^7')
+	{
+		parent::__construct($rcon,$say_command);
+		$this->target_encoding = $target_encoding;
+	}
+	
+	function convert($text)
+	{
+		return Color::irc2dp(iconv('UTF-8', $this->target_encoding,$text));
 	}
 }

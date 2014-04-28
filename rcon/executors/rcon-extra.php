@@ -32,7 +32,7 @@ class Rcon2Irc_SayAction extends Rcon2Irc_Executor
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
-		$bot->say($cmd->channel,"{$this->out_prefix}\00312*\xf ".Color::dp2irc($cmd->params[1]),-16);
+		$bot->say($cmd->channel,"{$rcon->out_prefix}\00312*\xf ".Color::dp2irc($cmd->params[1]),-16);
 		return true;
 	}
 }
@@ -43,11 +43,16 @@ class Irc2Rcon_RawSay extends RawCommandExecutor
 	public $action_command;
 	public $rcon;
 	
-	function __construct(Rcon $rcon, $say_command='_ircmessage %s ^7: %s',$action_command='_ircmessage "^4*^3 %s" ^3 %s')
+	function __construct(Rcon $rcon, $say_command='_ircmessage %s ^7: %s',$action_command='_ircmessage "^4*^3 %s" ^7 %s')
 	{
 		$this->say_command=$say_command;
 		$this->action_command = $action_command;
 		$this->rcon = $rcon;
+	}
+	
+	function convert($text)
+	{
+		return Color::irc2dp($text);
 	}
 	
 	
@@ -55,14 +60,33 @@ class Irc2Rcon_RawSay extends RawCommandExecutor
 	{
 		$text = str_replace(array('\\','"'),array('\\\\','\"'),$cmd->param_string());
 		if ( preg_match("{^\1ACTION ([^\1]*)\1$}", $text, $match) )
-			$this->rcon->send(sprintf($this->action_command,$cmd->from,Color::irc2dp($match[1])));
+			$this->rcon->send(sprintf($this->action_command,$cmd->from,$this->convert($match[1])));
 		else
-			$this->rcon->send(sprintf($this->say_command,$cmd->from,Color::irc2dp($text)));
+			$this->rcon->send(sprintf($this->say_command,$cmd->from,$this->convert($text)));
 	}
 }
+
+class Irc2Rcon_RawSay_EncodeText extends Irc2Rcon_RawSay
+{
+	public $target_encoding;
+	
+	function __construct(Rcon $rcon, $target_encoding='ASCII//TRANSLIT', 
+		$say_command='_ircmessage %s ^7: %s',$action_command='_ircmessage "^4*^3 %s" ^7 %s')
+	{
+		parent::__construct($rcon,$say_command,$action_command);
+		$this->target_encoding = $target_encoding;
+	}
+	
+	function convert($text)
+	{
+		return Color::irc2dp(iconv('UTF-8', $this->target_encoding,$text));
+	}
+}
+
+
 class Irc2Rcon_UserEvent extends Irc2Rcon_Executor
 {
-	function __construct(Rcon $rcon, $event, $message, $command='_ircmessage "^4*^3 %s" ^3 %s')
+	function __construct(Rcon $rcon, $event, $message, $command='_ircmessage "^4*^3 %s" ^7 %s')
 	{
 		parent::__construct($rcon,null,null);
 		$this->command=$command;
@@ -77,11 +101,26 @@ class Irc2Rcon_UserEvent extends Irc2Rcon_Executor
 	}
 }
 
+
+class Irc2Rcon_UserJoin extends Irc2Rcon_UserEvent
+{
+	function __construct(Rcon $rcon, $message="has joined", $command='_ircmessage "^4*^3 %s" ^7 %s')
+	{
+		parent::__construct($rcon,'JOIN',$message,$command);
+	}
+	
+	
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
+	{
+		return parent::check($cmd,$bot,$data) && $cmd->from != $bot->nick;
+	}
+}
+
 class Irc2Rcon_UserKicked extends Irc2Rcon_Executor
 {
 	public $message;
 	
-	function __construct(Rcon $rcon, $message='_ircmessage "^4*^3 %s" ^3 has kicked %s')
+	function __construct(Rcon $rcon, $message='_ircmessage "^4*^3 %s" ^7 has kicked ^3%s')
 	{
 		parent::__construct($rcon,null,null);
 		$this->message=$message;
@@ -97,7 +136,7 @@ class Irc2Rcon_UserKicked extends Irc2Rcon_Executor
 
 class Irc2Rcon_UserNick extends Irc2Rcon_UserKicked
 {
-	function __construct(Rcon $rcon, $message='_ircmessage "^4*^3 %s" ^3 is now known as %s')
+	function __construct(Rcon $rcon, $message='_ircmessage "^4*^3 %s" ^7 is now known as ^3%s')
 	{
 		parent::__construct($rcon,$message);
 		$this->irc_cmd = "NICK";
