@@ -54,6 +54,7 @@ class Rcon2Irc_Say extends Rcon2Irc_Executor
  *   - %bots%     number of bots
  *   - %total%    number of clients (players+bots)
  *   - %max%      maximum number of players
+ *   - %free%     free slots
  *   - %gametype% long gametype name (eg: deathmatch)
  *   - %gt%       short gametype name (eg: dm)
  *   - %sv_host%  server host name
@@ -82,6 +83,7 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 			'%bots%'    => $rcon->data->player->count_bots(),
 			'%total%'   => $rcon->data->player->count_all(),
 			'%max%'     => $rcon->data->player->max,
+			'%free%'    => ($rcon->data->player->max-$rcon->data->player->count_players()),
 			'%map%'     => $rcon->data->map,
 			'%country%' => $player->country(),
 			'%gametype%'=> $rcon->gametype_name($gametype),
@@ -183,8 +185,8 @@ class Rcon2Irc_Filter_BlahBlah extends Rcon2Irc_Filter
  */
 class Rcon2Irc_Score extends Rcon2Irc_Executor
 {
-	private $player_scores= array();
-	private $team_scores  = array();
+	protected $player_scores= array();
+	protected $team_scores  = array();
 	public $team_colors = array(5 => Color::RED, 
 								14 => Color::BLUE, 
 								13 => Color::YELLOW, 
@@ -236,7 +238,7 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 		return false;
 	}
 	
-	private function player_score( $player,$color)
+	protected function player_score( $player,$color)
 	{
 		$name = $player->name;
 		if ( $color != null )
@@ -251,7 +253,7 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 		return "\002".sprintf('%3s',$score)."\xf $name";
 	}
 	
-	private function score_compare($a,$b)
+	protected function score_compare($a,$b)
 	{
 		if ( $a->team == 'spectator' && $b->team == 'spectator' ) return 0;
 		if ( $a->team == 'spectator' ) return 1;
@@ -259,7 +261,7 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 		return $a->frags == $b->frags ? 0 : ( $a->frags > $b->frags ? -1 : +1 );
 	}
 	
-	private function print_scores(Rcon_Command $cmd, MelanoBot $bot)
+	protected function print_scores(Rcon_Command $cmd, MelanoBot $bot)
 	{
 		usort($this->player_scores,'Rcon2Irc_Score::score_compare');
 		if ( empty($this->team_scores) )
@@ -289,12 +291,12 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 		}
 	}
 	
-	private function gather_team(Rcon_Command $cmd, Rcon_Communicator $rcon)
+	protected function gather_team(Rcon_Command $cmd, Rcon_Communicator $rcon)
 	{
 		$this->team_scores[ $cmd->params[4] ] = $cmd->params[3];
 	}
 	
-	private function gather_player(Rcon_Command $cmd, Rcon_Communicator $rcon)
+	protected function gather_player(Rcon_Command $cmd, Rcon_Communicator $rcon)
 	{
 		$player = new RconPlayer;
 		list ($player->frags, $player->time, $player->team, $player->id, $player->name) = array_splice($cmd->params,6);
@@ -306,15 +308,95 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 	}
 }
 
+class Rcon2Irc_Score_Inline extends Rcon2Irc_Score
+{
+	public $show_spectators;
+	
+	function __construct($show_spectators = false)
+	{
+		$this->show_spectators = $show_spectators;
+		parent::__construct();
+	}
+	
+	function print_scores(Rcon_Command $cmd, MelanoBot $bot)
+	{
+		usort($this->player_scores,'Rcon2Irc_Score::score_compare');
+		if ( empty($this->team_scores) )
+		{
+			$score_string = array();
+			foreach($this->player_scores as $p )
+				if ( $this->show_spectators || $p->team != 'spectator' )
+					$score_string[] = $this->player_score($p,null);
+			$bot->say($cmd->channel,implode(", ",$score_string),-1);
+		}
+		else
+		{
+			$ts = array();
+			foreach($this->team_scores as $team => $score )
+			{
+				$color = new Color($this->team_colors[$team],true);
+				$ts[$team] = $color->irc()."$score\xf";
+			}
+			$bot->say($cmd->channel,"Team Scores: ".implode(":",array_values($ts)));
+			$ts['spectator'] = null;
+			foreach(array_keys($ts) as $team )
+			{
+				if ( !$this->show_spectators && $team == 'spectator' )
+					continue;
+				
+				$color = isset($this->team_colors[$team]) ? new Color($this->team_colors[$team],true) : null;
+				$score_string = array();
+				foreach($this->player_scores as $p )
+				{
+					if ( $p->team == $team )
+						$score_string[] = $this->player_score($p,$color);
+				}
+				$bot->say($cmd->channel,implode(", ",$score_string),-1);
+			}
+		}
+	}
+}
+
 /**
  * \brief Notify that a new match has started 
+ *
+ * Format variables:
+ *   - %players%  number of connected players (not bots)
+ *   - %bots%     number of bots
+ *   - %total%    number of clients (players+bots)
+ *   - %max%      maximum number of players
+ *   - %free%     free slots
+ *   - %gametype% long gametype name (eg: deathmatch)
+ *   - %gt%       short gametype name (eg: dm)
+ *   - %sv_host%  server host name
+ *   - %sv_ip%    server IP address
  */
 class Rcon2Irc_MatchStart extends Rcon2Irc_Executor
 {
+	public $message;
 	
-	function __construct()
+	function __construct($message = "Playing \00310%gametype%\xf on \00304%map%\xf (%free% free slots); join now: \2xonotic +connect %sv_ip%")
 	{
 		parent::__construct("{^:gamestart:([a-z]+)_(.*):[0-9.]*}");
+		$this->message = $message;
+	}
+	
+	protected function send_message(MelanoBot $bot,$channel,Rcon_Communicator $rcon)
+	{
+		$gametype = isset($rcon->data->gametype) ? $rcon->data->gametype : "";
+		$values = array(
+			'%players%' => $rcon->data->player->count_players(),
+			'%bots%'    => $rcon->data->player->count_bots(),
+			'%total%'   => $rcon->data->player->count_all(),
+			'%max%'     => $rcon->data->player->max,
+			'%free%'    => ($rcon->data->player->max-$rcon->data->player->count_players()),
+			'%map%'     => $rcon->data->map,
+			'%gametype%'=> $rcon->gametype_name($gametype),
+			'%gt%'      => $gametype,
+			'%sv_host%' => $rcon->data->hostname,
+			'%sv_ip%'   => $rcon->write_server,
+		);
+		$bot->say($channel,$rcon->out_prefix.str_replace(array_keys($values),array_values($values),$this->message),-1);
 	}
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
@@ -324,11 +406,7 @@ class Rcon2Irc_MatchStart extends Rcon2Irc_Executor
 			
 		$rcon->data->gametype=$cmd->params[1];
 		$rcon->data->map = $cmd->params[2];
-		
-		$bot->say($cmd->channel,"{$rcon->out_prefix}Playing \00310".$rcon->gametype_name($cmd->params[1]).
-			"\xf on \00304{$cmd->params[2]}\xf (".
-			($rcon->data->player->max-$rcon->data->player->count_players()).
-			" free slots); join now: \2xonotic +connect {$rcon->write_server}",-1 );
+		$this->send_message($bot,$cmd->channel,$rcon);
 		return true;
 	}
 }

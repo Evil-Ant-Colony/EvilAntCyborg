@@ -254,6 +254,8 @@ function rcon_comm($driver, Rcon $rcon,$channel,$prefix)
 
 	// Show score tables at the end of each match
 	new Rcon2Irc_Score(),
+	// Show scores inline at the end of each match
+	//new Rcon2Irc_Score_Inline(),
 	
 	// Show match start notifications
 	new Rcon2Irc_MatchStart(),

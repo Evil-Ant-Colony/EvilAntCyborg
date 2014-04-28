@@ -157,6 +157,8 @@ $rcon_test_comm->install(array(
 
 	// Show score tables at the end of each match
 	new Rcon2Irc_Score(),
+	// Show scores inline at the end of each match
+	//new Rcon2Irc_Score_Inline(),
 	
 	// Show match start notifications
 	new Rcon2Irc_MatchStart(),
