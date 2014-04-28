@@ -20,6 +20,10 @@ Logger::instance()->default_settings();
 // Note: to be able to retrieve auth information, the bot must be registered to Q
 $bot = new MelanoBot($network_quakenet,'ExampleBot','Auth password',array()); 
 
+// If using a bouncer (or the server has a password)
+//$bot->connection_password = 'ExampleBot/quakenet:bouncerpassword';
+
+// Restart automatically if didn't quit cleanly
 $bot->auto_restart = true;
 
 $driver = new BotDriver($bot);

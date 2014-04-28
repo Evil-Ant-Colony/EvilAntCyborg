@@ -25,8 +25,14 @@ date_default_timezone_set("UTC");
 Logger::instance()->default_settings();
 Logger::instance()->verbosity = 3;
 
+// Note: to be able to retrieve auth information, the bot must be registered to Q
+// The array contains the list of channels to connect to, you can omit channels 
+// which are specified on BotCommandDispatcher instances
 $bot = new MelanoBot($network_quakenet,'ExampleBot',null,
                         array('#example','#channel')); 
+
+// If using a bouncer (or the server has a password)
+//$bot->connection_password = 'ExampleBot/quakenet:bouncerpassword';
 
 $bot->auto_restart = true;
 
@@ -38,6 +44,7 @@ $driver->data->add_to_list('admin',new IRC_User(null,'Admin1Nick'));
 $driver->data->add_to_list('admin',new IRC_User(null,'Admin2Nick','example.com'));
 $driver->add_to_list('blacklist',new IRC_User(null,'AnnoyingUser'));
 
+// These messages are sent when a user joins the fun channel
 $custom_greets = array(
 	'AuthedBotOwnerNick' => 'welcomes his daddy',
 );
@@ -53,8 +60,10 @@ $driver->on_error = function (MelanoBotCommand $cmd, MelanoBot $bot, BotData $dr
 $message_queue = new MessageQueue();
 
 $driver->install_filter(array(
+	/// Ignore blacklisted users
 	new Filter_UserList('blacklist'),
-	new Filter_ChanHax('chanhax','admin')
+	/// Allow sending messages from a channel (or a private message) to another
+	new Filter_ChanHax('chanhax','admin'),
 ));
 
 // Global commands available on every channel
@@ -93,6 +102,8 @@ $disp_everywhere->install(array(
 ));
 
 // Some fun stuff to be displayed in a single channel
+// To allow in multiple channel you can use array('#chan1', '#chan2')
+// To allow in every channel, don't pass anything
 $disp_fun = new BotCommandDispatcher("#funchan");
 $disp_fun->install(array(
 // admin
@@ -159,58 +170,102 @@ function rcon_comm($driver, Rcon $rcon,$channel,$prefix)
 
 	$driver->install_external($rcon_comm);
 	$rcon_comm->install(array(
-		// Following commands require the ESK mod pack
-		/*
-		new Irc2Rcon_RawSay($rcon),
-		new Irc2Rcon_UserEvent($rcon,"JOIN","has joined"),
-		new Irc2Rcon_UserEvent($rcon,"PART","has parted"),
-		new Irc2Rcon_UserEvent($rcon,"QUIT","has quit"),
-		new Irc2Rcon_UserKicked($rcon),
-		new Irc2Rcon_UserNick($rcon),
-		*/
-		new Irc2Rcon_RawSayAdmin($rcon),
-		
-		new Irc2Rcon_Who($rcon),
-		new Irc2Rcon_Status($rcon),
-		new Irc2Rcon_Maps($rcon),
-		new Irc2Rcon_Rcon($rcon), /// \warning may be dangerous!
-		new Irc2Rcon_SingleCommand($rcon,"gotomap"),
-		new Irc2Rcon_SingleCommand($rcon,"chmap"),
-		new Irc2Rcon_SingleCommand($rcon,"endmatch"),
-		new Irc2Rcon_SingleCommand($rcon,"restart"),
-		new Irc2Rcon_SingleCommand($rcon,"mute"),
-		new Irc2Rcon_SingleCommand($rcon,"unmute"),
-		new Irc2Rcon_SingleCommand($rcon,"kick"),
-		new Irc2Rcon_VCall($rcon),
-		new Irc2Rcon_VStop($rcon),
-		new Irc2Rcon_Command_Update($rcon,"ban","defer 1 banlist"),
-		new Irc2Rcon_Command_Update($rcon,"unban","defer 1 banlist"),
-		new Irc2Rcon_Command_Update($rcon,"kickban","defer 1 banlist"),
-		new Irc2Rcon_Banlist($rcon),
+	// Following commands require the ESK mod pack
+	/*
+	// better than Irc2Rcon_RawSayAdmin
+	new Irc2Rcon_RawSay($rcon_test),
+	new Irc2Rcon_UserEvent($rcon_test,"JOIN","has joined"),
+	new Irc2Rcon_UserEvent($rcon_test,"PART","has parted"),
+	new Irc2Rcon_UserEvent($rcon_test,"QUIT","has quit"),
+	new Irc2Rcon_UserKicked($rcon_test),
+	new Irc2Rcon_UserNick($rcon_test),
+	*/
+	
+// IRC - public commands
 
-		new Rcon2Irc_SlowPolling(array("g_maplist")),
-		new Rcon2Irc_GetCvars(),
-		new Rcon2Irc_UpdateBans(),
+	// IRC->RCON using sv_adminnick and say (remove if using the ESK mod commands)
+	new Irc2Rcon_RawSayAdmin($rcon_test), 
+	
+	// "who" to list the connected players
+	new Irc2Rcon_Who($rcon_test),
+	// "maps pattern" to find maps matching pattern
+	new Irc2Rcon_Maps($rcon_test),
+	
+// IRC - admin commands
+
+	// (admin) "status" to view player, ip and such
+	new Irc2Rcon_Status($rcon_test),
+	// (admin) "rcon command" to execute arbitrary commands
+	new Irc2Rcon_Rcon($rcon_test),
+	// (admin) list of single commands forwarded to rcon
+	new Irc2Rcon_SingleCommand($rcon_test,"gotomap"),
+	new Irc2Rcon_SingleCommand($rcon_test,"chmap"),
+	new Irc2Rcon_SingleCommand($rcon_test,"endmatch"),
+	new Irc2Rcon_SingleCommand($rcon_test,"restart"),
+	new Irc2Rcon_SingleCommand($rcon_test,"mute"),
+	new Irc2Rcon_SingleCommand($rcon_test,"unmute"),
+	new Irc2Rcon_SingleCommand($rcon_test,"kick"),
+	// (admin) vcall/vstop from IRC
+	new Irc2Rcon_VCall($rcon_test),
+	new Irc2Rcon_VStop($rcon_test),
+	
+	// (admin) ban management
+	new Irc2Rcon_Command_Update($rcon_test,"ban","defer 1 banlist"),
+	new Irc2Rcon_Command_Update($rcon_test,"unban","defer 1 banlist"),
+	new Irc2Rcon_Command_Update($rcon_test,"kickban","defer 1 banlist"),
+	// (admin) "banlist" to view active bans "banlist refresh" to update the banlist from the server
+	new Irc2Rcon_Banlist($rcon_test),
+
+// RCON - retrieve info
+	// request updating g_maplist at the end of every match (needed by Irc2Rcon_Maps)
+	new Rcon2Irc_SlowPolling(array("g_maplist")),
+	// detect cvar changes (needed by Irc2Rcon_Maps)
+	new Rcon2Irc_GetCvars(),
+	// detect changes to the ban list (needed by Irc2Rcon_Banlist)
+	new Rcon2Irc_UpdateBans(),
+	
+// RCON - notify admins
+	// if a player prepends "!admin" to chat messages, admins will recieve a private message
+	new Rcon2Irc_NotifyAdmin(),
+	// if the server encounters an error, admins will recieve a private message
+	new Rcon2Irc_HostError(),
+	
+// RCON -> IRC chat
+	// plain chat
+	new Rcon2Irc_Say(),
+	// handle /me chats in the ESK mod pack
+	// new Rcon2Irc_SayAction(),
+	
+	// Show joins
+	new Rcon2Irc_Join(),
+	// If you have GeoIP enabled and want to see the country, use this instead
+	//new Rcon2Irc_Join("\00309+ join\xf: %name% \00302%country% \00304%map%\xf [\00304%players%\xf/\00304%max%\xf]"),
 		
-		new Rcon2Irc_NotifyAdmin(),
-		new Rcon2Irc_HostError(),
-		new Rcon2Irc_Say(),
-		new Rcon2Irc_SayAction(),
-		
-		new Rcon2Irc_Join(),
-		new Rcon2Irc_Part(),
-		new Rcon2Irc_Name(),
-		
-		new Rcon2Irc_Score(),
-		new Rcon2Irc_Votes(),
-		new Rcon2Irc_MatchStart(),
-		
-		new Rcon2Irc_Filter_BlahBlah(),
+	// Show parts
+	new Rcon2Irc_Part(),
+	// If you have GeoIP enabled and want to see the country, use this instead
+	//new Rcon2Irc_Part("\00304- part\xf: %name% \00302%country% \00304%map%\xf [\00304%players%\xf/\00304%max%\xf]"),
+	
+	// Show name changes
+	new Rcon2Irc_Name(),
+	
+	// Show vote calls/results and so on
+	new Rcon2Irc_Votes(),
+
+	// Show score tables at the end of each match
+	new Rcon2Irc_Score(),
+	
+	// Show match start notifications
+	new Rcon2Irc_MatchStart(),
+
+// RCON - filter some uniteresting output from rcon to get nicer logs
+	new Rcon2Irc_Filter_BlahBlah(),
 	));
 	
 	return $rcon_comm;
 }
 
+// bot admins are rcon admins
 $driver->data->grant_access['rcon-admin'] = array('admin');
 $rcon_test = new Rcon ( "127.0.0.1", 26000, "foo");
 // attach rcon instance to #rcon.channel, using test as prefix
@@ -218,6 +273,9 @@ $rcon_test = new Rcon ( "127.0.0.1", 26000, "foo");
 // commands to the server like this: (BotNick): test status
 // you can omit the prefix and everything sent to the channel will be visible in the xonotic server
 $rcon_test_comm = rcon_comm($driver,$rcon_test,"#rcon.channel","server");
+
+
+// Install dispatchers
 
 $driver->install_post_executor( new Post_Restart() );
 
@@ -230,3 +288,16 @@ $driver->install(array(
 
 // start the bot
 $driver->run();
+
+
+/*
+// If you want to see RCON player countries:
+
+// Change Join/Part messages to include %country%
+
+// Something like this instead of just $driver->run()
+require_once("geoip-api-php-1.14/src/geoip.inc");
+RconPlayer::$geoip = geoip_open("/usr/share/GeoIP/GeoIP.dat",GEOIP_STANDARD);
+$driver->run();
+geoip_close(RconPlayer::$geoip);
+*/

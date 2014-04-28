@@ -234,7 +234,7 @@ class BotOutBuffer
 			return;
 		}
 		Logger::log("irc","<",Color::irc2ansi($message->data),0);
-		$data = substr($message->data,0,$this->flood_max_bytes-2)."\n\r";
+		$data = substr($message->data,0,$this->flood_max_bytes-2)."\r\n";
 		$this->server->write($data);
 		$this->flood_next_time = microtime(true) + $this->flood_time_start * $this->flood_time_counter;
 		$this->flood_time_counter++;
@@ -317,6 +317,7 @@ class MelanoBot extends DataSource
     public $auto_restart=false;///< Whether the bot always restarts on network quit. \todo only used elsewhere, maybe worth moving to data
     private $channels =array();///< Channels the bot is currently connected to
     public $buffer; ///< Buffer message to the server
+    public $connection_password = null; ///< PASS password
     
     /**
      * \brief Create a bot
@@ -562,8 +563,10 @@ class MelanoBot extends DataSource
      */
     private function login_ext($real_name, $nick)
     {
-        $this->internal_command('USER',"$nick localhost $nick :$real_name");
-        $this->internal_command('NICK', $nick);
+		if ( $this->connection_password )
+			$this->internal_command('PASS', $this->connection_password);
+		$this->internal_command('USER',"$nick localhost $nick :$real_name");
+		$this->internal_command('NICK', $nick);
     }
     
     /**
@@ -604,7 +607,7 @@ class MelanoBot extends DataSource
         {
             $data = str_replace(array("\n","\r")," ",$data);
 			Logger::log("irc","<","\x1b[31m$command\x1b[0m $data",0);
-			$this->buffer->server->write("$command $data\n\r");
+			$this->buffer->server->write("$command $data\r\n");
 		}
     }
     
