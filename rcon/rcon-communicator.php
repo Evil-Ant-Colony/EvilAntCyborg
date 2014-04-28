@@ -187,10 +187,11 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 			
 			// ensure we are always listening correctly
 			$this->setup_server(false);
-			$this->send("echo :melanorcon:ok");
 			
 			foreach($this->poll_commands as $pc )
 				$this->send($pc);
+				
+			$this->send("echo :melanorcon:ok");
 			$this->poll_time = $time + $this->poll_interval;
 		}
 		

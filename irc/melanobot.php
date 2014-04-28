@@ -684,7 +684,7 @@ class MelanoBot extends DataSource
 			Logger::log("irc","!","\x1b[31m$data\x1b[0m",1);
         }
         
-        if ( $insize > 1 && $inarr[1] == 221  )
+        if ( $insize > 1 && $inarr[1] == 001 )
         {
             $this->connection_status = self::PROTOCOL_CONNECTED;
             $this->auth();

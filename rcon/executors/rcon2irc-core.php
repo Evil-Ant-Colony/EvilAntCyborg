@@ -73,6 +73,7 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 	{
 		if ( !$player || $player->is_bot() )
 			return;
+		$gametype = isset($rcon->data->gametype) ? $rcon->data->gametype : "";
 		$values = array(
 			'%name%'    => Color::dp2irc($player->name),
 			'%ip%'      => $player->ip,
@@ -83,8 +84,8 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 			'%max%'     => $rcon->data->player->max,
 			'%map%'     => $rcon->data->map,
 			'%country%' => $player->country(),
-			'%gametype%'=> $rcon->gametype_name($rcon->data->gametype),
-			'%gt%'      => $rcon->data->gametype,
+			'%gametype%'=> $rcon->gametype_name($gametype),
+			'%gt%'      => $gametype,
 			'%sv_host%' => $rcon->data->hostname,
 			'%sv_ip%'   => $rcon->write_server,
 		);
