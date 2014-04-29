@@ -24,14 +24,6 @@ require_once("misc/logger.php");
 require_once("misc/list.php");
 
 /**
- * \brief Convert \c $msg in an IRC Action
- */
-function irc_action($msg)
-{
-	return "\1ACTION $msg\1";
-}
-
-/**
  * \brief Non-blocking TCP connection
  */
 class MelanoBotServer
