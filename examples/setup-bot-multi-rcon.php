@@ -198,7 +198,7 @@ $rcon_comm_other = create_communicator ( $driver, "#rcon.channel",
 );
 
 // Allow to invoke a command (or chat) on multiple servers
-// The prefix "all-servers" will cause the following command to be directed to 
+// The prefix "servers" will cause the following command to be directed to 
 // the specified communicators
 $driver->install(new Rcon_Multicast(
 	"#rcon.channel",                           // IRC Channel
