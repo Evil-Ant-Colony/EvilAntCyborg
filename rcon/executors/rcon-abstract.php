@@ -92,6 +92,11 @@ abstract class Irc2Rcon_Executor extends CommandExecutor
 	{
 		return $data->rcon["{$this->rcon->read}"];
 	}
+	
+	function out_prefix()
+	{
+		return isset($this->comm->out_prefix) ? $this->comm->out_prefix : "";
+	}
 }
 
 

@@ -36,17 +36,21 @@ class Irc2Rcon_Who extends Irc2Rcon_Executor
 		}
 				
 		if ( !empty($players) )
-			$bot->say($cmd->channel,"\00304".count($players)."\xf/\00304{$player_manager->max}\xf: ".implode(", ",$players));
+			$bot->say($cmd->channel,$this->out_prefix()."\00304".count($players).
+				"\xf/\00304{$player_manager->max}\xf: ".implode(", ",$players));
 		else
-			$bot->say($cmd->channel,"Server is empty");
+			$bot->say($cmd->channel,$this->out_prefix()."Server is empty");
 	}
 }
 
 class Irc2Rcon_Status extends Irc2Rcon_Executor
 {
-	function __construct(Rcon $rcon, $trigger="status", $auth='rcon-admin')
+	public $private;
+	
+	function __construct(Rcon $rcon, $private = true, $trigger="status", $auth='rcon-admin')
 	{
 		parent::__construct($rcon,$trigger,$auth,"$trigger","Show players and server information");
+		$this->private = $private;
 	}
 	
 	function settings($channel, MelanoBot $bot, $rcon_data)
@@ -62,10 +66,12 @@ class Irc2Rcon_Status extends Irc2Rcon_Executor
 	{
 		$rcon_data = $this->data($data);
 		$player_manager = $rcon_data->player;
+		$channel = $this->private ? $cmd->from : $cmd->channel;
 		/// \todo status only on users matching the parameters
 		if ( $player_manager->count_all() > 0 )
 		{
-			$bot->say($cmd->channel,sprintf("\002%-21s %2s %4s %5s %-4s %s\xf", 
+			
+			$bot->say($channel,sprintf("\002%-21s %2s %4s %5s %-4s %s\xf", 
 				"ip address", "pl", "ping", "frags", "slot", "name" ));
 			
 			$spects = 0;
@@ -80,7 +86,7 @@ class Irc2Rcon_Status extends Irc2Rcon_Executor
 						$spects++;
 				}
 				
-				$bot->say($cmd->channel,
+				$bot->say($channel,
 					sprintf("%-21s %2s %4s %5s  #%-2s %s",
 						$player->ip, 
 						$player->pl,
@@ -92,14 +98,14 @@ class Irc2Rcon_Status extends Irc2Rcon_Executor
 			}
 			
 			
-			$bot->say($cmd->channel,"Players: \00304".($player_manager->count_players()-$spects).
+			$bot->say($channel,$this->out_prefix()."Players: \00304".($player_manager->count_players()-$spects).
 				"\xf active, \00304$spects\xf spectators, \00304".$player_manager->count_bots().
 				"\017 bots, \00304".$player_manager->count_all()."\xf/{$player_manager->max} total");
 		}
 		else
-			$bot->say($cmd->channel,"No users in server");
+			$bot->say($channel,$this->out_prefix()."No users in server");
 		
-		$this->settings($cmd->channel,$bot,$rcon_data);
+		$this->settings($channel,$bot,$rcon_data);
 	}
 }
 
@@ -122,7 +128,7 @@ class Irc2Rcon_Maps extends Irc2Rcon_Executor
 		if ( !isset($rcon_data->cvar) || !isset($rcon_data->cvar["g_maplist"]) )
 		{
 			$this->rcon->send("g_maplist");
-			$bot->say($cmd->channel,"Map list not initialized, try again in a few moments");
+			$bot->say($cmd->channel,$this->out_prefix()."Map list not initialized, try again in a few moments");
 		}
 		else
 		{
@@ -133,14 +139,14 @@ class Irc2Rcon_Maps extends Irc2Rcon_Executor
 			{
 				$maps = preg_grep("/$pattern/",$maps);
 				$nmatch = count($maps);
-				$bot->say($cmd->channel,"\00310$nmatch\xf/\00304$nmaps\xf maps match");
+				$bot->say($cmd->channel,$this->out_prefix()."\00310$nmatch\xf/\00304$nmaps\xf maps match");
 				if ( $nmatch <= $this->max_count )
 					foreach($maps as $map)
 						$bot->say($cmd->channel,"\00303$map",-$this->max_count);
 			}
 			else
 			{
-				$bot->say($cmd->channel,"\00304$nmaps\xf maps");
+				$bot->say($cmd->channel,$this->out_prefix()."\00304$nmaps\xf maps");
 			}
 		}
 	}

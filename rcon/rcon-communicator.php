@@ -287,7 +287,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	{
 		if ( $log )
 			Logger::log("dp","!","Connecting to {$this->rcon->read}",1);
-		$this->send("addtolist log_dest_udp {$this->rcon->read}");
+		$this->send("sv_cmd addtolist log_dest_udp {$this->rcon->read}");
 		$this->send("sv_logscores_console 0");
 		$this->send("sv_logscores_bots 1");
 		$this->send("sv_eventlog 1");
@@ -330,5 +330,52 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 			$rcon_data->sv_adminnick_vote_restore = $rcon_data->cvar["sv_adminnick"];
 		$rcon_data->cvar["sv_adminnick"] = $irc_nick;
 		$rcon_data->rcon->send("sv_adminnick \"$irc_nick\"");
+	}
+	
+	
+	function install($executors)
+	{
+		if ( !is_array($executors) )
+			$executors = array($executors);
+		
+		foreach($executors as $ex)
+		{
+			$ex->comm = $this;
+			$ex->install_on($this);
+		}
+	}
+}
+
+
+class Rcon_Multicast extends BotCommandDispatcher
+{
+	public $communicators = array();
+	
+	function __construct($channel,$communicators,$prefix)
+	{
+		parent::__construct(array($channel),$prefix);
+		$this->channel = $channel;
+		$this->communicators = $communicators;
+	}
+	
+	function loop_step(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
+	{
+		if ( !$this->matches($cmd) )
+			return false;
+		$cmd = $this->convert($cmd);
+		$got_it = false;
+		foreach($this->communicators as $comm)
+		{
+			$cc = clone $cmd;
+			if ( $cmd->cmd == null )
+				array_unshift($cc->params,$comm->prefix);
+			else
+			{
+				array_unshift($cc->params,$cmd->cmd);
+				$cc->cmd = $comm->prefix;
+			}
+			$got_it = $comm->loop_step($cc,$bot,$data) || $got_it;
+		}
+		return $got_it;
 	}
 }

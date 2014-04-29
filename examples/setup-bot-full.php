@@ -196,7 +196,8 @@ function rcon_comm($driver, Rcon $rcon,$channel,$prefix)
 	// (admin) "status" to view player, ip and such
 	new Irc2Rcon_Status($rcon_test),
 	// (admin) "rcon command" to execute arbitrary commands
-	new Irc2Rcon_Rcon($rcon_test),
+	//new Irc2Rcon_Rcon($rcon_test),
+	
 	// (admin) list of single commands forwarded to rcon
 	new Irc2Rcon_SingleCommand($rcon_test,"gotomap"),
 	new Irc2Rcon_SingleCommand($rcon_test,"chmap"),

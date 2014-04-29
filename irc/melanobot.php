@@ -796,8 +796,13 @@ class MelanoBot extends DataSource
 							// update the host/nick for the user issuing the command
 							/// \todo decide whether it's useful to perform this with every input and not just direct PRIVMSG
 							$user = $this->find_user_by_nick($from,$from_host);
-							$user->nick = $from;
-							$user->host = $from_host;
+							if ( !$user )
+								$user = new IRC_User($from,$from,$from_host);
+							else
+							{
+								$user->nick = $from;
+								$user->host = $from_host;
+							}
 							
                             if ( $chan == $this->nick )
                                 $chan = $from;

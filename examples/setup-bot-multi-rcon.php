@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This example shows how to set up a bot connecting to a single xonotic instance on a single channel
+ * This example shows how to set up a bot connecting to multiple xonotic instances on a single channel
  */ 
 
 require_once("irc/networks.php");
@@ -18,8 +18,15 @@ date_default_timezone_set("UTC");
 Logger::instance()->default_settings();
 
 // Note: to be able to retrieve auth information, the bot must be registered to Q
+// the bot must be registered to Q and have at least +k on the relevant channels
+
+// Connect to a preset network:
 $bot = new MelanoBot($network_quakenet,'ExampleBot','Auth password',array()); 
 
+// Connect to a specific IRC server:
+//$bot = new MelanoBot(new MelanoBotServer('localhost',6667),'ExampleBot','Auth password',array()); 
+// If the bot has to be AUTHed as a different user
+//$bot->auth_nick = 'SomeNick';
 // If using a bouncer (or the server has a password)
 //$bot->connection_password = 'ExampleBot/quakenet:bouncerpassword';
 
@@ -28,20 +35,17 @@ $bot->auto_restart = true;
 
 $driver = new BotDriver($bot);
 
+// Add a owner, a owner can perform any command and must be authed to Q
 $driver->data->add_to_list('owner',new IRC_User('AuthedBotOwnerNick'));
-$driver->data->add_to_list('admin',new IRC_User('AuthedAdmin1Nick'));
-$driver->data->add_to_list('admin',new IRC_User('AuthedAdmin2Nick'));
 
 // Allow reading commands from standard input
 $driver->install_source(new Stdin_Data_Source);
-
 
 // Global commands available on every channel
 $disp_everywhere = new BotCommandDispatcher();
 $disp_everywhere->install(array(
 // owner commands
 	new Executor_Reconnect(),
-	new Executor_Server(),
 	new Executor_Quit(),
 	new Executor_Restart(),
 	new Executor_Join(),
@@ -61,63 +65,69 @@ $disp_everywhere->install(array(
 	new Executor_CTCP_Source(),
 	new Executor_CTCP_ClientInfo(),
 ));
+$driver->install($disp_everywhere);
+$driver->install_post_executor( new Post_Restart() );
 
-// Rcon connection details, host, port, password, (rcon_secure=0), (local_address=host)
-$rcon_test = new Rcon ( "127.0.0.1", 26000, "foo");
-// Attach rcon instance to #rcon.channel, using server as prefix
-// chat to the server happens like this: server hello
-// commands to the server like this: ExampleBot: server status
-// you can omit the prefix and everything sent to the channel will be visible in the xonotic server
-$rcon_test_comm = new Rcon_Communicator("#rcon.channel",$rcon_test,"server");
+// Create a function that will create connections to the xonotic server
+function create_communicator($driver, $channel, Rcon $rcon,$prefix)
+{
+	
+	$rcon_comm = new Rcon_Communicator($channel,$rcon,$prefix);
 
-$driver->install_external($rcon_test_comm);
-$rcon_test_comm->install(array(
+	$driver->install_external($rcon_comm);
+	$driver->install($rcon_comm);
+	
+	$rcon_comm->install(array(
 	// Following commands require the ESK mod pack
 	/*
 	// better than Irc2Rcon_RawSayAdmin
-	new Irc2Rcon_RawSay($rcon_test),
-	new Irc2Rcon_UserEvent($rcon_test,"JOIN","has joined"),
-	new Irc2Rcon_UserEvent($rcon_test,"PART","has parted"),
-	new Irc2Rcon_UserEvent($rcon_test,"QUIT","has quit"),
-	new Irc2Rcon_UserKicked($rcon_test),
-	new Irc2Rcon_UserNick($rcon_test),
+	new Irc2Rcon_RawSay($rcon),
+	new Irc2Rcon_UserEvent($rcon,"JOIN","has joined"), // will show all joins
+	// new Irc2Rcon_UserJoin($rcon), // will show joins but not the bot's
+	new Irc2Rcon_UserEvent($rcon,"PART","has parted"),
+	new Irc2Rcon_UserEvent($rcon,"QUIT","has quit"),
+	new Irc2Rcon_UserKicked($rcon),
+	new Irc2Rcon_UserNick($rcon),
+	
+	// handle /me chats in the ESK mod pack
+	new Rcon2Irc_SayAction(),
 	*/
 	
 // IRC - public commands
 
-	// IRC->RCON using sv_adminnick and say
-	new Irc2Rcon_RawSayAdmin($rcon_test), 
+	// IRC->RCON using sv_adminnick and say (remove if using the ESK mod commands)
+	new Irc2Rcon_RawSayAdmin($rcon), 
 	
 	// "who" to list the connected players
-	new Irc2Rcon_Who($rcon_test),
+	new Irc2Rcon_Who($rcon),
 	// "maps pattern" to find maps matching pattern
-	new Irc2Rcon_Maps($rcon_test),
+	new Irc2Rcon_Maps($rcon),
 	
 // IRC - admin commands
 
 	// (admin) "status" to view player, ip and such
-	new Irc2Rcon_Status($rcon_test),
+	new Irc2Rcon_Status($rcon),
 	// (admin) "rcon command" to execute arbitrary commands
-	//new Irc2Rcon_Rcon($rcon_test),
+	//new Irc2Rcon_Rcon($rcon),
 	
 	// (admin) list of single commands forwarded to rcon
-	new Irc2Rcon_SingleCommand($rcon_test,"gotomap"),
-	new Irc2Rcon_SingleCommand($rcon_test,"chmap"),
-	new Irc2Rcon_SingleCommand($rcon_test,"endmatch"),
-	new Irc2Rcon_SingleCommand($rcon_test,"restart"),
-	new Irc2Rcon_SingleCommand($rcon_test,"mute"),
-	new Irc2Rcon_SingleCommand($rcon_test,"unmute"),
-	new Irc2Rcon_SingleCommand($rcon_test,"kick"),
+	new Irc2Rcon_SingleCommand($rcon,"gotomap"),
+	new Irc2Rcon_SingleCommand($rcon,"chmap"),
+	new Irc2Rcon_SingleCommand($rcon,"endmatch"),
+	new Irc2Rcon_SingleCommand($rcon,"restart"),
+	new Irc2Rcon_SingleCommand($rcon,"mute"),
+	new Irc2Rcon_SingleCommand($rcon,"unmute"),
+	new Irc2Rcon_SingleCommand($rcon,"kick"),
 	// (admin) vcall/vstop from IRC
-	new Irc2Rcon_VCall($rcon_test),
-	new Irc2Rcon_VStop($rcon_test),
+	new Irc2Rcon_VCall($rcon),
+	new Irc2Rcon_VStop($rcon),
 	
 	// (admin) ban management
-	new Irc2Rcon_Command_Update($rcon_test,"ban","defer 1 banlist"),
-	new Irc2Rcon_Command_Update($rcon_test,"unban","defer 1 banlist"),
-	new Irc2Rcon_Command_Update($rcon_test,"kickban","defer 1 banlist"),
+	new Irc2Rcon_Command_Update($rcon,"ban","defer 1 banlist"),
+	new Irc2Rcon_Command_Update($rcon,"unban","defer 1 banlist"),
+	new Irc2Rcon_Command_Update($rcon,"kickban","defer 1 banlist"),
 	// (admin) "banlist" to view active bans "banlist refresh" to update the banlist from the server
-	new Irc2Rcon_Banlist($rcon_test),
+	new Irc2Rcon_Banlist($rcon),
 
 // RCON - retrieve info
 	// request updating g_maplist at the end of every match (needed by Irc2Rcon_Maps)
@@ -136,8 +146,6 @@ $rcon_test_comm->install(array(
 // RCON -> IRC chat
 	// plain chat
 	new Rcon2Irc_Say(),
-	// handle /me chats in the ESK mod pack
-	// new Rcon2Irc_SayAction(),
 	
 	// Show joins
 	new Rcon2Irc_Join(),
@@ -165,21 +173,45 @@ $rcon_test_comm->install(array(
 
 // RCON - filter some uniteresting output from rcon to get nicer logs
 	new Rcon2Irc_Filter_BlahBlah(),
+	));
+	
+	return $rcon_comm;
+}
+
+
+
+// Attach rcon instance to #rcon.channel, using "server" as prefix
+// chat to the server happens like this: server hello
+// commands to the server like this: ExampleBot: server status
+// you can omit the prefix and everything sent to the channel will be visible in the xonotic server
+$rcon_comm_server = create_communicator(
+	$driver,                               // Bot driver
+	"#rcon.channel",                       // IRC Channel
+	new Rcon ( "127.0.0.1", 26000, "foo"), // Rcon connection details, host, port, password, (rcon_secure=0), (local_address=host)
+	"server"                               // Channel prefix, null or empty string to allow raw chats
+);
+
+// Create a connection to a xonotic server on a different machine
+$rcon_comm_other = create_communicator ( $driver, "#rcon.channel",
+	new Rcon ( "xonotic.server.address", 26000, "foo",0, "local.machine.address"),
+	"other"
+);
+
+// Allow to invoke a command (or chat) on multiple servers
+// The prefix "all-servers" will cause the following command to be directed to 
+// the specified communicators
+$driver->install(new Rcon_Multicast(
+	"#rcon.channel",                           // IRC Channel
+	array($rcon_comm_server,$rcon_comm_other), // Rcon communicators
+	"servers"                                  // Prefix
 ));
+
 
 // bot admins are rcon admins
 $driver->data->grant_access['rcon-admin'] = array('admin');
 
-$driver->install_post_executor( new Post_Restart() );
-
-$driver->install(array(
-	$disp_everywhere,
-	$rcon_test_comm,
-));
-
 // start the bot
 $driver->run();
-
 
 /*
 // If you want to see player countries:
@@ -191,4 +223,4 @@ require_once("geoip-api-php-1.14/src/geoip.inc");
 RconPlayer::$geoip = geoip_open("/usr/share/GeoIP/GeoIP.dat",GEOIP_STANDARD);
 $driver->run();
 geoip_close(RconPlayer::$geoip);
-*/
+*/ 

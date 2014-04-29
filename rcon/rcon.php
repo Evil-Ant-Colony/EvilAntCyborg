@@ -176,6 +176,6 @@ class Rcon
 	 */
 	function connect()
 	{
-		$this->send("addtolist log_dest_udp {$this->read->host}:{$this->read->port}");
+		$this->send("sv_cmd addtolist log_dest_udp {$this->read->host}:{$this->read->port}");
 	}
 }
