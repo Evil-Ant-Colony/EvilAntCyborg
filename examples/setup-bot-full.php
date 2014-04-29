@@ -269,6 +269,8 @@ function rcon_comm($driver, Rcon $rcon,$channel,$prefix)
 
 // bot admins are rcon admins
 $driver->data->grant_access['rcon-admin'] = array('admin');
+
+// Rcon connection details, host, port, password, (rcon_secure=0), (local_address=host)
 $rcon_test = new Rcon ( "127.0.0.1", 26000, "foo");
 // attach rcon instance to #rcon.channel, using test as prefix
 // chat to the server happens like this: test hello

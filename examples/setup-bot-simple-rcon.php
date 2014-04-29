@@ -62,8 +62,7 @@ $disp_everywhere->install(array(
 	new Executor_CTCP_ClientInfo(),
 ));
 
-// Rcon connection details, host, port, password
-// Note: as of now, it only supports rcon_secure 0
+// Rcon connection details, host, port, password, (rcon_secure=0), (local_address=host)
 $rcon_test = new Rcon ( "127.0.0.1", 26000, "foo");
 // Attach rcon instance to #rcon.channel, using server as prefix
 // chat to the server happens like this: server hello

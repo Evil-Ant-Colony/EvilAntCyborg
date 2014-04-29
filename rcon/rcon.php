@@ -113,15 +113,17 @@ class Rcon
 	public $secure;   ///< Secure protocol (rcon_secure)
 	public $socket;   ///< Socket used for communications
 	
-	function __construct($host,$port,$password, $secure = 0)
+	function __construct($host,$port,$password, $secure = 0, $local_host = null)
 	{
 		$this->write = new Rcon_Server ( $host, $port );
-		$this->read = new Rcon_Server ( $host, $port );
+		if ( !$local_host )
+			$local_host = $host;
+		$this->read = new Rcon_Server ( $local_host, $port );
 		$this->password = $password;
 		$this->secure  = $secure;
 		
 		$this->socket = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
-		socket_bind($this->socket, $host);
+		socket_bind($this->socket, $local_host);
 		socket_getsockname($this->socket,$this->read->host,$this->read->port);
 	}
 	
