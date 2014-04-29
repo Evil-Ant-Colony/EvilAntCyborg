@@ -63,7 +63,6 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	public $poll_interval = 60;      ///< Number of seconds between polls
 	private $poll_time = 0;          ///< When the next polling shall occur
 	private $connection_status;      ///< Status of the RCON connection, see the constants above
-	private $cache = "";             ///< Cache the last line if it has been split between multiple packets
 	public $bot_data = null;         ///< Hax :-(, used to access BotData without passing it as a parameter to the rcon executors
 	public $out_prefix = "";         ///< Prefix the rcon executors should use for IRC output
 	
@@ -200,14 +199,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		if ( !$packet->valid || !$packet->payload )
 			return;
 		
-		if ( $this->cache )
-		{
-			$packet->payload = $this->cache.$packet->payload;
-			$this->cache = "";
-		}
 		$lines = explode ("\n",$packet->payload);
-		if ( strlen($packet->contents) >= Rcon_Packet::MAX_READ_LENGTH )
-			$this->cache = array_pop($lines);
 		
 		// update data status
 		if ( preg_match("{host:\s+(.*)}",$packet->payload,$matches) )
