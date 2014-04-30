@@ -111,7 +111,7 @@ class Executor_Tell extends CommandExecutor
 			else
 			{
 				$this->queue->send($cmd->from,$who,$text);
-				Logger::log($msg,"!","Stored a message from {$cmd->from} to $who");
+				Logger::log('irc',"!","Stored a message from {$cmd->from} to $who");
 				$bot->say($cmd->channel, "Will do!");
 			}
 		}
@@ -143,5 +143,45 @@ class Executor_NotifyMessages extends CommandExecutor
 			}
 			
 		}
+	}
+}
+
+/**
+ * Save messages when the bot shuts down
+ */
+class Post_Message_Store extends StaticExecutor
+{
+	public $save_file;
+	public $queue;
+	
+	function __construct(MessageQueue $queue,$save_file=".messages")
+	{
+		$this->save_file = $save_file;
+		$this->queue = $queue;
+	}
+	
+	function execute(MelanoBot $bot, BotData $driver)
+	{
+		file_put_contents($this->save_file,json_encode($this->queue->messages));
+	}
+}
+/**
+ * Restore massages on startup
+ */
+class Pre_Message_Restore extends StaticExecutor
+{
+	public $save_file;
+	public $queue;
+	
+	function __construct(MessageQueue $queue,$save_file=".messages")
+	{
+		$this->save_file = $save_file;
+		$this->queue = $queue;
+	}
+	
+	function execute(MelanoBot $bot, BotData $driver)
+	{
+		if ( file_exists($this->save_file) )
+			$this->queue->messages = json_decode(file_get_contents($this->save_file),true);
 	}
 }

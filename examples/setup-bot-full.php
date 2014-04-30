@@ -100,6 +100,8 @@ $disp_everywhere->install(array(
 	new Executor_CTCP_Source(),
 	new Executor_CTCP_ClientInfo(),
 ));
+$driver->install_post_executor( new Post_Message_Store($message_queue) );
+$driver->install_pre_executor( new Pre_Message_Restore($message_queue) );
 
 // Some fun stuff to be displayed in a single channel
 // To allow in multiple channel you can use array('#chan1', '#chan2')
