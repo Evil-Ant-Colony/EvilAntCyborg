@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * This file has to be included if you want to create a bot instance the easy way
+ * See setup-bot-simple-rcon.php
+ */
+
 require_once("irc/networks.php");
 require_once("irc/executors/core.php");
 require_once("irc/executors/message.php");

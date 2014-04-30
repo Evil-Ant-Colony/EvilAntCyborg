@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This example shows how to set up a bot connecting to multiple xonotic instances on a single channel
+ * This example shows how to set up a bot connecting to multiple xonotic instances
  */ 
 
 require_once("irc/networks.php");

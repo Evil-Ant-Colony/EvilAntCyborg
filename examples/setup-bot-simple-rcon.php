@@ -1,4 +1,9 @@
 <?php
+
+/**
+ * This example shows how to set up a basic bot with rcon features
+ */ 
+ 
 require_once("examples/simple-setup.inc");
 date_default_timezone_set("UTC");
 

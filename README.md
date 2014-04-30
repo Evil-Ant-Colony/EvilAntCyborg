@@ -24,7 +24,7 @@ Installing
 Requirements
 ------------
 
-It requires PHP,a default installation should be enough.
+It requires PHP, a default installation should be enough.
 
 Setting up a bot instance
 -------------------------
