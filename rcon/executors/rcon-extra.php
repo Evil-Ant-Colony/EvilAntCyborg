@@ -86,33 +86,29 @@ class Irc2Rcon_RawSay_EncodeText extends Irc2Rcon_RawSay
 
 class Irc2Rcon_UserEvent extends Irc2Rcon_Executor
 {
-	function __construct(Rcon $rcon, $event, $message, $command='_ircmessage "^4*^3 %s" ^7 %s')
+	public $command, $include_bot;
+	
+	function __construct(Rcon $rcon, $event, $message, $include_bot = true,
+		$command="_ircmessage \"^4*^3 %s\" ^7 %s" )
 	{
 		parent::__construct($rcon,null,null);
-		$this->command=$command;
 		$this->message = $message;
+		$this->command = $command;
 		$this->irc_cmd = $event;
+	}
+	
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
+	{
+		return parent::check($cmd,$bot,$data) && 
+			( $this->include_bot || $cmd->from != $bot->nick );
 	}
 	
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
-		$this->rcon->send(sprintf($this->command,$cmd->from,$this->message));
-	}
-}
-
-
-class Irc2Rcon_UserJoin extends Irc2Rcon_UserEvent
-{
-	function __construct(Rcon $rcon, $message="has joined", $command='_ircmessage "^4*^3 %s" ^7 %s')
-	{
-		parent::__construct($rcon,'JOIN',$message,$command);
-	}
-	
-	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
-	{
-		return parent::check($cmd,$bot,$data) && $cmd->from != $bot->nick;
+		$msg = str_replace('%message%',$cmd->param_string(),$this->message);
+		
+		$this->rcon->send(sprintf($this->command,$cmd->from,$msg));
 	}
 }
 
@@ -120,7 +116,7 @@ class Irc2Rcon_UserKicked extends Irc2Rcon_Executor
 {
 	public $message;
 	
-	function __construct(Rcon $rcon, $message='_ircmessage "^4*^3 %s" ^7 has kicked ^3%s')
+	function __construct(Rcon $rcon, $message='_ircmessage "^4*^3 %s" ^7 has kicked ^3%s^7 (%s)')
 	{
 		parent::__construct($rcon,null,null);
 		$this->message=$message;
@@ -130,7 +126,7 @@ class Irc2Rcon_UserKicked extends Irc2Rcon_Executor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
-		$this->rcon->send(sprintf($this->message,$cmd->from,$cmd->params[0]));
+		$this->rcon->send(sprintf($this->message,$cmd->from,$cmd->params[0],$cmd->params[1]));
 	}
 }
 

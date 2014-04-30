@@ -174,9 +174,9 @@ function rcon_comm($driver, Rcon $rcon,$channel,$prefix)
 	/*
 	// better than Irc2Rcon_RawSayAdmin
 	new Irc2Rcon_RawSay($rcon_test),
-	new Irc2Rcon_UserEvent($rcon_test,"JOIN","has joined"),
-	new Irc2Rcon_UserEvent($rcon_test,"PART","has parted"),
-	new Irc2Rcon_UserEvent($rcon_test,"QUIT","has quit"),
+	new Irc2Rcon_UserEvent($rcon,"JOIN","has joined"),
+	new Irc2Rcon_UserEvent($rcon,"PART","has parted (%message%)"),
+	new Irc2Rcon_UserEvent($rcon,"QUIT","has quit (%message%)"),
 	new Irc2Rcon_UserKicked($rcon_test),
 	new Irc2Rcon_UserNick($rcon_test),
 	*/
@@ -184,38 +184,38 @@ function rcon_comm($driver, Rcon $rcon,$channel,$prefix)
 // IRC - public commands
 
 	// IRC->RCON using sv_adminnick and say (remove if using the ESK mod commands)
-	new Irc2Rcon_RawSayAdmin($rcon_test), 
+	new Irc2Rcon_RawSayAdmin($rcon), 
 	
 	// "who" to list the connected players
-	new Irc2Rcon_Who($rcon_test),
+	new Irc2Rcon_Who($rcon),
 	// "maps pattern" to find maps matching pattern
-	new Irc2Rcon_Maps($rcon_test),
+	new Irc2Rcon_Maps($rcon),
 	
 // IRC - admin commands
 
 	// (admin) "status" to view player, ip and such
-	new Irc2Rcon_Status($rcon_test),
+	new Irc2Rcon_Status($rcon),
 	// (admin) "rcon command" to execute arbitrary commands
-	//new Irc2Rcon_Rcon($rcon_test),
+	//new Irc2Rcon_Rcon($rcon),
 	
 	// (admin) list of single commands forwarded to rcon
-	new Irc2Rcon_SingleCommand($rcon_test,"gotomap"),
-	new Irc2Rcon_SingleCommand($rcon_test,"chmap"),
-	new Irc2Rcon_SingleCommand($rcon_test,"endmatch"),
-	new Irc2Rcon_SingleCommand($rcon_test,"restart"),
-	new Irc2Rcon_SingleCommand($rcon_test,"mute"),
-	new Irc2Rcon_SingleCommand($rcon_test,"unmute"),
-	new Irc2Rcon_SingleCommand($rcon_test,"kick"),
+	new Irc2Rcon_SingleCommand($rcon,"gotomap"),
+	new Irc2Rcon_SingleCommand($rcon,"chmap"),
+	new Irc2Rcon_SingleCommand($rcon,"endmatch"),
+	new Irc2Rcon_SingleCommand($rcon,"restart"),
+	new Irc2Rcon_SingleCommand($rcon,"mute"),
+	new Irc2Rcon_SingleCommand($rcon,"unmute"),
+	new Irc2Rcon_SingleCommand($rcon,"kick"),
 	// (admin) vcall/vstop from IRC
-	new Irc2Rcon_VCall($rcon_test),
-	new Irc2Rcon_VStop($rcon_test),
+	new Irc2Rcon_VCall($rcon),
+	new Irc2Rcon_VStop($rcon),
 	
 	// (admin) ban management
-	new Irc2Rcon_Command_Update($rcon_test,"ban","defer 1 banlist"),
-	new Irc2Rcon_Command_Update($rcon_test,"unban","defer 1 banlist"),
-	new Irc2Rcon_Command_Update($rcon_test,"kickban","defer 1 banlist"),
+	new Irc2Rcon_Command_Update($rcon,"ban","defer 1 banlist"),
+	new Irc2Rcon_Command_Update($rcon,"unban","defer 1 banlist"),
+	new Irc2Rcon_Command_Update($rcon,"kickban","defer 1 banlist"),
 	// (admin) "banlist" to view active bans "banlist refresh" to update the banlist from the server
-	new Irc2Rcon_Banlist($rcon_test),
+	new Irc2Rcon_Banlist($rcon),
 
 // RCON - retrieve info
 	// request updating g_maplist at the end of every match (needed by Irc2Rcon_Maps)

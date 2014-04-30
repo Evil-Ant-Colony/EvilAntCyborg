@@ -737,14 +737,16 @@ class MelanoBot extends DataSource
 					}
 					else if ( $who != null && $user = $this->find_user_by_nick($who) )
 						$this->remove_user_from_channel($chan,$user);
-                    return new MelanoBotCommand($irc_cmd, array($who), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
+					$message = trim(substr($data,strpos($data,':',1)+1));
+                    return new MelanoBotCommand($irc_cmd, array($who, $message), $from, $from_host, $chan, $data, $irc_cmd);
                 
                 case 'PART':
                     if ( $from == $this->nick )
 						$this->remove_channel($chan);
 					else if ( $user = $this->find_user_by_nick($from,$from_host) )
 						$this->remove_user_from_channel($chan,$user);
-                    return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chan, $data, $irc_cmd);
+					$message = trim(substr($data,strpos($data,':',1)+1));
+                    return new MelanoBotCommand($irc_cmd, array($message), $from, $from_host, $chan, $data, $irc_cmd);
                 case 'NICK':
                     $nick = trim($inarr[2],"\n\r!:");
                     $chans = array();
@@ -767,7 +769,8 @@ class MelanoBot extends DataSource
 					}
 					if ( $from == $this->nick )
 						$this->channels = array();
-					return new MelanoBotCommand($irc_cmd, array($from), /*$from,*/ $from, $from_host, $chans, $data, $irc_cmd);
+					$message = trim(substr($data,strpos($data,':',1)+1));
+					return new MelanoBotCommand($irc_cmd, array($message), /*$from,*/ $from, $from_host, $chans, $data, $irc_cmd);
 				case 'NOTICE':
 					$query = trim(substr($data,strpos($data,':',1)+1));
 					return new MelanoBotCommand($irc_cmd,array($query), $from, $from_host, null, $data, $irc_cmd);
@@ -816,10 +819,10 @@ class MelanoBot extends DataSource
                             }
                             $query = implode(' ',$query_params);*/
                                  
-                            return new MelanoBotCommand($command,$query_params,/*$query,*/$from,$from_host,$chan,$data, $irc_cmd/*, $chanhax*/);
+                            return new MelanoBotCommand($command,$query_params,$from,$from_host,$chan,$data, $irc_cmd);
                         }
                     }
-                    return new MelanoBotCommand(null,$query_params/*,$query*/,$from,$from_host,$chan,$data, $irc_cmd);
+                    return new MelanoBotCommand(null,$query_params,$from,$from_host,$chan,$data, $irc_cmd);
                     
             }
         }

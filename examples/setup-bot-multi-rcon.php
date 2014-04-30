@@ -81,8 +81,9 @@ function create_communicator($driver, $channel, Rcon $rcon,$prefix)
 	/*
 	// better than Irc2Rcon_RawSayAdmin
 	new Irc2Rcon_RawSay($rcon),
-	new Irc2Rcon_UserEvent($rcon,"JOIN","has joined"), // will show all joins
-	// new Irc2Rcon_UserJoin($rcon), // will show joins but not the bot's
+	new Irc2Rcon_UserEvent($rcon,"JOIN","has joined"),
+	new Irc2Rcon_UserEvent($rcon,"PART","has parted (%message%)"),
+	new Irc2Rcon_UserEvent($rcon,"QUIT","has quit (%message%)"),
 	new Irc2Rcon_UserEvent($rcon,"PART","has parted"),
 	new Irc2Rcon_UserEvent($rcon,"QUIT","has quit"),
 	new Irc2Rcon_UserKicked($rcon),
