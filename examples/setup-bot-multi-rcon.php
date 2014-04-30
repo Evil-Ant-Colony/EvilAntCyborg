@@ -51,7 +51,6 @@ $disp_everywhere->install(array(
 	new Executor_Join(),
 	new Executor_Part(),
 	new Executor_Nick(),
-	new Executor_StdoutDump(),
 // public commands
 	new Executor_Help(),
 	new Executor_License(), // Note: required to comply with the AGPL
