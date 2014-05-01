@@ -91,7 +91,8 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 			'%sv_host%' => $rcon->data->hostname,
 			'%sv_ip%'   => $rcon->write_server,
 		);
-		$bot->say($channel,$rcon->out_prefix.str_replace(array_keys($values),array_values($values),$this->format),-8);
+		$bot->say($channel,$rcon->out_prefix.
+			str_replace(array_keys($values),array_values($values),$this->format),1);
 	}
 }
 
