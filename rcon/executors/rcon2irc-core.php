@@ -191,6 +191,8 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 								14 => Color::BLUE, 
 								13 => Color::YELLOW, 
 								10 => Color::MAGENTA );
+	protected $lms = false;
+	protected $sort_reverse = false;
 	
 	function __construct()
 	{
@@ -198,6 +200,7 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 				  "(:teamscores:see-labels:(-?\d+)[-0-9,]*:(\d+))", // 2 - score=3 id=4
 				  "(:player:see-labels:(-?\d+)[-0-9,]*:(\d+):([^:]+):(\d+):(.*))",// 5 - score=6 time=7 team=8 id=9 name=10
 				  "(:scores:([a-z]+)_(.*)):",//11 gametype=12 map=13
+				  "(:labels:player:([^[,<!]*)(<?)!!,.*)",//14 primary=15 sort=16
 				  );
 
 		parent::__construct("{^".implode("|",$re)."}");
@@ -217,6 +220,8 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 				$this->print_scores($cmd,$bot);
 				$this->player_scores= array();
 				$this->team_scores  = array();
+				$this->lms = false;
+				$this->sort_reverse = false;
 				$rcon->data->gametype=null;
 				return true;
 			}
@@ -234,8 +239,20 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 			$rcon->data->map = $cmd->params[13];
 			$rcon->data->gametype = $cmd->params[12];
 		}
+		else if ( !empty($cmd->params[14]) )
+		{
+			$this->seen_labels($cmd);
+		}
 		
 		return false;
+	}
+	
+	protected function seen_labels(Rcon_Command $cmd)
+	{
+		if ( $cmd->params[15] == "rank" )
+			$this->lms = true;
+		if ( $cmd->params[16] == "<" )
+			$this->sort_reverse = true;
 	}
 	
 	protected function player_score( $player,$color)
@@ -260,10 +277,16 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 		if ( $b->team == 'spectator' ) return -1;
 		return $a->frags == $b->frags ? 0 : ( $a->frags > $b->frags ? -1 : +1 );
 	}
+	protected function sort_players()
+	{
+		usort($this->player_scores,'Rcon2Irc_Score::score_compare');
+		if ( $this->sort_reverse )
+			$this->player_scores = array_reverse($this->player_scores);
+	}
 	
 	protected function print_scores(Rcon_Command $cmd, MelanoBot $bot)
 	{
-		usort($this->player_scores,'Rcon2Irc_Score::score_compare');
+		$this->sort_players();
 		if ( empty($this->team_scores) )
 		{
 			foreach($this->player_scores as $p )
@@ -304,6 +327,8 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 		{
 			$existing_player->merge($player);
 		}
+		if ( $this->lms && $player->frags == 0 && $player->team == -1 )
+			$player->team = "spectator";
 		$this->player_scores []= $player;
 	}
 }
