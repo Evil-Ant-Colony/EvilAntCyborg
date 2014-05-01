@@ -166,3 +166,137 @@ class Executor_Dictionary extends CommandExecutor
 		}
 	}
 }
+
+
+
+class Executor_GoogleTranslate  extends CommandExecutor
+{
+	
+	static $language_codes = array(
+		"Afrikaans" => "af",
+		"Albanian" => "sq",
+		"Arabic" => "ar",
+		"Azerbaijani" => "az",
+		"Basque" => "eu",
+		"Bengali" => "bn",
+		"Belarusian" => "be",
+		"Bulgarian" => "bg",
+		"Catalan" => "ca",
+		"Chinese" => "zh-CN",
+		//"Chinese Simplified" => "zh-CN",
+		//"Chinese Traditional" => "zh-TW",
+		"Croatian" => "hr",
+		"Czech" => "cs",
+		"Danish" => "da",
+		"Dutch" => "nl",
+		"English" => "en",
+		"Esperanto" => "eo",
+		"Estonian" => "et",
+		"Filipino" => "tl",
+		"Finnish" => "fi",
+		"French" => "fr",
+		"Galician" => "gl",
+		"Georgian" => "ka",
+		"German" => "de",
+		"Greek" => "el",
+		"Gujarati" => "gu",
+		"Haitian" => "ht",
+		//"Haitian Creole" => "ht",
+		"Hebrew" => "iw",
+		"Hindi" => "hi",
+		"Hungarian" => "hu",
+		"Icelandic" => "is",
+		"Indonesian" => "id",
+		"Irish" => "ga",
+		"Italian" => "it",
+		"Japanese" => "ja",
+		"Kannada" => "kn",
+		"Korean" => "ko",
+		"Latin" => "la",
+		"Latvian" => "lv",
+		"Lithuanian" => "lt",
+		"Macedonian" => "mk",
+		"Malay" => "ms",
+		"Maltese" => "mt",
+		"Norwegian" => "no",
+		"Persian" => "fa",
+		"Polish" => "pl",
+		"Portuguese" => "pt",
+		"Romanian" => "ro",
+		"Russian" => "ru",
+		"Serbian" => "sr",
+		"Slovak" => "sk",
+		"Slovenian" => "sl",
+		"Spanish" => "es",
+		"Swahili" => "sw",
+		"Swedish" => "sv",
+		"Tamil" => "ta",
+		"Telugu" => "te",
+		"Thai" => "th",
+		"Turkish" => "tr",
+		"Ukrainian" => "uk",
+		"Urdu" => "ur",
+		"Vietnamese" => "vi",
+		"Welsh" => "cy",
+		"Yiddish" => "yi",
+	);
+	function __construct($trigger="translate")
+	{
+		parent::__construct($trigger,null,"$trigger [from Language] [into Language] Phrase...",
+			'Make the bot translate the given Phrase (using Google)');
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	{
+		$sl="";
+		$tl="en";
+		
+		if ( count($cmd->params) > 2 )
+		{
+		
+			$direction = $cmd->params[0];
+			if ( $direction == 'from' )
+			{
+				array_shift($cmd->params);
+				$lang_from = ucfirst(array_shift($cmd->params));
+				if ( isset(self::$language_codes[$lang_from]) )
+					$sl = self::$language_codes[$lang_from];
+				else
+				{
+					$bot->say($cmd->channel,"I'm sorry but I don't speak $lang_from");
+					return;
+				}
+				$direction = $cmd->params[0];
+			}
+			
+			if ( $direction == 'into' )
+			{
+				array_shift($cmd->params);
+				$lang_to = ucfirst(array_shift($cmd->params));
+				if ( isset(self::$language_codes[$lang_to]) )
+					$tl = self::$language_codes[$lang_to];
+				else
+				{
+					$bot->say($cmd->channel,"I'm sorry but I don't speak $lang_to");
+					return;
+				}
+			}
+			
+		}
+			
+		
+		$url="http://translate.google.com/translate_a/t?client=t&sl=$sl&tl=$tl&ie=UTF-8&oe=UTF-8&text=".urlencode($cmd->param_string());
+		$response = file_get_contents($url);
+		if ( preg_match('{^\[\[\["(([^\\\\"]|(\\\\.))+)}',$response,$matches) )
+		{
+			$bot->say($cmd->channel, stripslashes($matches[1]) );
+		}
+		else
+		{
+			echo "$url\n";
+			print_r($response);
+			$bot->say($cmd->channel,"I'm sorry but I can't translate that...");
+		}
+	}
+}
+
