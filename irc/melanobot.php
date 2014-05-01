@@ -103,9 +103,10 @@ class MelanoBotServer
 class BotOutBuffer
 {
 	public $flood_time_start = 0.2; ///< Minimum delay between messages (in seconds)
+	public $flood_time_max = 2;     ///< Maximum delaw between messages
 	public $flood_max_bytes = 512;  ///< Maximum nuber of bytes in a message (longer messages will be truncated)
 	public $server = null;          ///< MelanoBotServer to send the data to
-	public $flood_max_delay = 12;    ///< Messages older than this many seconds will be discarded
+	public $flood_max_delay = 12;   ///< Messages older than this many seconds will be discarded
 	public $dicard_threshold = 1;   ///< Messages with at least this priority won't be discarded
 	private $flood_time_counter = 1;///< Internal counter to increase delay between messages
 	private $flood_next_time = 0;   ///< When it will be possible to send the next message (in seconds)
@@ -228,7 +229,8 @@ class BotOutBuffer
 		Logger::log("irc","<",Color::irc2ansi($message->data),0);
 		$data = substr($message->data,0,$this->flood_max_bytes-2)."\r\n";
 		$this->server->write($data);
-		$this->flood_next_time = microtime(true) + $this->flood_time_start * $this->flood_time_counter;
+		$wait = $this->flood_time_start*$this->flood_time_counter;
+		$this->flood_next_time = microtime(true) + max($this->flood_time_max,$wait);
 		$this->flood_time_counter++;
 	}
 	

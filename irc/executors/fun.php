@@ -323,7 +323,7 @@ class Executor_RenderPony extends CommandExecutor
 				$lines = file($this->ponypath."/".self::$ponies[$pony].".irc.txt", FILE_IGNORE_NEW_LINES);
 				foreach ( $lines as $line )
 				{
-					$bot->say($cmd->channel,$line,-512);
+					$bot->say($cmd->channel,$line,1);
 				}
 			}
 			else
