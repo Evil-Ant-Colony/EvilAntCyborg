@@ -167,6 +167,7 @@ class Rcon2Irc_Filter_BlahBlah extends Rcon2Irc_Filter
 		"^Map .* contains the legacy 'type' keyword.*",
 		"^Map .* provides unknown info item .*",
 		"^Mod_LoadQ3Shaders: .*",
+		"^Unstuck player entity .*",
 	);
 	
 	
