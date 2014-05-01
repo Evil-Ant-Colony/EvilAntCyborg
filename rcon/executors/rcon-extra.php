@@ -19,6 +19,7 @@
  */
 
 require_once("rcon/executors/rcon-abstract.php");
+require_once('irc/executors/webapi.php');
 
 /**
  * \brief Handles say /me blah blah
@@ -182,3 +183,48 @@ class Rcon2Irc_HostError extends Rcon2Irc_Executor
 		return true;
 	}
 }
+
+
+
+
+
+class Rcon2Irc_Translate  extends Rcon2Irc_Executor
+{
+	function __construct()
+	{
+		// 1 = Player 2=[...] 3=from 4=to 5=text
+		parent::__construct("{^\1(.*?)\^7: !translate\s*(\[([a-zA-Z]+)?-([a-zA-Z]+)?\])?\s*(.*)}");
+	}
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		$sl="";
+		$tl="en";
+		
+		
+		if ( !empty($cmd->params[3]) )
+		{
+			$sl = Executor_GoogleTranslate::language_code($cmd->params[3]);
+		}
+		if ( !empty($cmd->params[4]) )
+		{
+			$tl = Executor_GoogleTranslate::language_code($cmd->params[4]);
+			if ( !$tl ) $tl = "en";
+		}
+		
+		$translated = Executor_GoogleTranslate::translate($sl,$tl,Color::dp2none($cmd->params[5]));
+		
+		if ( $translated )
+		{
+			Rcon_Communicator::set_sv_adminnick($rcon->data,"Server Translator");
+			$translated = str_replace(array('\\','"'),array('\\\\','\"'),$translated);
+			$rcon->send('say ^7'.$translated);
+			Rcon_Communicator::restore_sv_adminnick($rcon->data);
+		}
+		
+		
+		
+		return false;
+	}
+}
+

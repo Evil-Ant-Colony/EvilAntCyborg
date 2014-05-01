@@ -284,19 +284,38 @@ class Executor_GoogleTranslate  extends CommandExecutor
 			
 		}
 			
-		
-		$url="http://translate.google.com/translate_a/t?client=t&sl=$sl&tl=$tl&ie=UTF-8&oe=UTF-8&text=".urlencode($cmd->param_string());
-		$response = file_get_contents($url);
-		if ( preg_match('{^\[\[\["(([^\\\\"]|(\\\\.))+)}',$response,$matches) )
+		$translated = self::translate($sl,$tl,$cmd->param_string());
+		if ( $translated )
 		{
-			$bot->say($cmd->channel, stripslashes($matches[1]) );
+			$bot->say($cmd->channel, $translated );
 		}
 		else
 		{
-			echo "$url\n";
-			print_r($response);
 			$bot->say($cmd->channel,"I'm sorry but I can't translate that...");
 		}
+	}
+	
+	static function language_code($language)
+	{
+		$language = ucfirst($language);
+		if ( isset(self::$language_codes[$language]) )
+			return self::$language_codes[$language];
+		$language = strtolower($language);
+		if ( in_array($language,self::$language_codes) )
+			return $language;
+		return null;
+	}
+	
+	static function translate($sl,$tl,$text)
+	{
+		$url="http://translate.google.com/translate_a/t?client=t&sl=$sl&tl=$tl&ie=UTF-8&oe=UTF-8&text=".
+			urlencode($text);
+		
+		$response = file_get_contents($url);
+		if ( preg_match('{^\[\[\["(([^\\\\"]|(\\\\.))+)}',$response,$matches) )
+			return stripslashes($matches[1]);
+			
+		return null;
 	}
 }
 
