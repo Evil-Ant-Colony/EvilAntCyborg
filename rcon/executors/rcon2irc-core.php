@@ -188,6 +188,7 @@ class Rcon2Irc_Filter_BlahBlah extends Rcon2Irc_Filter
 class Rcon2Irc_Score extends Rcon2Irc_Executor
 {
 	protected $player_scores= array();
+	protected $spectators   = array();
 	protected $team_scores  = array();
 	public $team_colors = array(5 => Color::RED, 
 								14 => Color::BLUE, 
@@ -195,8 +196,9 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 								10 => Color::MAGENTA );
 	protected $lms = false;
 	protected $sort_reverse = false;
+	public $show_spectators;
 	
-	function __construct()
+	function __construct($show_spectators = true)
 	{
 		$re=array("(:end)",// 1
 				  "(:teamscores:see-labels:(-?\d+)[-0-9,]*:(\d+))", // 2 - score=3 id=4
@@ -206,6 +208,8 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 				  );
 
 		parent::__construct("{^".implode("|",$re)."}");
+		
+		$this->show_spectators = $show_spectators;
 	}
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot,  Rcon_Communicator $rcon)
@@ -218,9 +222,15 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 				if ( isset($rcon->data->gametype) )
 					$gametype = "\00310".$rcon->gametype_name($rcon->data->gametype)."\xf on ";
 				$map = isset($rcon->data->map) && $rcon->data->map ? $rcon->data->map : "?";
-				$bot->say($cmd->channel,"{$rcon->out_prefix}$gametype\00304$map\017 ended:");
-				$this->print_scores($cmd,$bot);
+				
+				$show_scores = $this->show_spectators || 
+					($rcon->data->player->count_players()-count($this->spectators) > 0);
+				$bot->say($cmd->channel,"{$rcon->out_prefix}$gametype\00304$map\017 ended".
+					($show_scores?":":""));
+				if ($show_scores)
+					$this->print_scores($cmd,$bot);
 				$this->player_scores= array();
+				$this->spectators   = array();
 				$this->team_scores  = array();
 				$this->lms = false;
 				$this->sort_reverse = false;
@@ -266,17 +276,22 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 			$name = Color::dp2irc($name);
 		
 		$score = $player->frags;
-		if ( $player->team == 'spectator' )
-			$score = "";
 			
 		return "\002".sprintf('%3s',$score)."\xf $name";
 	}
 	
+	protected function print_spectators(Rcon_Command $cmd, MelanoBot $bot)
+	{
+		if ( $this->show_spectators )
+			foreach($this->spectators as $p )
+				$bot->say($cmd->channel,"    ".Color::dp2irc($p->name),-1);
+	}
+	
 	protected function score_compare($a,$b)
 	{
-		if ( $a->team == 'spectator' && $b->team == 'spectator' ) return 0;
+		/*if ( $a->team == 'spectator' && $b->team == 'spectator' ) return 0;
 		if ( $a->team == 'spectator' ) return 1;
-		if ( $b->team == 'spectator' ) return -1;
+		if ( $b->team == 'spectator' ) return -1;*/
 		return $a->frags == $b->frags ? 0 : ( $a->frags > $b->frags ? -1 : +1 );
 	}
 	protected function sort_players()
@@ -293,6 +308,7 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 		{
 			foreach($this->player_scores as $p )
 				$bot->say($cmd->channel,$this->player_score($p,null),-1);
+			$this->print_spectators($cmd,$bot);
 		}
 		else
 		{
@@ -303,7 +319,6 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 				$ts[$team] = $color->irc()."$score\xf";
 			}
 			$bot->say($cmd->channel,"Team Scores: ".implode(":",array_values($ts)));
-			$ts['spectator'] = null;
 			foreach(array_keys($ts) as $team )
 			{
 				$color = isset($this->team_colors[$team]) ? new Color($this->team_colors[$team],true) : null;
@@ -313,6 +328,7 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 						$bot->say($cmd->channel,$this->player_score($p,$color),-1);
 				}
 			}
+			$this->print_spectators($cmd,$bot);
 		}
 	}
 	
@@ -325,27 +341,61 @@ class Rcon2Irc_Score extends Rcon2Irc_Executor
 	{
 		$player = new RconPlayer;
 		list ($player->frags, $player->time, $player->team, $player->id, $player->name) = array_splice($cmd->params,6);
+		$is_player = true;
 		if ( $existing_player = $rcon->data->player->find_by_id($player->id) )
 		{
+			if ( $existing_player->is_bot() )
+				$is_player = false;
 			$existing_player->merge($player);
 		}
 		if ( $this->lms && $player->frags == 0 && $player->team == -1 )
 			$player->team = "spectator";
-		$this->player_scores []= $player;
+			
+		if ( $player->team == "spectator" )
+		{
+			$this->spectators []= $player;
+		}
+		else
+		{
+			$this->player_scores []= $player;
+		}
 	}
 }
 
 class Rcon2Irc_Score_Inline extends Rcon2Irc_Score
 {
-	public $show_spectators;
 	
 	function __construct($show_spectators = false)
 	{
-		$this->show_spectators = $show_spectators;
-		parent::__construct();
+		parent::__construct($show_spectators);
 	}
 	
-	function print_scores(Rcon_Command $cmd, MelanoBot $bot)
+	protected function player_score( $player,$color)
+	{
+		$name = $player->name;
+		if ( $color != null )
+			$name = $color->irc().Color::dp2none($name)."\xf";
+		else
+			$name = Color::dp2irc($name);
+		
+		$score = $player->frags;
+			
+		return "\002$score\xf $name";
+	}
+	
+	protected function print_spectators(Rcon_Command $cmd, MelanoBot $bot)
+	{
+		if ( $this->show_spectators )
+		{
+			$score_string = array();
+			foreach($this->player_scores as $p )
+				if ( $this->spectators )
+					$score_string[] = Color::dp2irc($p->name);
+			$bot->say($cmd->channel,implode(", ",$score_string),-1);
+		}
+	}
+	
+	protected function print_scores(Rcon_Command $cmd, MelanoBot $bot)
 	{
 		usort($this->player_scores,'Rcon2Irc_Score::score_compare');
 		if ( empty($this->team_scores) )
@@ -355,6 +405,7 @@ class Rcon2Irc_Score_Inline extends Rcon2Irc_Score
 				if ( $this->show_spectators || $p->team != 'spectator' )
 					$score_string[] = $this->player_score($p,null);
 			$bot->say($cmd->channel,implode(", ",$score_string),-1);
+			$this->print_spectators($cmd,$bot);
 		}
 		else
 		{
@@ -365,11 +416,8 @@ class Rcon2Irc_Score_Inline extends Rcon2Irc_Score
 				$ts[$team] = $color->irc()."$score\xf";
 			}
 			$bot->say($cmd->channel,"Team Scores: ".implode(":",array_values($ts)));
-			$ts['spectator'] = null;
 			foreach(array_keys($ts) as $team )
 			{
-				if ( !$this->show_spectators && $team == 'spectator' )
-					continue;
 				
 				$color = isset($this->team_colors[$team]) ? new Color($this->team_colors[$team],true) : null;
 				$score_string = array();
@@ -380,6 +428,7 @@ class Rcon2Irc_Score_Inline extends Rcon2Irc_Score
 				}
 				$bot->say($cmd->channel,implode(", ",$score_string),-1);
 			}
+			$this->print_spectators($cmd,$bot);
 		}
 	}
 }
