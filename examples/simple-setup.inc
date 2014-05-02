@@ -23,8 +23,19 @@ require_once('rcon/executors/irc2rcon-admin.php');
 
 Logger::instance()->default_settings();
 
-// Create a function that will create connections to the xonotic server
-function create_communicator($driver, $channel, Rcon $rcon, $prefix, $esk)
+/**
+ * \brief Create a function that will create connections to the xonotic server
+ * \param $driver  Bot driver
+ * \param $channel Channel to get/send messages
+ * \param $rcon    Rcon connection
+ * \param $prefix  Server prefix on IRC (can be null)
+ * \param $game    Activate game-specific features. Possible values: xonotic xonotic-esk nexuiz
+ * \param $score_table Whether to show a full score table on match end (If false a more compact display is used)
+ * \param $score_spectator Whether to include spectators in the score list
+ * \param $admins  Extra admins for the server
+ */
+function create_communicator($driver, $channel, Rcon $rcon, $prefix=null, $game='xonotic', 
+                             $score_table=false, $score_spectator=false, $admins=array())
 {
 	
 	$rcon_comm = new Rcon_Communicator($channel,$rcon,$prefix);
@@ -32,7 +43,7 @@ function create_communicator($driver, $channel, Rcon $rcon, $prefix, $esk)
 	$driver->install_external($rcon_comm);
 	$driver->install($rcon_comm);
 	
-	if ( $esk )
+	if ( $game == 'xonotic-esk' )
 	{
 		$rcon_comm->install(array(
 			// Following commands require the ESK mod pack
@@ -48,9 +59,13 @@ function create_communicator($driver, $channel, Rcon $rcon, $prefix, $esk)
 			// handle /me chats in the ESK mod pack
 			new Rcon2Irc_SayAction(),
 		));
+		$game = 'xonotic';
 	}
+	else if ( $game == 'xonotic' )
+		$rcon_comm->install(new Irc2Rcon_RawSayAdmin($rcon));
 	else
-		$rcon_comm->install(array(new Irc2Rcon_RawSayAdmin($rcon)));
+		$rcon_comm->install(new Irc2Rcon_RawSayAdmin_EncodeText($rcon));
+		
 	
 	$rcon_comm->install(array(
 	
@@ -110,14 +125,9 @@ function create_communicator($driver, $channel, Rcon $rcon, $prefix, $esk)
 	
 	// Show vote calls/results and so on
 	new Rcon2Irc_Votes(),
-
-	// Show score tables at the end of each match
-	new Rcon2Irc_Score(),
-	// Show scores inline at the end of each match
-	//new Rcon2Irc_Score_Inline(),
 	
 	// Show match start notifications
-	new Rcon2Irc_MatchStart(),
+	new Rcon2Irc_MatchStart("Playing \00310%gametype%\xf on \00304%map%\xf (%free% free slots); join now: \2$game +connect %sv_ip%"),
 
 // RCON - filter some uniteresting output from rcon to get nicer logs
 	new Rcon2Irc_Filter_BlahBlah(),
@@ -137,6 +147,30 @@ function create_communicator($driver, $channel, Rcon $rcon, $prefix, $esk)
 			new Rcon2Irc_Part(),
 		));
 	}
+	
+	if ( $score_table )
+		$rcon_comm->install(new Rcon2Irc_Score($score_spectator));
+	else
+		$rcon_comm->install(new Rcon2Irc_Score_Inline(($score_spectator)));
+		
+		
+	if ( !empty($admins) )
+	{
+		$auth="svadmin_$channel:$prefix@{$rcon->read}";
+		$driver->data->grant_access[$auth] = array('rcon-admin');
+		foreach($admins as $admin)
+		{
+			if ( is_string($admin) )
+				$admin = new IRC_User($admin);
+			$driver->data->add_to_list($auth,$admin);
+		}
+		foreach($rcon_comm->executors as $ex)
+		{
+			if ( $ex->auth == 'rcon-admin' )
+				$ex->auth = $auth;
+		}
+	}
+	
 	
 	return $rcon_comm;
 }
@@ -161,6 +195,8 @@ function create_bot($params)
 	global $bot;
 	global $driver;
 	global $network_quakenet;
+	global $communicators;
+	$communicators = array();
 	$bot_config = $params;
 	
 	$bot = new MelanoBot(
@@ -210,9 +246,11 @@ function create_bot($params)
 	$driver->data->grant_access['rcon-admin'] = array('admin');
 	foreach(get_param('dp_servers',array()) as $dps)
 	{
-		create_communicator(
+		$channel = get_dp_param($dps,'irc_channel');
+		$prefix = get_dp_param($dps,'prefix');
+		$communicators["$channel:$prefix"] =  create_communicator(
 			$driver,
-			get_dp_param($dps,'irc_channel'),
+			$channel,
 			new Rcon ( 
 				get_dp_param($dps,'host',"127.0.0.1"),
 				get_dp_param($dps,'port',26000),
@@ -220,8 +258,11 @@ function create_bot($params)
 				get_dp_param($dps,'rcon_secure',0),
 				get_dp_param($dps,'log_dest_udp')
 			),
-			get_dp_param($dps,'prefix'),
-			get_dp_param($dps,'esk_mod',false)
+			$prefix,
+			get_dp_param($dps,'game','xonotic'),
+			get_dp_param($dps,'score_table',false),
+			get_dp_param($dps,'score_spectator',false),
+			get_dp_param($dps,'admins',array())
 		);
 	}
 }

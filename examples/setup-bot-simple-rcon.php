@@ -30,7 +30,10 @@ create_bot(array(
 		'rcon_secure'   => 0,          // Secure protocol
 		'prefix'        => 'xon',      // Chat prefix, set to null to disable
 		'log_dest_udp'  => null,       // If the bot runs on a different host than DP, the address of such host
-		'esk_mod'       => false,      // Allow features specific to the ESK mod
+		'game'          => 'xonotic',  // Values: 'xonotic' 'xonotic-esk' 'nexuiz'
+		'score_table'   => false,      // If true show a large score table, if false each team is shown in a single row
+		'score_spectator'=>false,      // Whether to include spectators in the score list
+		'admins'        => array(),    // List of IRC users (who aren't already bot admins) who will have access to admin features
 	),
 ),
 
