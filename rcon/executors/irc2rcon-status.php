@@ -60,6 +60,12 @@ class Irc2Rcon_Status extends Irc2Rcon_Executor
 			$gametype = Rcon_Communicator::gametype_name($rcon_data->gametype);
 
 		$bot->say($channel,"Map: \00304{$rcon_data->map}\017, Game: \00304$gametype\017");
+		
+		
+		if ( !empty($rcon_data->mutators) )
+		{
+			$bot->say($channel,"Mutators: ".implode(", ",$rcon_data->mutators));
+		}
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)

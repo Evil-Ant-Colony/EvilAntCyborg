@@ -226,6 +226,8 @@ function rcon_comm($driver, Rcon $rcon,$channel,$prefix)
 	new Rcon2Irc_GetCvars(),
 	// detect changes to the ban list (needed by Irc2Rcon_Banlist)
 	new Rcon2Irc_UpdateBans(),
+	// detect active mutators
+	new Rcon2Irc_GetMutators(),
 	
 // RCON - notify admins
 	// if a player prepends "!admin" to chat messages, admins will recieve a private message
