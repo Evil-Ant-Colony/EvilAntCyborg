@@ -98,20 +98,6 @@ class Executor_RespondKick extends CommandExecutor
 	}
 }
 
-class Raw_What extends RawCommandExecutor
-{
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
-	{
-		return $cmd->cmd != null;
-	}
-	
-	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
-	{
-		$bot->say($cmd->channel, "What?",-1 );
-	}
-}
-
 
 class Raw_Echo extends RawCommandExecutor
 {
@@ -335,5 +321,24 @@ class Executor_MiscList extends Executor_Multi
 			new Executor_MiscListEdit($list_name,$auth_edit,$list_ref),
 			new Executor_MiscListReadonly($list_name,$auth_read,$list_ref)
 		));
+	}
+}
+
+
+class Executor_Cointoss extends CommandExecutor
+{
+	public $default;
+	function __construct($trigger="cointoss",$default=array("Heads","Tails"),$auth=null)
+	{
+		parent::__construct($trigger,$auth,"$trigger [values]","Get a random element out of the given values");
+		$this->default = $default;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	{
+		$values = $cmd->params;
+		if ( count($values) < 1 )
+			$values = $this->default;
+		$bot->say($cmd->channel,$values[rand(0,count($values)-1)]);
 	}
 }
