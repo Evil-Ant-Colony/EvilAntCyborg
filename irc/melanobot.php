@@ -54,8 +54,11 @@ class MelanoBotServer
 	function connect()
 	{
 		$this->socket = fsockopen($this->server,$this->port);
-		stream_set_blocking($this->socket,0);
-		stream_set_timeout($this->socket,1);
+		if ( $this->socket !== false )
+		{
+			stream_set_blocking($this->socket,0);
+			stream_set_timeout($this->socket,1);
+		}
 		return $this->socket;
 	}
 	
@@ -296,7 +299,7 @@ class MelanoBot extends DataSource
 	const PROTOCOL_CONNECTED  = 3; ///< IRC fully connected, can send data
 
 
-	private $server_index;///< Internal index to the currently connected server
+	private $server_index = 0;///< Internal index to the currently connected server
     public $servers;      ///< Array of server
     public $real_name;    ///< IRC bot real name
     public $nick;         ///< Current bot NICK
@@ -333,7 +336,7 @@ class MelanoBot extends DataSource
         $this->join_list = $channels;
         $this->listen_to = "$nick:";
         $this->buffer = new BotOutBuffer();
-        $this->connect();
+        $this->connect_cycle();
     }
     
     /**
@@ -356,13 +359,21 @@ class MelanoBot extends DataSource
 				Logger::log("irc","!","Connection failed ".$this->servers[$i]."",1);
 			}
 		}
-    }
+	}
+
+	/**
+	 * \brief Get the server the bot is connected to
+	 */
+	function current_server()
+	{
+		return $this->servers[$this->server_index];
+	}
     
-    /**
-     * \brief Disconnect from server
-     */
-    function disconnect()
-    {
+	/**
+		* \brief Disconnect from server
+		*/
+	function disconnect()
+	{
 		$this->channels = array();
 		$this->users = array();
 		if ( $this->buffer->server->connected() )
@@ -371,16 +382,15 @@ class MelanoBot extends DataSource
 			$this->buffer->server->disconnect();
 		}
 		$this->connection_status = self::DISCONNECTED;
-    }
-    
-    /**
-     * \brief Quit and disconnect from current server and try to cycle server looking for a connection
-     */
-    function reconnect($message="reconnect")
-    {
+	}
+
+	/**
+	 * \brief Connect to the first available server
+	 * \return \b true on success
+	 */
+	private function connect_cycle()
+	{
 		$this->connection_status = self::DISCONNECTED;
-		$join_list = array_merge($this->channels,$this->join_list);
-		$this->quit($message);
 		$i = $this->server_index;
 		for ( $tries = 0; $tries < count($this->servers); $tries++ )
 		{
@@ -388,12 +398,22 @@ class MelanoBot extends DataSource
 			$this->connect($i);
 			if ( $this->servers[$i]->connected() )
 			{
-				$this->join_list = $join_list;
-				return;
+				return true;
 			}
 		}
 		Logger::log("irc","!","All connections failed",1);
-		print_r($this);
+		return false;
+	}
+
+    /**
+     * \brief Quit and disconnect from current server and try to cycle server looking for a connection
+     */
+    function reconnect($message="reconnect")
+    {
+		$this->quit($message);
+		$join_list = array_merge($this->channels,$this->join_list);
+		if ( $this->connect_cycle() )
+			$this->join_list = $join_list;
     }
     
     /**

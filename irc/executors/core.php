@@ -118,7 +118,7 @@ class Executor_Server extends CommandExecutor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
-		$bot->say($cmd->channel,$bot->current_server);
+		$bot->say($cmd->channel,$bot->current_server());
 	}
 }
 
