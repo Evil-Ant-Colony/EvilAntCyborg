@@ -85,7 +85,7 @@ class Rcon_Packet
 		$packet->server = new Rcon_Server();
 		@socket_recvfrom($socket, $packet->contents, $len, MSG_DONTWAIT, $packet->server->host, $packet->server->port);
 		$head = substr($packet->contents,0,strlen(self::$read_header));
-		$packet->payload = rtrim(substr($packet->contents,strlen(self::$read_header)),"\n\r");
+		$packet->payload = substr($packet->contents,strlen(self::$read_header));
 		$packet->valid = $head == self::$read_header;
 		return $packet;
 	}
