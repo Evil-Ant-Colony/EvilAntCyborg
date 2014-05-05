@@ -168,8 +168,10 @@ $disp_cup->install(array(
 // Set up a rcon connection to a Xonotic server
 function rcon_comm($driver, Rcon $rcon,$channel,$prefix)
 {
-	$rcon_comm = new Rcon_Communicator($channel,$rcon,$prefix);
-
+	static $server_number = 0;
+	$rcon_comm = new Rcon_Communicator($channel,$rcon,$prefix,$server_number);
+	$server_number++;
+	
 	$driver->install_external($rcon_comm);
 	$rcon_comm->install(array(
 	// Following commands require the ESK mod pack

@@ -37,8 +37,9 @@ Logger::instance()->default_settings();
 function create_communicator($driver, $channel, Rcon $rcon, $prefix=null, $game='xonotic', 
                              $score_table=false, $score_spectator=false, $admins=array())
 {
-	
-	$rcon_comm = new Rcon_Communicator($channel,$rcon,$prefix);
+	static $server_number = 0;
+	$rcon_comm = new Rcon_Communicator($channel,$rcon,$prefix,$server_number);
+	$server_number++;
 
 	$driver->install_external($rcon_comm);
 	$driver->install($rcon_comm);

@@ -61,11 +61,12 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	public $rcon_filters = array();  ///< Filter rcon commands
 	public $poll_commands = array(); ///< Commands to be polled periodically to rcon (as a string)
 	public $poll_interval = 60;      ///< Number of seconds between polls
-	private $poll_time = 0;          ///< When the next polling shall occur
+	private $poll_time = -1;         ///< When the next polling shall occur
 	private $connection_status;      ///< Status of the RCON connection, see the constants above
 	private $cache = "";             ///< Cache the last line if it has been split between multiple packets
 	public $bot_data = null;         ///< Hax :-(, used to access BotData without passing it as a parameter to the rcon executors
 	public $out_prefix = "";         ///< Prefix the rcon executors should use for IRC output
+	public $first_poll_time = 0;     ///< Delay the first polling by this many seconds
 	
 	/**
 	 * \brief Convert a gametype string identifier to a human-readable name
@@ -102,7 +103,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		$this->rcon->send($command);
 	}
 	
-	function __construct($channel,Rcon $rcon,$prefix=null)
+	function __construct($channel,Rcon $rcon,$prefix=null,$first_poll_time=0)
 	{
 		parent::__construct(array($channel),$prefix);
 		$this->channel = $channel;
@@ -110,6 +111,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		$this->poll_commands []= "status 1";
 		if ( $prefix )
 			$this->out_prefix = "$prefix ";
+		$this->first_poll_time = $first_poll_time;
 	}
 	
 	/**
@@ -168,14 +170,16 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	{
 		$this->bot_data = $data;
 		
-		if ( $this->connection_status == self::WAITING_IRC && $bot->connection_status() == MelanoBot::PROTOCOL_CONNECTED )
+		if ( $this->connection_status == self::WAITING_IRC && 
+			 $bot->connection_status() == MelanoBot::PROTOCOL_CONNECTED &&
+			 $this->poll_time == -1 )
 		{
 			$this->connection_status = self::DISCONNECTED;
-			$this->poll_time = 0;
+			$this->poll_time = time()+$this->first_poll_time;
 		}
 		
 		$time = time();
-		if ( $time > $this->poll_time )
+		if ( $time > $this->poll_time && $this->poll_time != -1 )
 		{
 			if ( $this->connection_status != self::WAITING_IRC )
 			{
