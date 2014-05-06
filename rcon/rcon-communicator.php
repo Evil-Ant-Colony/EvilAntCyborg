@@ -49,10 +49,11 @@ class Rcon_Command
  */
 class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunicator
 {
-	const WAITING_IRC = -2;
-	const CHECKING_CONNECTION = -1;
-	const DISCONNECTED = 0;
-	const CONNECTED = 1;
+	const WAITING_IRC = -2;         ///< Not yet connected to IRC
+	const CHECKING_CONNECTION = -1; ///< Checking that the connection is working
+	const CHECK_FAILED = -3;        ///< Check failed, will disconnect if it doesn't get back
+	const DISCONNECTED = 0;         ///< Connection failed, not connected
+	const CONNECTED = 1;            ///< Connection is fine
 	
 	public $channel;                 ///< IRC channel
 	public $data;                    ///< Rcon-related data object
@@ -146,7 +147,9 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 			{
 				$bot->say($this->channel,"{$this->out_prefix}\2Warning!\xf server \00304{$this->data->hostname}\xf disconnected!",16);
 			}
-			else if ( $status == self::CONNECTED && $this->connection_status != self::CHECKING_CONNECTION )
+			else if ( $status == self::CONNECTED && 
+				$this->connection_status != self::CHECKING_CONNECTION && 
+				$this->connection_status != self::CHECK_FAILED )
 			{
 				$bot->say($this->channel,"{$this->out_prefix}Server \00309{$this->data->hostname}\xf connected.",16);
 				$this->setup_server();
@@ -185,6 +188,8 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 			{
 				if ( $this->connection_status == self::CONNECTED )
 					$this->set_connection_status(self::CHECKING_CONNECTION,$bot);
+				else if ( $this->connection_status == self::CHECKING_CONNECTION )
+					$this->set_connection_status(self::CHECK_FAILED,$bot);
 				else
 					$this->set_connection_status(self::DISCONNECTED,$bot);
 			}
@@ -244,7 +249,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 				$this->data->player->set_players($players);
 			}
 		}
-		else if (  preg_match("{:melanorcon:ok}",$packet->payload) && $this->connection_status != self::WAITING_IRC )
+		else if (  preg_match("{^:melanorcon:ok}",$packet->payload) && $this->connection_status != self::WAITING_IRC )
 		{
 			Logger::log("dp","!","Server {$this->rcon->read} is connected",3);
 			$this->set_connection_status(self::CONNECTED,$bot);
