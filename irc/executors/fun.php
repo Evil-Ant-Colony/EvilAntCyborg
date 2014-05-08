@@ -191,8 +191,8 @@ class Executor_ReverseText extends CommandExecutor
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$rev = "";
-		$param_string = $cmd->param_string();
-		for ( $i = 0; $i < strlen($param_string); $i++ )
+		$param_string = Color::irc2none(iconv('UTF-8','ASCII//TRANSLIT',$cmd->param_string()));
+		for ( $i = 0; $i < min(strlen($param_string),$bot->buffer->flood_max_bytes); $i++ )
 		{
 			$c = $param_string[$i];
 			if ( isset(self::$reverse_ASCII[$c]) )
