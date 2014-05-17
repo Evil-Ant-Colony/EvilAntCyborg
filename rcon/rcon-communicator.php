@@ -68,6 +68,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	public $bot_data = null;         ///< Hax :-(, used to access BotData without passing it as a parameter to the rcon executors
 	public $out_prefix = "";         ///< Prefix the rcon executors should use for IRC output
 	public $first_poll_time = 0;     ///< Delay the first polling by this many seconds
+	public $connection_messages=true;///< Whether to show connect/disconnect messages
 	
 	/**
 	 * \brief Convert a gametype string identifier to a human-readable name
@@ -143,7 +144,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	{
 		if ( $status != $this->connection_status )
 		{
-			if ( $status == self::DISCONNECTED )
+			if ( $status == self::DISCONNECTED && $this->connection_messages )
 			{
 				$bot->say($this->channel,"{$this->out_prefix}\2Warning!\xf server \00304{$this->data->hostname}\xf disconnected!",16);
 			}
@@ -151,7 +152,8 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 				$this->connection_status != self::CHECKING_CONNECTION && 
 				$this->connection_status != self::CHECK_FAILED )
 			{
-				$bot->say($this->channel,"{$this->out_prefix}Server \00309{$this->data->hostname}\xf connected.",16);
+				if ($this->connection_messages)
+					$bot->say($this->channel,"{$this->out_prefix}Server \00309{$this->data->hostname}\xf connected.",16);
 				$this->setup_server();
 			}
 		}
