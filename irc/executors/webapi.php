@@ -118,14 +118,29 @@ class Raw_Youtube extends RawCommandExecutor
 			$url="http://gdata.youtube.com/feeds/api/videos/{$match[1]}?alt=json";
 			$response = json_decode(file_get_contents($url),true);
 			$title = "";
+			$duration = "";
 			if ( isset($response["entry"]["title"]['$t']) )
 			{
 				$title = $response["entry"]["title"]['$t'];
 			}
+			if ( isset($response["entry"]['media$group']['yt$duration']['seconds']) )
+			{
+				$seconds = (int) $response["entry"]['media$group']['yt$duration']['seconds'];
+				$minutes = floor($seconds / 60);
+				$seconds %= 60;
+				$duration = "$minutes:$seconds";
+				if ( $minutes >= 60 )
+				{
+					$hours = floor($minutes / 60);
+					$minutes %= 60;
+					$duration = "$hours:$minutes:$seconds";
+				}
+				$duration = " (\002$duration\xf)";
+			}
 			/*else
 				print_r($response);*/
 				
-			$bot->say($cmd->channel,"Ha Ha! Nice vid {$cmd->from}! $title");
+			$bot->say($cmd->channel,"Ha Ha! Nice vid {$cmd->from}! $title$duration");
 		}
 	}
 	
