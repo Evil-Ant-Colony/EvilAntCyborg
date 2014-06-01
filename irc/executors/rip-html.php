@@ -73,7 +73,6 @@ class Executor_RipHtmlSimple extends Executor_RipHtmlBase
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$contents = $this->get_contents($this->url, $this->xpath);
-		print_r($contents);
 		if ( count($contents) > 0 )
 		{
 			$bot->say($cmd->channel,implode(" ",$contents));
