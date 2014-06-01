@@ -39,13 +39,13 @@ class Executor_Help extends CommandExecutor
 			{
 				foreach($disp->executors as $name => $ex)
 					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$bot,$data) )
-						$list[$ex->name] = $ex;
+						$list[$ex->name()] = $ex;
 				foreach($disp->raw_executors as $ex)
 					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$bot,$data) )
-						$list[$ex->name] = $ex;
+						$list[$ex->name()] = $ex;
 				foreach($disp->filters as $ex)
 					if ( $ex->name() && $ex->check_auth($cmd->from,$cmd->host,$bot,$data) )
-						$list[$ex->name] = $ex;
+						$list[$ex->name()] = $ex;
 			}
 		}
 		ksort($list);

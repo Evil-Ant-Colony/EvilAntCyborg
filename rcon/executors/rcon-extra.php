@@ -204,15 +204,15 @@ class Rcon2Irc_Translate  extends Rcon2Irc_Executor
 		
 		if ( !empty($cmd->params[3]) )
 		{
-			$sl = Executor_GoogleTranslate::language_code($cmd->params[3]);
+			$sl = GoogleTranslator::language_code($cmd->params[3]);
 		}
 		if ( !empty($cmd->params[4]) )
 		{
-			$tl = Executor_GoogleTranslate::language_code($cmd->params[4]);
+			$tl = GoogleTranslator::language_code($cmd->params[4]);
 			if ( !$tl ) $tl = "en";
 		}
 		
-		$translated = Executor_GoogleTranslate::translate($sl,$tl,Color::dp2none($cmd->params[5]));
+		$translated = GoogleTranslator::translate($sl,$tl,Color::dp2none($cmd->params[5]));
 		
 		if ( $translated )
 		{
