@@ -298,7 +298,7 @@ class Irc2Rcon_Autotranslate  extends Irc2Rcon_RawExecutor
 		}
 		else
 		{
-			$text = $cmd->param_string();
+			$text = Color::irc2none($cmd->param_string());
 			$command = $this->say_command;
 			if ( preg_match("{^\1ACTION ([^\1]*)\1$}", $text, $match) )
 			{
@@ -311,7 +311,7 @@ class Irc2Rcon_Autotranslate  extends Irc2Rcon_RawExecutor
 				$rcon_data = $this->data($data);
 				Rcon_Communicator::set_sv_adminnick($rcon_data,"[IRC] {$cmd->from}");
 				$text = str_replace(array('\\','"'),array('\\\\','\"'),$text);
-				$this->rcon->send($command.$this->convert($text));
+				$this->rcon->send(sprintf($command,$cmd->from).$this->convert($text));
 				Rcon_Communicator::restore_sv_adminnick($rcon_data);
 				return true;
 			}
