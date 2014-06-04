@@ -111,9 +111,9 @@ class Executor_Reconnect extends CommandExecutor
  */
 class Executor_Server extends CommandExecutor
 {
-	function __construct()
+	function __construct($trigger='irc_server')
 	{
-		parent::__construct('server','owner','server','Show server name');
+		parent::__construct($trigger,'owner',"$trigger",'Show IRC server name');
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)

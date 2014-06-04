@@ -70,9 +70,16 @@ class Irc2Rcon_Status extends Irc2Rcon_Executor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
+		$channel = $this->private ? $cmd->from : $cmd->channel;
+		
+		if ( !$this->comm->is_connected() )
+		{
+			$bot->say($channel,$this->out_prefix()."Server not connected");
+			return;
+		}
+			
 		$rcon_data = $this->data($data);
 		$player_manager = $rcon_data->player;
-		$channel = $this->private ? $cmd->from : $cmd->channel;
 		/// \todo status only on users matching the parameters
 		if ( $player_manager->count_all() > 0 )
 		{
@@ -181,5 +188,46 @@ class Irc2Rcon_Banlist extends Irc2Rcon_Executor
 				$bot->say($cmd->channel,sprintf(
 					"#\00304%-3s \00310%-21s\xf %s seconds",
 					$id,$ban->ip,$ban->time));
+	}
+}
+
+
+
+/**
+ * \brief Show information about the server
+ */
+class Irc2Rcon_Server extends Irc2Rcon_Executor
+{
+	function __construct(Rcon $rcon, $trigger="server", $auth=null)
+	{
+		parent::__construct($rcon,$trigger,$auth,"$trigger [ip|stats|game]","Show server information");
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		$rcon_data = $this->data($data);
+		if ( count($cmd->params) == 0 )
+		{
+			$bot->say($cmd->channel,$this->out_prefix().$rcon_data->hostname);
+			return;
+		}
+		
+		switch ( $cmd->params[0] )
+		{
+			case 'ip': 
+				$bot->say($cmd->channel,$this->out_prefix().$this->comm->write_server);
+				break;
+			case 'stats':
+				$bot->say($cmd->channel,$this->out_prefix().(!empty($rcon_data->stats)?$rcon_data->stats:"No stats are set for this server"));
+				break;
+			case 'game':
+				$gametype = "unknown gametype";
+				if ( isset($rcon_data->gametype) )
+					$gametype = Rcon_Communicator::gametype_name($rcon_data->gametype);
+				$bot->say($cmd->channel,$this->out_prefix()."Playing \00310$gametype\017 on \00304{$rcon_data->map}\017");
+				break;
+				
+				
+		}
 	}
 }

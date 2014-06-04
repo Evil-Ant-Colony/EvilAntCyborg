@@ -34,12 +34,15 @@ Logger::instance()->default_settings();
  * \param $score_spectator Whether to include spectators in the score list
  * \param $admins  Extra admins for the server
  */
-function create_communicator($driver, $channel, Rcon $rcon, $prefix=null, $game='xonotic', 
+function create_communicator($driver, $channel, Rcon $rcon, $prefix=null, $stats_url=null, $game='xonotic', 
                              $score_table=false, $score_spectator=false, $admins=array())
 {
 	static $server_number = 0;
 	$rcon_comm = new Rcon_Communicator($channel,$rcon,$prefix,$server_number);
 	$server_number++;
+	
+	if ( !empty($stats_url) )
+		$rcon_comm->data->stats = $stats_url;
 
 	$driver->install_external($rcon_comm);
 	$driver->install($rcon_comm);
@@ -74,6 +77,8 @@ function create_communicator($driver, $channel, Rcon $rcon, $prefix=null, $game=
 	new Irc2Rcon_Who($rcon),
 	// "maps pattern" to find maps matching pattern
 	new Irc2Rcon_Maps($rcon),
+	// "server [ip|stats|game] to show info about the server
+	new Irc2Rcon_Server($rcon),
 	
 // IRC - admin commands
 
@@ -260,6 +265,7 @@ function create_bot($params)
 				get_dp_param($dps,'log_dest_udp')
 			),
 			$prefix,
+			empty($dps['xonstats']) ? get_dp_param($dps,'stats_url') : "http://stats.xonotic.org/server/".$dps['xonstats'],
 			get_dp_param($dps,'game','xonotic'),
 			get_dp_param($dps,'score_table',false),
 			get_dp_param($dps,'score_spectator',false),

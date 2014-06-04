@@ -114,6 +114,11 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		if ( $prefix )
 			$this->out_prefix = "$prefix ";
 		$this->first_poll_time = $first_poll_time;
+		
+		$this->data = new StdClass();
+		$this->data->rcon = $this->rcon;
+		$this->data->hostname = "{$this->rcon->read}";
+		$this->data->map = "unknown map";
 	}
 	
 	/**
@@ -129,12 +134,16 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		
 		if ( ! isset($data->rcon["{$this->rcon->read}"]) )
 		{
-			$data->rcon["{$this->rcon->read}"] = new StdClass();
-			$data->rcon["{$this->rcon->read}"]->rcon = $this->rcon;
-			$data->rcon["{$this->rcon->read}"]->player = new PlayerManager;
-			$data->rcon["{$this->rcon->read}"]->hostname = "{$this->rcon->read}";
+			$this->data->player = new PlayerManager;
+			$data->rcon["{$this->rcon->read}"] = $this->data;
 		}
-		$this->data = $data->rcon["{$this->rcon->read}"];
+		else
+			$this->data = $data->rcon["{$this->rcon->read}"];
+	}
+	
+	function is_connected()
+	{
+		return $this->connection_status == self::CONNECTED || $this->connection_status == self::CHECKING_CONNECTION;
 	}
 	
 	/**
