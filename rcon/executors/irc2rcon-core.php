@@ -22,15 +22,14 @@ require_once("rcon/executors/rcon-abstract.php");
 
 
 
-class Irc2Rcon_RawSayAdmin extends RawCommandExecutor
+class Irc2Rcon_RawSayAdmin extends Irc2Rcon_RawExecutor
 {
 	public $say_command;
-	public $rcon;
 	
 	function __construct(Rcon $rcon, $say_command='say ^7')
 	{
+		parent::__construct($rcon);
 		$this->say_command=$say_command;
-		$this->rcon = $rcon;
 	}
 	
 	function convert($text)

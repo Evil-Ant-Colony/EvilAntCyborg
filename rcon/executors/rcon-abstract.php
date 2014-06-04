@@ -100,3 +100,26 @@ abstract class Irc2Rcon_Executor extends CommandExecutor
 }
 
 
+/**
+ * \brief Raw IRC Executor which may send data to rcon
+ */
+abstract class Irc2Rcon_RawExecutor extends RawCommandExecutor
+{
+	public $rcon;
+	
+	function __construct(Rcon $rcon, $auth=null )
+	{
+		$this->rcon = $rcon;
+		$this->auth = $auth;
+	}
+	
+	function data(BotData $data)
+	{
+		return $data->rcon["{$this->rcon->read}"];
+	}
+	
+	function out_prefix()
+	{
+		return isset($this->comm->out_prefix) ? $this->comm->out_prefix : "";
+	}
+}

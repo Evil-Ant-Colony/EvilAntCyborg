@@ -38,17 +38,16 @@ class Rcon2Irc_SayAction extends Rcon2Irc_Executor
 	}
 }
 
-class Irc2Rcon_RawSay extends RawCommandExecutor
+class Irc2Rcon_RawSay extends Irc2Rcon_RawExecutor
 {
 	public $say_command;
 	public $action_command;
-	public $rcon;
 	
 	function __construct(Rcon $rcon, $say_command='_ircmessage %s ^7: %s',$action_command='_ircmessage "^4*^3 %s" ^7 %s')
 	{
+		parent::__construct($rcon);
 		$this->say_command=$say_command;
 		$this->action_command = $action_command;
-		$this->rcon = $rcon;
 	}
 	
 	function convert($text)
@@ -184,10 +183,6 @@ class Rcon2Irc_HostError extends Rcon2Irc_Executor
 	}
 }
 
-
-
-
-
 class Rcon2Irc_Translate  extends Rcon2Irc_Executor
 {
 	function __construct()
@@ -228,3 +223,111 @@ class Rcon2Irc_Translate  extends Rcon2Irc_Executor
 	}
 }
 
+/**
+ * \brief Autotranslate irc commands into rcon
+ */
+class Irc2Rcon_Autotranslate  extends Irc2Rcon_RawExecutor
+{
+	public $nicks = array();		///< IRC nicks for which translation is enabled
+	public $target_language='en';	///< Target language code
+	public $trigger;				///< Trigger for admin commands
+	public $say_command;			///< Command used to send messages to rcon
+	public $action_command;			///< Command used to send messages to rcon on ACTION
+	public $target_encoding;		///< If not null convert the string encoding before sending it to rcon
+	
+	function __construct(Rcon $rcon, $say_command='say ^7', $action_command='say ^4* ^7', $trigger = 'autotranslate', $auth = 'rcon-admin', $target_encoding=null)
+	{
+		parent::__construct($rcon,$auth);
+		$this->trigger = $trigger;
+		$this->say_command = $say_command;
+		$this->action_command = $action_command;
+		$this->target_encoding = $target_encoding;
+	}
+	
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		return ( $cmd->cmd == $this->trigger && $this->check_auth($cmd->from,$cmd->host,$bot,$data) ) ||  
+			( $cmd->cmd == null && in_array($cmd->from,$this->nicks) );
+	}
+	
+	function convert($text)
+	{
+		if ( $this->target_encoding && $this->target_encoding != 'UTF-8' )
+			$text = iconv('UTF-8', $this->target_encoding,$text);
+		return Color::irc2dp($text);
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		if ( $cmd->cmd == $this->trigger )
+		{
+			switch ( $cmd->params[0] )
+			{
+				case 'clear':
+					$this->nicks = array();
+					$bot->say($cmd->channel, "Removed all automatic translations");
+					break;
+				case '+':
+				case 'add':
+					for ( $i = 1; $i < count($cmd->params); $i++ )
+						if ( strlen($cmd->params[$i]) > 0 )
+							$this->nicks[]= $cmd->params[$i];
+					$this->nicks = array_unique($this->nicks);
+					$bot->say($cmd->channel, "Autotranslations: ".implode(", ",$this->nicks));
+					break;
+				case '-':
+				case 'rm':
+					for ( $i = 1; $i < count($cmd->params); $i++ )
+					{
+						if ( ($key = array_search($cmd->params[$i], $this->nicks)) !== false )
+							array_splice($this->nicks,$key,1);
+					}
+					$bot->say($cmd->channel, "Removed given automatic translations");
+					break;
+				case 'view':
+					if ( empty($this->nicks) )
+						$bot->say($cmd->channel,"No automatic translations");
+					else
+						$bot->say($cmd->channel,implode(", ",$this->nicks));
+					break;
+				default:
+					$this->help($cmd, $bot, $data);
+			}
+			return true;
+				
+		}
+		else
+		{
+			$text = $cmd->param_string();
+			$command = $this->say_command;
+			if ( preg_match("{^\1ACTION ([^\1]*)\1$}", $text, $match) )
+			{
+				$text = $match[1];
+				$command = $this->action_command;
+			}
+			$text = GoogleTranslator::translate("",$this->target_language,$text);
+			if ( $text )
+			{
+				$rcon_data = $this->data($data);
+				Rcon_Communicator::set_sv_adminnick($rcon_data,"[IRC] {$cmd->from}");
+				$text = str_replace(array('\\','"'),array('\\\\','\"'),$text);
+				$this->rcon->send($command.$this->convert($text));
+				Rcon_Communicator::restore_sv_adminnick($rcon_data);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	function name()
+	{
+		return $this->trigger;
+	}
+	
+	function help(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		$bot->say($cmd->channel,"\x0304".$this->name()."\x03: \x0314{$this->trigger} clear|+ user...|- user...|view\x03");
+		$bot->say($cmd->channel,"\x0302Manage automatic translations to rcon\x03");
+	}
+	
+}
