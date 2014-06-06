@@ -106,14 +106,14 @@ class Raw_Youtube extends RawCommandExecutor
 	
 	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
-		return strpos($cmd->raw,"www.youtube.com/watch?v=") !== false;
+		return strpos($cmd->raw,"youtu.be/") !== false || strpos($cmd->raw,"www.youtube.com/watch?v=") !== false;
 	}
 	
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$match = array();
-		if ( preg_match("{www\.youtube\.com/watch\?v=([-_0-9a-zA-Z]+)}",$cmd->raw,$match) )
+		if ( preg_match("{(?:www\.youtube\.com/watch\?v=|youtu\.be/)([-_0-9a-zA-Z]+)}",$cmd->param_string(),$match) )
 		{
 			$url="http://gdata.youtube.com/feeds/api/videos/{$match[1]}?alt=json";
 			$response = json_decode(file_get_contents($url),true);
@@ -137,8 +137,6 @@ class Raw_Youtube extends RawCommandExecutor
 				}
 				$duration = " (\002$duration\xf)";
 			}
-			/*else
-				print_r($response);*/
 				
 			$bot->say($cmd->channel,"Ha Ha! Nice vid {$cmd->from}! $title$duration");
 		}
