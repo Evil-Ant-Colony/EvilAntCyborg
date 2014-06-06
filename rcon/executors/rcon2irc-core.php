@@ -112,6 +112,13 @@ class Rcon2Irc_Join extends Rcon2Irc_JoinPart_Base
 		$player = new RconPlayer();
 		list ($player->id, $player->slot, $player->ip, $player->name) = array_splice($cmd->params,1);
 		
+		if ( strpos($player->ip,".") === false && preg_match("{([[:xdigit:]:]*)(.*)}",$player->name,$matches) && !empty($matches[2]) )
+		{
+			$player->ip .= $matches[1];
+			$player->name .= $matches[2];
+		}
+			
+		
 		$already = $rcon->data->player->find($player->slot);
 		$already = $already != null && $already->name == $player->name;
 		
