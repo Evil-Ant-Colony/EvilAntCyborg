@@ -120,11 +120,10 @@ class Rcon2Irc_Join extends Rcon2Irc_JoinPart_Base
 			
 		
 		$already = $rcon->data->player->find($player->slot);
-		$already = $already != null && $already->name == $player->name;
 		
 		$rcon->data->player->add($player);
 		
-		if ( !$already || $already->id != $player->id )
+		if ( $already == null || $already->name != $player->name || $already->id != $player->id )
 			$this->send_message($bot,$cmd->channel,$player,$rcon);
 		
 		return true;
