@@ -78,6 +78,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 		static $gametype_names = array(	
 			"as"  => "assault",
 			"ca"  => "clan arena",
+			"cq"  => "conquest",
 			"ctf" => "capture the flag",
 			"cts" => "race cts",
 			"dom" => "domination",
