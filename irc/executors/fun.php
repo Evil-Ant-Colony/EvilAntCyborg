@@ -141,7 +141,7 @@ class Executor_Morse extends CommandExecutor
 		't' => "-",
 		'u' => "..-",
 		'v' => "...-",
-		'w' => ".---",
+		'w' => ".--",
 		'x' => "-..-",
 		'y' => "-.--",
 		'z' => "--..",

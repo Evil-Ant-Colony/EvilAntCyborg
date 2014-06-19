@@ -672,6 +672,11 @@ class MelanoBot extends DataSource
             return null;
         }
         
+		if ( $this->connection_status >= self::PROTOCOL_CONNECTED && !empty($this->join_list) )
+		{
+			$this->join($this->join_list);
+		}
+		
         $data = $this->buffer->server->read();
         
         if ( $data == "" )
@@ -704,11 +709,6 @@ class MelanoBot extends DataSource
             $this->auth();
             
         }
-        
-		if ( $this->connection_status >= self::PROTOCOL_CONNECTED && !empty($this->join_list) )
-		{
-			$this->join($this->join_list);
-		}
         
         
         if ( $insize > 5 && $inarr[1] == 353 )
