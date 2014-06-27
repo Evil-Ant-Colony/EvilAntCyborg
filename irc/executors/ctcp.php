@@ -153,3 +153,20 @@ class Executor_CTCP_UserInfo extends Executor_CTCP_Base
 		$this->response($cmd,$bot,$this->info);
 	}
 }
+
+class Executor_CTCP_Custom extends Executor_CTCP_Base
+{
+	public $reply;
+	
+	function __construct($trigger,$reply)
+	{
+		parent::__construct($trigger);
+		$this->reply = $reply;
+	}
+	
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		$this->response($cmd,$bot,$this->reply);
+	}
+}
