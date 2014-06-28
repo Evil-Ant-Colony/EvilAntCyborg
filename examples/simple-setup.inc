@@ -230,6 +230,7 @@ function create_bot($params)
 		new Executor_Quit(),
 		new Executor_Restart(),
 		new Executor_Join(),
+		new Executor_Invite(),
 		new Executor_Part(),
 		new Executor_Nick(),
 	// public commands

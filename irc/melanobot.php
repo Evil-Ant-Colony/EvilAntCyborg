@@ -845,6 +845,8 @@ class MelanoBot extends DataSource
 						}
 					}
 					return new MelanoBotCommand(null,$query_params,$from,$from_host,$chan,$data, $irc_cmd);
+				default:
+					return new MelanoBotCommand($irc_cmd,array_slice($inarr,2),$from,$from_host,null,$data, $irc_cmd);
 					
 			}
 		}

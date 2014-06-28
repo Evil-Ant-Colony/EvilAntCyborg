@@ -186,6 +186,25 @@ class Executor_Join extends CommandExecutor
 	}
 }
 
+class Executor_Invite extends CommandExecutor
+{
+	function __construct($auth='admin')
+	{
+		parent::__construct(null,$auth);
+		$this->irc_cmd = 'INVITE';
+	}
+	
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		return $this->check_auth($cmd->from,$cmd->host,$bot,$data) &&
+			isset($cmd->params[1]) && $cmd->params[0] == $bot->nick;
+	}
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	{
+		$bot->join($cmd->params[1]);
+	}
+}
+
 /**
  * Part from a channel (or the current channel if none is provided)
  */
