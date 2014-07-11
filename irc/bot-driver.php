@@ -39,6 +39,7 @@ class BotDriver
 	public $pre_executors = array();  ///< List of executors applied before the bot starts
 	public $filters = array();        ///< Stuff to be applied to each command before checking for execution
 	public $extarnal_comm = array();  ///< Connect external processes to irc
+	public $max_speed = 0.005;        ///< Maximum loop speed (in seconds)
 	
 	/**
 	 * \brief Install data source
@@ -206,9 +207,7 @@ class BotDriver
 		
 		foreach ( $this->pre_executors as $ex )
 			$ex->execute($this->bot,$this->data);
-		
-		/// \todo parametrize
-		$delay = 0.001;
+
 		// loop
 		while($this->check_status())
 		{
@@ -216,12 +215,12 @@ class BotDriver
 			
 			$this->loop_step();
 			
-			$this->bot->buffer->flush_nonblock(0,$delay*1000000);
+			$this->bot->buffer->flush_nonblock(0,$this->max_speed*1000000);
 			
 			// computer programs are weird, they need to get some sleep if they have not been awake long enough :3
 			$delta = microtime(true) - $time;
-			if ( $delta < $delay )
-				usleep(($delay-$delta)*1000000);
+			if ( $delta < $this->max_speed )
+				usleep(($this->max_speed-$delta)*1000000);
 		}
 		
 		foreach ( $this->post_executors as $ex )
