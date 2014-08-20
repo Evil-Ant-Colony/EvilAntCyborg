@@ -59,12 +59,12 @@ class Irc2Rcon_Status extends Irc2Rcon_Executor
 		if ( isset($rcon_data->gametype) )
 			$gametype = Rcon_Communicator::gametype_name($rcon_data->gametype);
 
-		$bot->say($channel,"Map: \00304{$rcon_data->map}\017, Game: \00304$gametype\017");
+		$bot->say($channel,"Map: \00304{$rcon_data->map}\017, Game: \00304$gametype\017", 16);
 		
 		
 		if ( !empty($rcon_data->mutators) )
 		{
-			$bot->say($channel,"Mutators: ".implode(", ",$rcon_data->mutators));
+			$bot->say($channel,"Mutators: ".implode(", ",$rcon_data->mutators), 16);
 		}
 	}
 	
@@ -74,7 +74,7 @@ class Irc2Rcon_Status extends Irc2Rcon_Executor
 		
 		if ( !$this->comm->is_connected() )
 		{
-			$bot->say($channel,$this->out_prefix()."Server not connected");
+			$bot->say($channel,$this->out_prefix()."Server not connected", 16);
 			return;
 		}
 			
@@ -85,7 +85,7 @@ class Irc2Rcon_Status extends Irc2Rcon_Executor
 		{
 			
 			$bot->say($channel,sprintf("\002%-21s %2s %4s %5s %-4s %s\xf", 
-				"ip address", "pl", "ping", "frags", "slot", "name" ));
+				"ip address", "pl", "ping", "frags", "slot", "name" ), 16);
 			
 			$spects = 0;
 			foreach($player_manager->all() as $player)
@@ -107,16 +107,16 @@ class Irc2Rcon_Status extends Irc2Rcon_Executor
 						$frags,
 						$player->slot,
 						Color::dp2irc($player->name)
-				));
+				), 16);
 			}
 			
 			
 			$bot->say($channel,$this->out_prefix()."Players: \00304".($player_manager->count_players()-$spects).
 				"\xf active, \00304$spects\xf spectators, \00304".$player_manager->count_bots().
-				"\017 bots, \00304".$player_manager->count_all()."\xf/{$player_manager->max} total");
+				"\017 bots, \00304".$player_manager->count_all()."\xf/{$player_manager->max} total", 16);
 		}
 		else
-			$bot->say($channel,$this->out_prefix()."No users in server");
+			$bot->say($channel,$this->out_prefix()."No users in server", 16);
 		
 		$this->settings($channel,$bot,$rcon_data);
 	}
