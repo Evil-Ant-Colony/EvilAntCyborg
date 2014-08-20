@@ -271,8 +271,8 @@ class CupManager
         $matches=array();
         if ( preg_match("{".
                 "<p>([^\n]*)</p>".
-                "(\n<p>Maps:\s*([-._a-zA-Z0-9]+(,\s*[-._a-zA-Z0-9]+)*)?</p>)?".
-                "(\n<p>Time:\s*([^\n]+)</p>)?".
+                "(\s*<p>Maps:\s*([-._a-zA-Z0-9]+(,\s*[-._a-zA-Z0-9]+)*)?</p>)?".
+                "(\s*<p>Time:\s*([^\n]+)</p>)?".
                 "}",
                 $json_array['tournament']['description'],
                 $matches
