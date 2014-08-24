@@ -790,14 +790,15 @@ class Executor_Cup_Pick_Nick extends Executor_Cup
 	{
 		if ( count($cmd->params) == 2 && $this->map_picker()->is_player($cmd->params[0]) )
 		{
-			foreach ( $this->map_picker()->player as $p )
-				if ( $cmd->params[0] == $p->nick )
+			foreach ( $this->map_picker()->player as &$p )
+				if ( $cmd->params[0] == $p )
 				{
-					$driver->remove_from_list_nick($p->nick);
+					$driver->remove_from_list_nick($p);
+					$p = $cmd->params[1];
 					$driver->add_to_list('player',new IRC_User(null,$cmd->params[1]));
+					$bot->say($cmd->channel,"Listen to {$cmd->params[1]} as map picker for {$cmd->params[0]}",1024);
 					break;
 				}
-			$bot->say($cmd->channel,"Listen to {$cmd->params[1]} as map picker for {$cmd->params[0]}",1024);
 		}
 		else
 		{
