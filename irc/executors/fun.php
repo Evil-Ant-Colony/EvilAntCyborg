@@ -339,11 +339,15 @@ class Executor_RenderPony extends CommandExecutor
 	
 	static public $ponies = array(
 		'applejack' => 'applejack-nohat',
+		'big' => 'big-mac',
+		'celestia' => 'celestia',
 		'derpy' => 'derpy',
 		'fluttershy' => 'fluttershy',
+		'luna' => 'luna',
 		'lyra' => 'lyra',
 		'pinkie' => 'pinkie-pie',
 		'pinkamena' => 'pinkie-pie',
+		'princess' => 'celestia',
 		'rainbow' => 'rainbow-dash',
 		'rarity' => 'rarity',
 		'rose' => 'rose',
@@ -354,8 +358,6 @@ class Executor_RenderPony extends CommandExecutor
 		'alicorn' => 'twilight-alicorn',
 		'vinyl' => 'vinyl-scratch-noglasses',
 		'dj' => 'vinyl-scratch-glasses',
-		'princess' => 'celestia',
-		'celestia' => 'celestia',
 	);
 
 }
