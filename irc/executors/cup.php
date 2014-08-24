@@ -102,7 +102,7 @@ abstract class Executor_Cup extends CommandExecutor
 	{
 		if ( !$this->cup_manager->check_cup() )
 		{
-			$bot->say($cmd->channel,"No tournament is currently scheduled");
+			$bot->say($cmd->channel,"No tournament is currently scheduled",1024);
 			return false;
 		}
 		return true;
@@ -121,8 +121,8 @@ abstract class Executor_Cup extends CommandExecutor
 	function map_pick_show_turn($cmd,$bot)
 	{
 		$dp = $this->map_picker()->is_picking() ? "\x0303PICK\x03" : "\x0304DROP\x03";
-		$bot->say($cmd->channel,$this->map_picker()->current_player().", your turn");
-		$bot->say($cmd->channel,"$dp ".implode(', ',$this->map_picker()->maps));
+		$bot->say($cmd->channel,$this->map_picker()->current_player().", your turn",1024);
+		$bot->say($cmd->channel,"$dp ".implode(', ',$this->map_picker()->maps),1024);
 	}
 }
 
@@ -179,12 +179,12 @@ class Executor_Cup_Next extends Executor_Cup
 			$num = isset($cmd->params[0]) ? (int)$cmd->params[0] : 1;
 			if ( $num > 5 && !$driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) )
 				$num = 5;
-			$bot->say($cmd->channel,"Fetching...");
+			$bot->say($cmd->channel,"Fetching...",1024);
 			$matches = $this->cup_manager->current_open_matches();
 			$num = min($num,count($matches));
 			if ( count($matches) == 0 )
 			{
-				$bot->say($cmd->channel,"No matches are currently available");
+				$bot->say($cmd->channel,"No matches are currently available",1024);
 			}
 			else
 			{
@@ -194,7 +194,7 @@ class Executor_Cup_Next extends Executor_Cup
 					if ( $match == null )
 						break;
 					$bot->say($cmd->channel,
-						$match->id.": ".$match->team1()." vs ".$match->team2());
+						$match->id.": ".$match->team1()." vs ".$match->team2(),1024);
 				}
 			}
 		}
@@ -213,7 +213,7 @@ class Executor_Cup_Cups extends Executor_Cup
 		$this->cup_manager->update_tournaments();
 		
 		if ( empty($this->cup_manager->cups) )
-			$bot->say($cmd->channel,"No cups available");
+			$bot->say($cmd->channel,"No cups available",1024);
 		else
 		{
 			$text = "Available cups: ";
@@ -224,7 +224,7 @@ class Executor_Cup_Cups extends Executor_Cup
 					$text .= "*";
 				$text .= "{$c->name} ({$c->id}), ";
 			}
-			$bot->say($cmd->channel,$text);
+			$bot->say($cmd->channel,$text,1024);
 		}
 	}
 }
@@ -240,7 +240,7 @@ class Executor_Cup_Results extends Executor_Cup
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		if ( $this->check_cup($cmd,$bot) )
-			$bot->say($cmd->channel,$this->cup()->result_url());
+			$bot->say($cmd->channel,$this->cup()->result_url(),1024);
 	}
 }
 
@@ -262,7 +262,7 @@ class Executor_Cup_CupReadonly extends Executor_Cup
 	{
 		if ( $this->check_cup($cmd,$bot) )
 			$bot->say($cmd->channel,
-				"Current cup: ".$this->cup()->name." - ".$this->cup()->id);
+				"Current cup: ".$this->cup()->name." - ".$this->cup()->id,1024);
 	}
 }
 
@@ -293,9 +293,9 @@ class Executor_Cup_CupSelect extends Executor_Cup
 			}
 		}
 		if ( $cup )
-			$bot->say($cmd->channel,"Cup switched to: {$cup->name} - {$cup->id}");
+			$bot->say($cmd->channel,"Cup switched to: {$cup->name} - {$cup->id}",1024);
 		else
-			$bot->say($cmd->channel,"Cup \"$next\" not found");
+			$bot->say($cmd->channel,"Cup \"$next\" not found",1024);
 	}
 	
 }
@@ -330,7 +330,7 @@ class Executor_Cup_DescriptionReadonly extends Executor_Cup
 		if ( $this->check_cup($cmd,$bot) )
 		{
 			$cup = $this->cup();
-			$bot->say($cmd->channel,"Cup {$cup->name} ({$cup->id}): {$cup->description}");
+			$bot->say($cmd->channel,"Cup {$cup->name} ({$cup->id}): {$cup->description}",1024);
 		}
 	}
 }
@@ -355,7 +355,7 @@ class Executor_Cup_DescriptionSet extends Executor_Cup
 			$cup = $this->cup();
 			$cup->description = $cmd->param_string();
 			$this->cup_manager->update_cup($cup);
-			$bot->say($cmd->channel,"Cup {$cup->name} ({$cup->id}): {$cup->description}");
+			$bot->say($cmd->channel,"Cup {$cup->name} ({$cup->id}): {$cup->description}",1024);
 		}
 	}
 }
@@ -417,7 +417,7 @@ class Executor_Cup_TimeSet extends Executor_Cup
 				$this->cup_manager->update_cup($cup);
 			}
 			else
-				$bot->say($cmd->channel,"Invalid time format");
+				$bot->say($cmd->channel,"Invalid time format",1024);
 		}
 	}
 }
@@ -442,9 +442,9 @@ class Executor_Cup_Time extends Executor_Multi_Cup
 			
 			$cup = $this->cup();
 			if ( $cup->start_time == null )
-				$bot->say($cmd->channel,"Current cup is currently not scheduled");
+				$bot->say($cmd->channel,"Current cup is currently not scheduled",1024);
 			else if ( $cup->start_time <= time() )
-				$bot->say($cmd->channel,"Cup already started");
+				$bot->say($cmd->channel,"Cup already started",1024);
 			else
 			{
 				$delta = $cup->start_time - time();
@@ -457,7 +457,7 @@ class Executor_Cup_Time extends Executor_Multi_Cup
 				if ( $d_hour > 0 || $d_day > 0 )
 					$d_string .= "$d_hour hours, ";
 				$d_string .= "$d_min minutes";
-				$bot->say($cmd->channel,"Cup will start in $d_string");
+				$bot->say($cmd->channel,"Cup will start in $d_string",1024);
 			}
 		}
 	}
@@ -513,7 +513,7 @@ class Executor_Cup_Start extends Executor_Cup
 			$cup = $this->cup();
 			$cup->start();
 			$cup->start_time = time();
-			$bot->say($cmd->channel,"Cup started");
+			$bot->say($cmd->channel,"Cup started",1024);
 			$this->cup_manager->update_cup($cup);
 		}
 	}
@@ -579,7 +579,7 @@ class Executor_Cup_Score extends Executor_Cup
 		
 			if ( count($cmd->params) < 1 )
 			{
-				$bot->say($cmd->channel,"Which match?");
+				$bot->say($cmd->channel,"Which match?",1024);
 				return;
 			}
 			
@@ -587,7 +587,7 @@ class Executor_Cup_Score extends Executor_Cup
 			$match = $this->cup_manager->match($cup->id,$cmd->params[0]);
 			if ( $match == null )
 			{
-				$bot->say($cmd->channel,"Match ".$cmd->params[0]." not found");
+				$bot->say($cmd->channel,"Match ".$cmd->params[0]." not found",1024);
 				return;
 			}
 			
@@ -596,17 +596,17 @@ class Executor_Cup_Score extends Executor_Cup
 			{
 				$match->team1->add_score($cmd->params[1]);
 				$match->team2->add_score($cmd->params[2]);
-				$bot->say($cmd->channel,"Updated match ".$cmd->params[0].":");
+				$bot->say($cmd->channel,"Updated match ".$cmd->params[0].":",1024);
 				$this->cup_manager->update_match($cup,$match);
 			}
 			else
-				$bot->say($cmd->channel,"Match {$match->id}:");
+				$bot->say($cmd->channel,"Match {$match->id}:",1024);
 				
 			$t1 = $match->team1();
 			$t2 = $match->team2();
 			$len=max(strlen($t1),strlen($t2));
-			$bot->say($cmd->channel,str_pad($t1,$len).": ".$match->score1());
-			$bot->say($cmd->channel,str_pad($t2,$len).": ".$match->score2()); 
+			$bot->say($cmd->channel,str_pad($t1,$len).": ".$match->score1(),1024);
+			$bot->say($cmd->channel,str_pad($t2,$len).": ".$match->score2(),1024); 
 		}
 	}
 }
@@ -623,7 +623,7 @@ class Executor_Cup_End extends Executor_Cup
 	{
 		if ( count($cmd->params) != 1 )
 		{
-			$bot->say($cmd->channel,"Match ID?");
+			$bot->say($cmd->channel,"Match ID?",1024);
 		}
 		else if ( $this->check_cup($cmd,$bot) )
 		{
@@ -631,19 +631,19 @@ class Executor_Cup_End extends Executor_Cup
 			$match = $this->cup_manager->match($cup->id,$cmd->params[0]);
 			if ( $match == null )
 			{
-				$bot->say($cmd->channel,"Match ".$cmd->params[0]." not found");
+				$bot->say($cmd->channel,"Match ".$cmd->params[0]." not found",1024);
 				return;
 			}
 			
 			$win = $match->winner();
 			if ( $win == null )
 			{
-				$bot->say($cmd->channel,"Cannot end ".$cmd->params[0]." (no winner)");
+				$bot->say($cmd->channel,"Cannot end ".$cmd->params[0]." (no winner)",1024);
 				return;
 			}
 			
 			$this->cup_manager->end_match($cup,$match);
-			$bot->say($cmd->channel,"{$win->name} won match {$match->id} (".$match->team1()." vs ".$match->team2().")");
+			$bot->say($cmd->channel,"{$win->name} won match {$match->id} (".$match->team1()." vs ".$match->team2().")",1024);
 		}
 	}
 
@@ -664,21 +664,21 @@ class Executor_Cup_Pick_Setup extends Executor_Cup
 			$cup = $this->cup();
 			if ( empty($cmd->params) )
 			{
-				$bot->say($cmd->channel,"Match ID?");
+				$bot->say($cmd->channel,"Match ID?",1024);
 				return;
 			}
 			if ( empty($cup->maps) )
 			{
-				$bot->say($cmd->channel,"No maps to pick...");
+				$bot->say($cmd->channel,"No maps to pick...",1024);
 				return;
 			}
 			
-			$bot->say($cmd->channel,"Fetching match...");
+			$bot->say($cmd->channel,"Fetching match...",1024);
 			
 			$match = $this->cup_manager->match($cup->id,$cmd->params[0]);
 			if ( $match == null )
 			{
-				$bot->say($cmd->channel,"Match ".$cmd->params[0]." not found");
+				$bot->say($cmd->channel,"Match ".$cmd->params[0]." not found",1024);
 				return;
 			}
 			
@@ -688,7 +688,7 @@ class Executor_Cup_Pick_Setup extends Executor_Cup
 			$driver->lists['player'] = array();
 			
 			$bot->say($cmd->channel, "Setting up picking for {$match->id}: ".
-									$map_pick->player[0]." vs ".$map_pick->player[1]);
+									$map_pick->player[0]." vs ".$map_pick->player[1],1024);
 			
 		}
 	}
@@ -716,11 +716,11 @@ class Executor_Cup_Pick_Pick extends Executor_Cup
 		if ( count($cmd->params) >= 1 )
 		{
 			$this->map_picker()->pick_num = (int)$cmd->params[0];
-			$bot->say($cmd->channel,"Map picking: ".$this->map_picker()->pick_drops());
+			$bot->say($cmd->channel,"Map picking: ".$this->map_picker()->pick_drops(),1024);
 		}
 		else
 		{
-			$bot->say($cmd->channel,"How many picks?");
+			$bot->say($cmd->channel,"How many picks?",1024);
 		}
 	}
 }
@@ -743,9 +743,9 @@ class Executor_Cup_Pick_Stop extends Executor_Cup
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
-		$bot->say($cmd->channel,"Map picking stopped");
+		$bot->say($cmd->channel,"Map picking stopped",1024);
 		$totmaps = array_merge($this->map_picker()->picks,$this->map_picker()->maps);
-		$bot->say($cmd->channel,"Remaining maps: ".implode(', ',$totmaps));
+		$bot->say($cmd->channel,"Remaining maps: ".implode(', ',$totmaps),1024);
 		$driver->lists['player'] = array();
 		$this->cup_manager->map_picker = null;
 		$this->cup_manager->map_picking_status = 0;
@@ -765,9 +765,9 @@ class Executor_Cup_Pick_Begin extends Executor_Cup
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
         
-		$bot->say($cmd->channel,"Starting map picking ");
-		$bot->say($cmd->channel,$this->map_picker()->player[0]." vs ".$this->map_picker()->player[1]);
-		$bot->say($cmd->channel,$this->map_picker()->pick_drops());
+		$bot->say($cmd->channel,"Starting map picking ",1024);
+		$bot->say($cmd->channel,$this->map_picker()->player[0]." vs ".$this->map_picker()->player[1],1024);
+		$bot->say($cmd->channel,$this->map_picker()->pick_drops(),1024);
 		$driver->lists['player'] = array();
 		foreach ( $this->map_picker()->player as $nick )
 			$driver->lists['player'][$nick] = null; /// \todo can use host
@@ -796,12 +796,12 @@ class Executor_Cup_Pick_Nick extends Executor_Cup
 					$p = $cmd->params[1];
 					break;
 				}
-			$bot->say($cmd->channel,"Listen to {$cmd->params[1]} as map picker for {$cmd->params[0]}");
+			$bot->say($cmd->channel,"Listen to {$cmd->params[1]} as map picker for {$cmd->params[0]}",1024);
 		}
 		else
 		{
 			$bot->say($cmd->channel,"Currently listening to ".
-										implode(' and ',$this->map_picker()->player));
+										implode(' and ',$this->map_picker()->player),1024);
 		}
 	}
 }
@@ -856,7 +856,7 @@ class Executor_Pick_Raw extends Executor_Cup
 			
 		if ( !$this->map_picker()->has_map($map) )
 		{
-			$bot->say($cmd->channel,"Map $map is not in the list");
+			$bot->say($cmd->channel,"Map $map is not in the list",1024);
 		}
 		else
 		{
@@ -864,8 +864,8 @@ class Executor_Pick_Raw extends Executor_Cup
 			if ( count($this->map_picker()->maps) == 1 )
 			{
 				$this->map_picker()->picks []= $this->map_picker()->maps[0];
-				$bot->say($cmd->channel,"Map picking ended");
-				$bot->say($cmd->channel,"Result: ".implode(', ',$this->map_picker()->picks));
+				$bot->say($cmd->channel,"Map picking ended",1024);
+				$bot->say($cmd->channel,"Result: ".implode(', ',$this->map_picker()->picks),1024);
 				$driver->lists['player'] = array();
 				$this->cup_manager->map_picker = null;
 				$this->cup_manager->map_picking_status = 0;
