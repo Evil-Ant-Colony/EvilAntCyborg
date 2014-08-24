@@ -770,7 +770,7 @@ class Executor_Cup_Pick_Begin extends Executor_Cup
 		$bot->say($cmd->channel,$this->map_picker()->pick_drops(),1024);
 		$driver->lists['player'] = array();
 		foreach ( $this->map_picker()->player as $nick )
-			$driver->lists['player'][$nick] = null; /// \todo can use host
+			$driver->add_to_list('player',new IRC_User($nick)); /// \todo can use host
 		$this->map_pick_show_turn($cmd,$bot);
 		$this->cup_manager->map_picking_status = 2;
 	}
