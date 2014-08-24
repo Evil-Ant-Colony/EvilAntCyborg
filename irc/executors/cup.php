@@ -791,9 +791,9 @@ class Executor_Cup_Pick_Nick extends Executor_Cup
 		if ( count($cmd->params) == 2 && $this->map_picker()->is_player($cmd->params[0]) )
 		{
 			foreach ( $this->map_picker()->player as &$p )
-				if ( $cmd->params[0] == $p )
+				if ( $cmd->params[0] == $p->nick )
 				{
-					$p = $cmd->params[1];
+					$p->nick = $cmd->params[1];
 					break;
 				}
 			$bot->say($cmd->channel,"Listen to {$cmd->params[1]} as map picker for {$cmd->params[0]}",1024);
