@@ -179,7 +179,7 @@ class Executor_Cup_Next extends Executor_Cup
 			$num = isset($cmd->params[0]) ? (int)$cmd->params[0] : 1;
 			if ( $num > 5 && !$driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) )
 				$num = 5;
-			$bot->say($cmd->channel,"Fetching...",1024);
+			$bot->say($cmd->channel,"Fetching...",1025);
 			$matches = $this->cup_manager->current_open_matches();
 			$num = min($num,count($matches));
 			if ( count($matches) == 0 )
@@ -673,7 +673,7 @@ class Executor_Cup_Pick_Setup extends Executor_Cup
 				return;
 			}
 			
-			$bot->say($cmd->channel,"Fetching match...",1024);
+			$bot->say($cmd->channel,"Fetching match...",1025);
 			
 			$match = $this->cup_manager->match($cup->id,$cmd->params[0]);
 			if ( $match == null )
@@ -790,10 +790,11 @@ class Executor_Cup_Pick_Nick extends Executor_Cup
 	{
 		if ( count($cmd->params) == 2 && $this->map_picker()->is_player($cmd->params[0]) )
 		{
-			foreach ( $this->map_picker()->player as &$p )
+			foreach ( $this->map_picker()->player as $p )
 				if ( $cmd->params[0] == $p->nick )
 				{
-					$p->nick = $cmd->params[1];
+					$driver->remove_from_list_nick($p->nick);
+					$driver->add_to_list('player',new IRC_User(null,$cmd->params[1]));
 					break;
 				}
 			$bot->say($cmd->channel,"Listen to {$cmd->params[1]} as map picker for {$cmd->params[0]}",1024);
