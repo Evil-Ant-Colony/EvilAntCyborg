@@ -413,7 +413,7 @@ class Executor_Cup_TimeSet extends Executor_Cup
 			$time = strtotime($cmd->param_string());
 			if ( $time != null )
 			{
-				$cup->start_time = $time;
+				$cup->start_at = $time;
 				$this->cup_manager->update_cup($cup);
 			}
 			else
@@ -441,13 +441,17 @@ class Executor_Cup_Time extends Executor_Multi_Cup
 			parent::execute($cmd,$bot,$driver);
 			
 			$cup = $this->cup();
-			if ( $cup->start_time == null )
-				$bot->say($cmd->channel,"Current cup is currently not scheduled",1024);
-			else if ( $cup->start_time <= time() )
+			if ( $cup->started_at != null && $cup->start_at <= time() )
+			{
 				$bot->say($cmd->channel,"Cup already started",1024);
+			}
+			else if ( $cup->start_at == null )
+				$bot->say($cmd->channel,"Current cup is currently not scheduled",1024);
+			else if ( $cup->start_at <= time() )
+				$bot->say($cmd->channel,"Cup is starting soon",1024);
 			else
 			{
-				$delta = $cup->start_time - time();
+				$delta = $cup->start_at - time();
 				$d_day = (int) ($delta / (60*60*24));
 				$d_hour = (int) ($delta % (60*60*24) / (60*60));
 				$d_min = round($delta % (60*60) / 60);
@@ -512,7 +516,7 @@ class Executor_Cup_Start extends Executor_Cup
 		{
 			$cup = $this->cup();
 			$cup->start();
-			$cup->start_time = time();
+			$cup->started_at = time();
 			$bot->say($cmd->channel,"Cup started",1024);
 			$this->cup_manager->update_cup($cup);
 		}

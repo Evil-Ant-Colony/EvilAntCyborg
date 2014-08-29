@@ -181,7 +181,8 @@ class Cup
     public $url;
     public $id;
     public $maps;
-    public $start_time;
+    public $start_at;
+    public $started_at;
     public $name;
     
     function __construct($manager,$id,$url,$name)
@@ -212,7 +213,7 @@ class Cup
     
     function start()
     {
-       return  $this->manager->start_tournament($this->id);
+        return  $this->manager->start_tournament($this->id);
     }
 }
 
@@ -238,6 +239,7 @@ class CupManager
         $url = $this->api_url."$command.json?";
         foreach($params as $k => $p)
             $url .= "$k=".urlencode($p)."&";
+        Logger::log("std","<","\x1b[1mGET\x1b[0m $url",4);
         return json_decode(file_get_contents($url),true);
     }
     
@@ -255,6 +257,7 @@ class CupManager
         );
         $context  = stream_context_create($options);
         $url = $this->api_url."$command.json";
+        Logger::log("std","<","\x1b[1mPOST\x1b[0m $url",4);
         return json_decode(file_get_contents($url,false,$context),true);
     }
     
@@ -272,7 +275,6 @@ class CupManager
         if ( preg_match("{".
                 "<p>([^\n]*)</p>".
                 "(\s*<p>Maps:\s*([-._a-zA-Z0-9]+(,\s*[-._a-zA-Z0-9]+)*)?</p>)?".
-                "(\s*<p>Time:\s*([^\n]+)</p>)?".
                 "}",
                 $json_array['tournament']['description'],
                 $matches
@@ -280,11 +282,13 @@ class CupManager
         {
             $cup->description = $matches[1];
             if ( count($matches) > 3 )
-				$cup->maps = explode(', ',$matches[3]);
-            if ( count($matches) > 6 )
-                $cup->start_time=strtotime($matches[6]);
-            //$cup->start_time = $matches;
+                $cup->maps = explode(', ',$matches[3]);
         }
+        
+        if ( isset( $json_array['tournament']["start_at"] ) )
+            $cup->start_at=strtotime($json_array['tournament']["start_at"]);
+        if ( isset( $json_array['tournament']["started_at"] ) )
+            $cup->started_at=strtotime($json_array['tournament']["started_at"]);
         
         return $cup;
 
@@ -363,15 +367,15 @@ class CupManager
     
     function participant($cup_id,$id)
     {
-         $p = $this->call("tournaments/$cup_id/participants/$id");
-         if ( isset($p["participant"]) )
+        $p = $this->call("tournaments/$cup_id/participants/$id");
+        if ( isset($p["participant"]) )
             return $p["participant"]["name"];
         return null;
     }
     
     function match($cup_id,$match_id)
     {
-       return $this->match_from_json($cup_id,
+        return $this->match_from_json($cup_id,
                     $this->call("tournaments/$cup_id/matches/$match_id")
             );
     }
@@ -379,9 +383,13 @@ class CupManager
     function update_cup(Cup $cup)
     {
         $desc = "<p>{$cup->description}</p>\n".
-                "<p>Maps: ".implode(", ",$cup->maps)."</p>\n".
-                "<p>Time: ".date("c",$cup->start_time)."</p>";
-        return $this->set("tournaments/{$cup->id}",array('tournament[description]'=>$desc));
+                "<p>Maps: ".implode(", ",$cup->maps)."</p>";
+                
+        $array = array();
+        $array['tournament[description]']=$desc;
+        if ( $cup->start_at != null )
+        $array['tournament[start_at]'] = date("c",$cup->start_at);
+        return $this->set("tournaments/{$cup->id}",$array);
     }
     
     function update_match(Cup $cup, Match $match)
