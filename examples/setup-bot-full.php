@@ -156,6 +156,7 @@ $disp_cup->install(array(
 	new Executor_Cup_Time($cup_manager),
 	new Executor_Cup_Maps($cup_manager),
 	new Executor_Cup_Score($cup_manager),
+	new Executor_Cup_Players($cup_manager),
 // cup commands (anyone)
 	new Executor_Cup_Next($cup_manager),
 	new Executor_Cup_Results($cup_manager),

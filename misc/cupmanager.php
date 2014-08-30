@@ -135,7 +135,7 @@ class MapPicker
         
         for ( $i = 0; $i < count($lowmaps); $i++ )
         {
-            if ( strncmp($lowmaps[$i], $map, strlen($map)) == 0 ) 
+            if ( strncasecmp($lowmaps[$i], $map, strlen($map)) == 0 ) 
                 return $i;
         }
         
@@ -338,7 +338,7 @@ class CupManager
      * \param $params Associative array of arguments to pass to the command
      * \return An associative array with the API result (extracted from JSON)
      */
-    private function call($command,$params=array())
+    protected function call($command,$params=array())
     {
         $params['api_key'] = $this->api_key;
         $url = $this->api_url."$command.json?";
@@ -354,7 +354,7 @@ class CupManager
      * \param $params Associative array of arguments to pass to the command
      * \return An associative array with the API result (extracted from JSON)
      */
-    private function set($command,$params=array())
+    protected function set($command,$params=array())
     {
         $params['_method']="put";
         $params['api_key'] = $this->api_key;
@@ -374,7 +374,7 @@ class CupManager
     /**
      * \brief Create a cup object from the array received from the API
      */
-    private function cup_from_json($json_array)
+    protected function cup_from_json($json_array)
     {
         if ( !isset($json_array['tournament'] ) )
             return null;
@@ -410,7 +410,7 @@ class CupManager
     /**
      * \brief Create a match object from the array received from the API
      */
-    private function match_from_json($cup_id,$json_array)
+    protected function match_from_json($cup_id,$json_array)
     {
         if ( !isset($json_array['match'] ) )
             return null;
@@ -442,6 +442,21 @@ class CupManager
         }
         
         return new Match ($match_id, $p1,$p2);
+    }
+    
+    
+    /**
+     * \brief Create a participant object from the array received from the API
+     */
+    protected function participant_from_json($json_array)
+    {
+        if ( isset($json_array["participant"]) )
+            return new CupParticipant(
+                $json_array["participant"]["name"],
+                $json_array["participant"]["id"],
+                $json_array["participant"]["misc"]
+            );
+        return null;
     }
     
     /**
@@ -516,10 +531,7 @@ class CupManager
      */
     function participant($cup_id,$id)
     {
-        $p = $this->call("tournaments/$cup_id/participants/$id");
-        if ( isset($p["participant"]) )
-            return new CupParticipant($p["participant"]["name"],$id,$p["participant"]["misc"]);
-        return null;
+        return $this->participant_from_json($this->call("tournaments/$cup_id/participants/$id"));
     }
     
     /**

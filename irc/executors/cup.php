@@ -26,16 +26,14 @@ require_once('misc/cupmanager.php');
 class CachedCupManager extends CupManager
 {
 	public $cups;				///< Array of open cups
-	public $current_cup;		///< Reference to the current cup
+	private $current_cup;		///< Reference to the current cup
 	public $map_picking_status; ///< Picking status: 0 = NO, 1 = SETUP, 2 = PICKING
 	public $map_picker;			///< Active map picker
-	public $participants;		///< TODO 
+	public $participants=array();///< Cached participants
 	
 	function __construct($api_key,$organization=null)
 	{
 		parent::__construct($api_key,$organization);
-		//$this->cups = $this->tournaments();
-		//$this->current_cup = empty($this->cups) ? null : $this->cups[0];
 		$this->map_picking_status = 0;
 	}
 	
@@ -45,23 +43,59 @@ class CachedCupManager extends CupManager
      */
 	function update_tournaments()
 	{
+		$this->participants=array();
 		$this->cups = $this->tournaments();
 		if ( empty($this->cups) )
-			$this->current_cup = null;
+			$this->select_cup(null);
 		else if ( $this->current_cup == null )
-			$this->current_cup = $this->cups[0];
+			$this->select_cup($this->cups[0]);
 		else
 		{
 			foreach ( $this->cups as $cup )
 			{
 				if ( $cup->id == $this->current_cup->id )
 				{
-					$this->current_cup = $cup;
+					$this->select_cup($cup);
 					return;
 				}
 			}
-			$this->current_cup = $this->cups[0];
+			$this->select_cup($this->cups[0]);
 		}
+	}
+	
+	/**
+	 * \brief Select the given cup and ensure all the info are loaded
+	 */
+	function select_cup(Cup $cup)
+	{
+	
+		$this->current_cup = $cup;
+		if ( $cup )
+			$this->reload_participants($cup->id);
+	}
+	
+	/**
+	 * \brief Get the selected cup
+	 */
+	function cup()
+	{
+		return $this->current_cup;
+	}
+	
+	/**
+	 * \brief Reload participants of the given cup
+	 */
+	function reload_participants($cup_id)
+	{
+		$this->participants[$cup_id] = array();
+		$r = $this->call("tournaments/$cup_id/participants");
+		if ( is_array($r) )
+			foreach($r as $p)
+			{
+				$part = $this->participant_from_json($p);
+				if ( $part != null )
+					$this->participants[$cup_id][$part->id] = $part;
+			}
 	}
 	
 	/**
@@ -99,6 +133,27 @@ class CachedCupManager extends CupManager
 	{
 		return $this->current_cup != null && $this->current_cup->started();
 	}
+	
+    /**
+     * \brief Get participant by ID
+     * \param $cup_id   Cup id
+     * \param $id       Participant id
+     * \return Participant object or \c null if not found
+     * \note Checks the cache before calling the API
+     */
+	function participant($cup_id,$id)
+	{
+		if ( !empty($this->participants[$cup_id][$id]) )
+			return $this->participants[$cup_id][$id];
+		if ( !isset($this->participants[$cup_id]) )
+			$this->participants[$cup_id] = array();
+		$part = parent::participant($cup_id,$id);
+		if ( $part != null )
+			$this->participants[$cup_id][$id] = $part;
+		return $part;
+	}
+	
+	
 	
 }
 
@@ -157,7 +212,7 @@ abstract class Executor_Cup extends CommandExecutor
 	 */
 	function cup()
 	{
-		return $this->cup_manager->current_cup;
+		return $this->cup_manager->cup();
 	}
 	
 	/**
@@ -360,7 +415,7 @@ class Executor_Cup_CupSelect extends Executor_Cup
 			if ( $c->id == $next || $c->name == $next )
 			{
 				$cup = $c;
-				$this->cup_manager->current_cup = $c;
+				$this->cup_manager->select_cup($c);
 				break;
 			}
 		}
@@ -581,6 +636,67 @@ class Executor_Cup_Maps extends Executor_Multi_Cup
 		}
 	}
 	
+}
+
+
+/**
+ * \brief Show active players
+ */
+class Executor_Cup_PlayersReadonly extends Executor_Cup
+{
+	public $max_count = 8;
+	
+	function __construct(CachedCupManager $cup_manager)
+	{
+		parent::__construct($cup_manager,'players',null,'players [query]',
+			'Show players matching query participating in the cup');
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		if ( $this->check_cup($cmd,$bot) )
+		{
+			$players = array();
+			if ( isset( $this->cup_manager->participants[$this->cup()->id] ) )
+				$players = $this->cup_manager->participants[$this->cup()->id];
+			if ( count($players) == 0 )
+				$bot->say($cmd->channel,"No players in the cup");
+			else
+			{
+				$query = count($cmd->params) > 0 ? $cmd->params[0] : null;
+				$matches = array();
+				foreach ( $players as $play )
+					if ( !$query || strncasecmp($play->name, $query, strlen($query)) == 0 )
+						$matches[] = $play->name;
+				if ( count($matches) == 0 )
+					$bot->say($cmd->channel, "No matching players" );
+				else
+				{
+					$string = "Found \00310".count($matches)."\xf players";
+					if ( count($matches) > $this->max_count )
+						$string .= " (too many to show)";
+					else
+						$string .= ": ".implode(", ",$matches);
+					$bot->say($cmd->channel,$string);
+				
+				}
+			}
+		}
+	}
+}
+
+/**
+ * \brief Manage participants
+ */
+class Executor_Cup_Players extends Executor_Multi_Cup
+{
+
+	function __construct(CachedCupManager $cup_manager)
+	{
+		parent::__construct($cup_manager,'players',null,array(
+			new Executor_Cup_PlayersReadonly($cup_manager),
+		));
+	}
 }
 
 /**
