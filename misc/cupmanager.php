@@ -338,37 +338,89 @@ class CupManager
      * \param $params Associative array of arguments to pass to the command
      * \return An associative array with the API result (extracted from JSON)
      */
-    protected function call($command,$params=array())
+    protected function get($command,$params=array())
     {
         $params['api_key'] = $this->api_key;
-        $url = $this->api_url."$command.json?";
-        foreach($params as $k => $p)
-            $url .= "$k=".urlencode($p)."&";
+        $url = $this->api_url."$command.json?".http_build_query($params);
         Logger::log("std","<","\x1b[1mGET\x1b[0m $url",4);
         return json_decode(file_get_contents($url),true);
     }
     
     /**
-     * \brief Update an object via the API (POST)
+     * \brief Update an object via the API (PUT)
      * \param $command API command
      * \param $params Associative array of arguments to pass to the command
      * \return An associative array with the API result (extracted from JSON)
      */
-    protected function set($command,$params=array())
+    protected function put($command,$params=array())
     {
         $params['_method']="put";
         $params['api_key'] = $this->api_key;
+        $query = http_build_query($params);
         $options = array(
             'http' => array(
-                'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+                'header'  => "Content-type: application/x-www-form-urlencoded\r\n".
+                             "Content-Length: ".strlen($query)."\r\n",
                 'method'  => 'POST',
-                'content' => http_build_query($params),
+                'content' => $query,
             ),
         );
         $context  = stream_context_create($options);
         $url = $this->api_url."$command.json";
-        Logger::log("std","<","\x1b[1mPOST\x1b[0m $url",4);
+        Logger::log("std","<","\x1b[1mPUT\x1b[0m $url $query",4);
         return json_decode(file_get_contents($url,false,$context),true);
+    }
+    
+    
+    /**
+     * \brief Create an object via the API (POST)
+     * \param $command API command
+     * \param $params Associative array of arguments to pass to the command
+     * \return An associative array with the API result (extracted from JSON)
+     */
+    protected function post($command,$params=array())
+    {
+        $params['api_key'] = $this->api_key;
+        $query = http_build_query($params);
+        $options = array(
+            'http' => array(
+                'header'  => "Content-type: application/x-www-form-urlencoded\r\n".
+                             "Content-Length: ".strlen($query)."\r\n",
+                'method'  => 'POST',
+                'content' => $query,
+            ),
+        );
+        $context  = stream_context_create($options);
+        $url = $this->api_url."$command.json";
+        Logger::log("std","<","\x1b[1mPOST\x1b[0m $url $query",4);
+        $temp = file_get_contents($url,false,$context);
+        return json_decode($temp,true);
+    }
+    
+    /**
+     * \brief Delete an object via the API (DELETE)
+     * \param $command API command
+     * \param $params Associative array of arguments to pass to the command
+     * \return An associative array with the API result (extracted from JSON)
+     * \todo Merge these 4 functions and add a string parameter for the method
+     */
+    protected function delete($command,$params=array())
+    {
+        $params['api_key'] = $this->api_key;
+        $query = http_build_query($params);
+        $options = array(
+            'http' => array(
+                'header'  => "Content-type: application/x-www-form-urlencoded\r\n".
+                             "Content-Length: ".strlen($query)."\r\n",
+                'method'  => 'DELETE',
+                'content' => $query,
+            ),
+        );
+        $context  = stream_context_create($options);
+        $url = $this->api_url."$command.json";
+        Logger::log("std","<","\x1b[1mDELETE\x1b[0m $url $query",4);
+        $temp = file_get_contents($url,false,$context);
+        return json_decode($temp,true);
     }
     
     /**
@@ -470,9 +522,9 @@ class CupManager
         if ( isset($this->organization) )
             $condition['subdomain']='eac';
         $cond1 = array_merge($condition,array('state'=>'in_progress'));
-        $ts1 = $this->call('tournaments',$cond1);
+        $ts1 = $this->get('tournaments',$cond1);
         $cond2 = array_merge($condition,array('state'=>'pending'));
-        $ts2 = $this->call('tournaments',$cond2);
+        $ts2 = $this->get('tournaments',$cond2);
         $tarr = array();
         foreach($ts1 as $t)
             $tarr []= $this->cup_from_json($t);
@@ -488,7 +540,7 @@ class CupManager
      */
     function tournament($id)
     {
-        return $this->cup_from_json($this->call("tournaments/$id"));
+        return $this->cup_from_json($this->get("tournaments/$id"));
     }
     
     
@@ -499,7 +551,7 @@ class CupManager
      */
     function start_tournament($id)
     {
-        return $this->call("tournaments/start/$id");
+        return $this->get("tournaments/start/$id");
     }
     
     /**
@@ -510,7 +562,7 @@ class CupManager
      */
     function open_matches($cup_id,$max=-1)
     {
-        $m = $this->call("tournaments/$cup_id/matches",array('state'=>'open'));
+        $m = $this->get("tournaments/$cup_id/matches",array('state'=>'open'));
         $matches = array();
         $i = 0;
         foreach($m as $match)
@@ -531,7 +583,29 @@ class CupManager
      */
     function participant($cup_id,$id)
     {
-        return $this->participant_from_json($this->call("tournaments/$cup_id/participants/$id"));
+        return $this->participant_from_json($this->get("tournaments/$cup_id/participants/$id"));
+    }
+    
+    /**
+     * \brief Add a participant in the given cup
+     * \note Calls the API
+     */
+    function add_participant($cup_id,CupParticipant $part)
+    {
+		return $this->participant_from_json(
+				$this->post("tournaments/$cup_id/participants",array(
+					'participant[name]'=>$part->name,
+					'participant[misc]'=>$part->nick,
+				)));
+    }
+    
+    /**
+     * \brief Delete a participant
+     * \note Calls the API
+     */
+    function remove_participant($cup_id,CupParticipant $part)
+    {
+		return $this->delete("tournaments/$cup_id/participants/{$part->id}");
     }
     
     /**
@@ -544,7 +618,7 @@ class CupManager
     function match($cup_id,$match_id)
     {
         return $this->match_from_json($cup_id,
-                    $this->call("tournaments/$cup_id/matches/$match_id")
+                    $this->get("tournaments/$cup_id/matches/$match_id")
             );
     }
     
@@ -561,7 +635,7 @@ class CupManager
         $array['tournament[description]']=$desc;
         if ( $cup->start_at != null )
         $array['tournament[start_at]'] = date("c",$cup->start_at);
-        return $this->set("tournaments/{$cup->id}",$array);
+        return $this->put("tournaments/{$cup->id}",$array);
     }
     
     /**
@@ -590,8 +664,7 @@ class CupManager
             $params['match[winner_id]'] = 'tie';
         else
             $params['match[winner_id]'] = $win->id;
-        print_r($params);
-        return $this->set("tournaments/{$cup->id}/matches/{$match->id}",$params);
+        return $this->put("tournaments/{$cup->id}/matches/{$match->id}",$params);
     }
 }
 

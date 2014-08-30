@@ -88,7 +88,7 @@ class CachedCupManager extends CupManager
 	function reload_participants($cup_id)
 	{
 		$this->participants[$cup_id] = array();
-		$r = $this->call("tournaments/$cup_id/participants");
+		$r = $this->get("tournaments/$cup_id/participants");
 		if ( is_array($r) )
 			foreach($r as $p)
 			{
@@ -151,6 +151,16 @@ class CachedCupManager extends CupManager
 		if ( $part != null )
 			$this->participants[$cup_id][$id] = $part;
 		return $part;
+	}
+	
+	/**
+	 * \brief Get cached participants for the current cup
+	 */
+	function participants()
+	{
+		if ( !isset($this->participants[$this->current_cup->id]) )
+			$this->participants[$this->current_cup->id] = array();
+		return $this->participants[$this->current_cup->id];
 	}
 	
 	
@@ -476,7 +486,7 @@ class Executor_Cup_DescriptionSet extends Executor_Cup
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$data) ;
+		return count($cmd->params) > 0 && parent::check($cmd,$bot,$data) ;
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
@@ -533,7 +543,7 @@ class Executor_Cup_TimeSet extends Executor_Cup
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$data) ;
+		return count($cmd->params) > 0 && parent::check($cmd,$bot,$data) ;
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
@@ -638,7 +648,6 @@ class Executor_Cup_Maps extends Executor_Multi_Cup
 	
 }
 
-
 /**
  * \brief Show active players
  */
@@ -656,32 +665,108 @@ class Executor_Cup_PlayersReadonly extends Executor_Cup
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
-			$players = array();
-			if ( isset( $this->cup_manager->participants[$this->cup()->id] ) )
-				$players = $this->cup_manager->participants[$this->cup()->id];
-			if ( count($players) == 0 )
-				$bot->say($cmd->channel,"No players in the cup");
+			$this->show($cmd->param_string(false),$cmd->channel,$bot);
+		}
+	}
+	
+	protected function show($query,$channel,MelanoBot $bot,$priority=1)
+	{
+		$players = $this->cup_manager->participants();
+		if ( count($players) == 0 )
+			$bot->say($channel,"No players in the cup",$priority);
+		else
+		{
+			$matches = array();
+			foreach ( $players as $play )
+				if ( !$query || strncasecmp($play->name, $query, strlen($query)) == 0 )
+					$matches[] = $play->name;
+			if ( count($matches) == 0 )
+				$bot->say($channel, "No matching players",$priority);
 			else
 			{
-				$query = count($cmd->params) > 0 ? $cmd->params[0] : null;
-				$matches = array();
-				foreach ( $players as $play )
-					if ( !$query || strncasecmp($play->name, $query, strlen($query)) == 0 )
-						$matches[] = $play->name;
-				if ( count($matches) == 0 )
-					$bot->say($cmd->channel, "No matching players" );
+				$string = "Found \00310".count($matches)."\xf players";
+				if ( count($matches) > $this->max_count )
+					$string .= " (too many to show)";
 				else
-				{
-					$string = "Found \00310".count($matches)."\xf players";
-					if ( count($matches) > $this->max_count )
-						$string .= " (too many to show)";
-					else
-						$string .= ": ".implode(", ",$matches);
-					$bot->say($cmd->channel,$string);
-				
-				}
+					$string .= ": ".implode(", ",$matches);
+				$bot->say($channel,$string,$priority);
+			
 			}
 		}
+		
+	}
+}
+
+/**
+ * \brief Manage cup players
+ */
+class Executor_Cup_PlayersAdmin extends Executor_Cup_PlayersReadonly
+{
+	
+	function __construct(CachedCupManager $cup_manager,$auth='admin')
+	{
+		parent::__construct($cup_manager);
+		$this->auth = $auth;
+		$this->synopsis='players reload|+ Player...|- Player...';
+		$this->description='Manage cup players';
+		$this->writes = true;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		if ( !$this->check_cup($cmd,$bot) )
+			return;
+			
+		if ( count($cmd->params) == 0 )
+		{
+			$this->show("",$cmd->channel,$bot,1024);
+		}
+		else if ( $cmd->params[0] == "+" || $cmd->params[0] == "add" )
+		{
+			$name = $cmd->param_string(false,1);
+			foreach( $this->cup_manager->participants() as $p )
+			{
+				if ( $p->name == $name )
+				{
+					$bot->say($cmd->channel,"Player already in the cup",1024);
+					return;
+				}
+			}
+			$part = $this->cup_manager->add_participant($this->cup()->id,new CupParticipant($name,null));
+			if ( $part != null )
+			{
+				$this->cup_manager->participants[$this->cup()->id][$part->id] = $part;
+				$bot->say($cmd->channel,"Enrolled {$part->name} in the cup",1024);
+			}
+			else
+				$bot->say($cmd->channel,"Error while adding $name to the cup",1024);
+		}
+		else if ( $cmd->params[0] == "-" || $cmd->params[0] == "rm" )
+		{
+			$name = $cmd->param_string(false,1);
+			
+			foreach( $this->cup_manager->participants() as $part )
+			{
+				if ( $part->name == $name || $part->id == $name || $part->nick == $name )
+				{
+					$r = $this->cup_manager->remove_participant($this->cup()->id,$part);
+					unset($this->cup_manager->participants[$this->cup()->id][$part->id]);
+					$bot->say($cmd->channel,"{$part->name} has been removed from the cup",1024);
+					return;
+				}
+			}
+			$bot->say($cmd->channel,"Player $name not found",1024);
+		}
+		else if ( $cmd->params[0] == "reload" )
+		{
+			$this->cup_manager->reload_participants($this->cup()->id);
+			$this->show("",$cmd->channel,$bot,1024);
+		}
+		else
+		{
+			$this->show($cmd->param_string(false),$cmd->channel,$bot,1024);
+		}
+		
 	}
 }
 
@@ -694,6 +779,7 @@ class Executor_Cup_Players extends Executor_Multi_Cup
 	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'players',null,array(
+			new Executor_Cup_PlayersAdmin($cup_manager),
 			new Executor_Cup_PlayersReadonly($cup_manager),
 		));
 	}
@@ -715,10 +801,10 @@ class Executor_Cup_Start extends Executor_Cup
 		if ( $this->check_cup($cmd,$bot) )
 		{
 			$cup = $this->cup();
+			$this->cup_manager->update_cup($cup);
 			$cup->start();
 			$cup->started_at = time();
 			$bot->say($cmd->channel,"Cup started",1024);
-			$this->cup_manager->update_cup($cup);
 		}
 	}
 }

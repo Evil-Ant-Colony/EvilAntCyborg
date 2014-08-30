@@ -26,6 +26,7 @@
 require_once("irc/melanobot.php");
 
 $network_quakenet = array(
+	new MelanoBotServer('irc.quakenet.org',6667),
 	new MelanoBotServer('euroserv.fr.quakenet.org',6667),
 	new MelanoBotServer('portlane.se.quakenet.org',6667),
 	new MelanoBotServer('xs4all.nl.quakenet.org',6667),
@@ -34,7 +35,6 @@ $network_quakenet = array(
 	new MelanoBotServer('jubii2.dk.quakenet.org',6667),
 	new MelanoBotServer('blacklotus.ca.us.quakenet.org',6667),
 	new MelanoBotServer('servercentral.il.us.quakenet.org',6667),
-	new MelanoBotServer('irc.quakenet.org',6667),
 );
 
 $network_freenode = array(
