@@ -133,7 +133,7 @@ function create_communicator($driver, $channel, Rcon $rcon,$prefix)
 
 // RCON - retrieve info
 	// request updating g_maplist at the end of every match (needed by Irc2Rcon_Maps)
-	new Rcon2Irc_SlowPolling(array("g_maplist")),
+	new Rcon2Irc_SlowPolling(array("g_maplist","banlist")),
 	// detect cvar changes (needed by Irc2Rcon_Maps)
 	new Rcon2Irc_GetCvars(),
 	// detect changes to the ban list (needed by Irc2Rcon_Banlist)

@@ -25,7 +25,11 @@ require_once('misc/cupmanager.php');
  */
 class CachedCupManager extends CupManager
 {
-	public $cups, $current_cup, $map_picking_status, $map_picker;
+	public $cups;				///< Array of open cups
+	public $current_cup;		///< Reference to the current cup
+	public $map_picking_status; ///< Picking status: 0 = NO, 1 = SETUP, 2 = PICKING
+	public $map_picker;			///< Active map picker
+	public $participants;		///< TODO 
 	
 	function __construct($api_key,$organization=null)
 	{
@@ -35,6 +39,10 @@ class CachedCupManager extends CupManager
 		$this->map_picking_status = 0;
 	}
 	
+	/**
+	 * \brief Reload trounament information
+     * \note Calls the API
+     */
 	function update_tournaments()
 	{
 		$this->cups = $this->tournaments();
@@ -56,7 +64,12 @@ class CachedCupManager extends CupManager
 		}
 	}
 	
-	
+	/**
+	 * \brief Check if there's a cup set
+	 * 
+	 * If there is no set cup but one is available, that one is selected
+	 * \return Whethere there's an active cup
+	 */
 	function check_cup()
 	{   
 		if ( $this->current_cup != null )
@@ -68,17 +81,35 @@ class CachedCupManager extends CupManager
 		return true;
 	}
 	
-	function current_open_matches()
+	/**
+	 * \brief Get open matches for the current cup
+	 * \pre \code $this->check_cup() \endcode
+	 * \param $max max number of results
+	 * \note Calls the API
+	 */
+	function current_open_matches($max=-1)
 	{
-		return $this->open_matches($this->current_cup->id);
+		return $this->open_matches($this->current_cup->id,$max);
+	}
+	
+	/**
+	 * \brief Whether the current cup exists and it has started
+	 */
+	function has_started()
+	{
+		return $this->current_cup != null && $this->current_cup->started();
 	}
 	
 }
 
+/**
+ * \brief Base class for cup executors
+ */
 abstract class Executor_Cup extends CommandExecutor
 {
-	public $cup_manager;
-	public $on_picking;
+	public $cup_manager; ///< Cup manager
+	public $on_picking;  ///< Picking stage this executor is active on
+	public $writes=false;///< Whether the executors writes to the cup (ie: can only be executed before it has started)
 	
 	function __construct(CachedCupManager $cup_manager, 
 						$name,$auth,$synopsis="",$description="",$irc_cmd='PRIVMSG')
@@ -88,16 +119,29 @@ abstract class Executor_Cup extends CommandExecutor
 		$this->on_picking = 0;
 	}
 	
+	/**
+	 * \brief Whether is should be active according to the picking stage
+	 */
 	function check_picking()
 	{
 		return $this->on_picking == $this->cup_manager->map_picking_status;
 	}
 	
-	function check_auth($nick,$host,MelanoBot $bot, BotData $driver)
+	function check_auth($nick,$host,MelanoBot $bot, BotData $data)
 	{
-		return $this->check_picking() && parent::check_auth($nick,$host,$bot, $driver);
+		return $this->check_picking() && parent::check_auth($nick,$host,$bot, $data);
 	}
 	
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
+	{
+		return  ( !$this->writes || !$this->cup_manager->has_started() ) && 
+				$this->check_auth($cmd->from,$cmd->host,$bot,$data);
+	}
+	
+	/**
+	 * \brief Check whether there's an active cup, if not send an error message over IRC
+	 * \return \c true if there's a cup
+	 */
 	function check_cup(MelanoBotCommand $cmd, MelanoBot $bot)
 	{
 		if ( !$this->cup_manager->check_cup() )
@@ -108,24 +152,37 @@ abstract class Executor_Cup extends CommandExecutor
 		return true;
 	}
 	
+	/**
+	 * \brief Get active cup
+	 */
 	function cup()
 	{
 		return $this->cup_manager->current_cup;
 	}
 	
+	/**
+	 * \brief Get active map_picker
+	 */
 	function map_picker()
 	{
 		return $this->cup_manager->map_picker;
 	}
 	
+	/**
+	 * \brief Show a message for map picking
+	 * \todo Why is this here?
+	 */
 	function map_pick_show_turn($cmd,$bot)
 	{
 		$dp = $this->map_picker()->is_picking() ? "\x0303PICK\x03" : "\x0304DROP\x03";
-		$bot->say($cmd->channel,$this->map_picker()->current_player().", your turn",1024);
+		$bot->say($cmd->channel,$this->map_picker()->current_player()->nick.", your turn",1024);
 		$bot->say($cmd->channel,"$dp ".implode(', ',$this->map_picker()->maps),1024);
 	}
 }
 
+/**
+ * \brief Switch executors with the same name (eg: one for admins and one for users)
+ */
 abstract class Executor_Multi_Cup extends Executor_Cup
 {
 	private $multiple_inheritance;
@@ -138,20 +195,20 @@ abstract class Executor_Multi_Cup extends Executor_Cup
 	}
 	
 	
-	function check_auth($nick,$host,MelanoBot $bot, BotData $driver)
+	function check_auth($nick,$host,MelanoBot $bot, BotData $data)
 	{
-		return $this->check_picking() && $this->multiple_inheritance->check_auth($nick,$host,$bot,$driver);
+		return $this->check_picking() && $this->multiple_inheritance->check_auth($nick,$host,$bot,$data);
 	}
 	
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return $this->check_picking() && $this->multiple_inheritance->check($cmd,$bot,$driver);
+		return $this->check_picking() && $this->multiple_inheritance->check($cmd,$bot,$data);
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
-		return $this->multiple_inheritance->execute($cmd,$bot,$driver);
+		return $this->multiple_inheritance->execute($cmd,$bot,$data);
 	}
 	
 	function executors()
@@ -159,12 +216,15 @@ abstract class Executor_Multi_Cup extends Executor_Cup
 		return $this->multiple_inheritance->executors;
 	}
 	
-	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return $this->multiple_inheritance->help($cmd,$bot,$driver);
+		return $this->multiple_inheritance->help($cmd,$bot,$data);
 	}
 }
 
+/**
+ * \brief Show next matches
+ */
 class Executor_Cup_Next extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
@@ -172,23 +232,23 @@ class Executor_Cup_Next extends Executor_Cup
 		parent::__construct($cup_manager,'next',null,'next [n]','Show the next (n) scheduled matches');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
 			$num = isset($cmd->params[0]) ? (int)$cmd->params[0] : 1;
-			if ( $num > 5 && !$driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) )
+			if ( $num > 5 && !$data->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) )
 				$num = 5;
-			$bot->say($cmd->channel,"Fetching...",1025);
-			$matches = $this->cup_manager->current_open_matches();
-			$num = min($num,count($matches));
+			if ( $num > 1 )
+				$bot->say($cmd->channel,"Fetching...",1025);
+			$matches = $this->cup_manager->current_open_matches($num);
 			if ( count($matches) == 0 )
 			{
 				$bot->say($cmd->channel,"No matches are currently available",1024);
 			}
 			else
 			{
-				for ( $i = 0; $i < $num; $i++ )
+				for ( $i = 0; $i < count($matches); $i++ )
 				{
 					$match = $matches[$i];
 					if ( $match == null )
@@ -201,6 +261,9 @@ class Executor_Cup_Next extends Executor_Cup
 	}
 }
 
+/**
+ * \brief Show (and update) available cups
+ */
 class Executor_Cup_Cups extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
@@ -208,7 +271,7 @@ class Executor_Cup_Cups extends Executor_Cup
 		parent::__construct($cup_manager,'cups','admin','cups','Show the available cups');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		$this->cup_manager->update_tournaments();
 		
@@ -229,6 +292,10 @@ class Executor_Cup_Cups extends Executor_Cup
 	}
 }
 
+/**
+ * \brief Show the bracket URL
+ * \todo Maybe rename to bracket
+ */
 class Executor_Cup_Results extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
@@ -237,14 +304,16 @@ class Executor_Cup_Results extends Executor_Cup
 			'Show a URL where you can view the cup details');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 			$bot->say($cmd->channel,$this->cup()->result_url(),1024);
 	}
 }
 
-
+/**
+ * \brief Show the current cup
+ */
 class Executor_Cup_CupReadonly extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
@@ -253,12 +322,12 @@ class Executor_Cup_CupReadonly extends Executor_Cup
 			'Show the current cup name and ID');
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) ;
+		return count($cmd->params) == 0 || !$data->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 			$bot->say($cmd->channel,
@@ -266,6 +335,9 @@ class Executor_Cup_CupReadonly extends Executor_Cup
 	}
 }
 
+/**
+ * \brief Set the current cup
+ */
 class Executor_Cup_CupSelect extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
@@ -274,12 +346,12 @@ class Executor_Cup_CupSelect extends Executor_Cup
 			'Change the current cup');
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$driver) ;
+		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$data) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		$next = trim($cmd->param_string());
 		$cup = null;
@@ -300,6 +372,9 @@ class Executor_Cup_CupSelect extends Executor_Cup
 	
 }
 
+/**
+ * \brief Executor_Cup_CupReadonly + Executor_Cup_CupSelect
+ */
 class Executor_Cup_Cup extends Executor_Multi_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
@@ -320,12 +395,12 @@ class Executor_Cup_DescriptionReadonly extends Executor_Cup
 			'Show the description of the current cup');
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) ;
+		return count($cmd->params) == 0 || !$data->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -341,14 +416,15 @@ class Executor_Cup_DescriptionSet extends Executor_Cup
 	{
 		parent::__construct($cup_manager,'description','admin','description [new_description]',
 			'Change the description for the current cup');
+		$this->writes = true;
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$driver) ;
+		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$data) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -380,12 +456,12 @@ class Executor_Cup_TimeReadonly extends Executor_Cup
 			'Display the scheduled start time for the current cup');
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return count($cmd->params) == 0 || !$driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) ;
+		return count($cmd->params) == 0 || !$data->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		// noop
 	}
@@ -397,14 +473,15 @@ class Executor_Cup_TimeSet extends Executor_Cup
 	{
 		parent::__construct($cup_manager,'time','admin','time [new_time]',
 			'Change the scheduled start time for the current cup');
+		$this->writes = true;
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$driver) ;
+		return count($cmd->params) > 0 && $this->check_auth($cmd->from,$cmd->host,$bot,$data) ;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -434,11 +511,11 @@ class Executor_Cup_Time extends Executor_Multi_Cup
 	}
 	
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd, $bot) )
 		{
-			parent::execute($cmd,$bot,$driver);
+			parent::execute($cmd,$bot,$data);
 			
 			$cup = $this->cup();
 			if ( $cup->started_at != null && $cup->start_at <= time() )
@@ -467,41 +544,48 @@ class Executor_Cup_Time extends Executor_Multi_Cup
 	}
 }
 
+/**
+ * \brief Show the map list (admins can add and remove them)
+ */
 class Executor_Cup_Maps extends Executor_Multi_Cup
 {
+	private $ex_write, $ex_read;
 	
 	function __construct(CachedCupManager $cup_manager)
 	{
 		parent::__construct($cup_manager,'maps',null,array(
-			new Executor_MiscListEdit('maps','admin'),
-			new Executor_MiscListReadonly('maps',null)
+			$this->ex_write = new Executor_MiscListEdit('maps','admin'),
+			$this->ex_read = new Executor_MiscListReadonly('maps',null)
 		));
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
 			$cup = $this->cup();
-				
-			foreach($this->executors() as $ex )
-				if ( $ex->check($cmd,$bot,$driver) )
-				{
-					$ex->list = &$cup->maps;
-					$ex->execute($cmd,$bot,$driver);
-					break;
-				}
 			
-			if ( count($cmd->params) > 0 && $driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) )
-			{			
+			if ( count($cmd->params) > 0 && !$this->cup_manager->has_started() &&
+				$this->ex_write->check($cmd,$bot,$data) )
+			{
+				$this->ex_write->list = &$cup->maps;
+				$this->ex_write->execute($cmd,$bot,$data);
 				$this->cup_manager->update_cup($cup);
+			}
+			else
+			if ( $this->ex_read->check($cmd,$bot,$data) )
+			{
+				$this->ex_read->list = &$cup->maps;
+				$this->ex_read->execute($cmd,$bot,$data);
 			}
 		}
 	}
 	
 }
 
-
+/**
+ * \brief Start the current cup
+ */
 class Executor_Cup_Start extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
@@ -510,7 +594,7 @@ class Executor_Cup_Start extends Executor_Cup
 			'Start the cup');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -524,8 +608,6 @@ class Executor_Cup_Start extends Executor_Cup
 }
 
 
-
-
 class Executor_Cup_ScoreReadonly extends CommandExecutor
 {
 	function __construct()
@@ -534,7 +616,7 @@ class Executor_Cup_ScoreReadonly extends CommandExecutor
 			'Show the scores for match_id');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		// noop
 	}
@@ -548,7 +630,7 @@ class Executor_Cup_ScoreSet extends CommandExecutor
 			'Appends the given scores to the score list in the given match');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		// noop
 	}
@@ -566,17 +648,17 @@ class Executor_Cup_Score extends Executor_Cup
 		//$this->reports_error = true;
 	}
 	
-	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function help(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		if ( $this->rw->check_auth($cmd->from,$cmd->host,$bot,$driver) )
+		if ( $this->rw->check_auth($cmd->from,$cmd->host,$bot,$data) )
 		{
-			$this->rw->help($cmd,$bot,$driver);
+			$this->rw->help($cmd,$bot,$data);
 		}
 		else
-			$this->ro->help($cmd,$bot,$driver);
+			$this->ro->help($cmd,$bot,$data);
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd, $bot) )
 		{
@@ -596,10 +678,10 @@ class Executor_Cup_Score extends Executor_Cup
 			}
 			
 			// matchID score1 score2
-			if ( count($cmd->params) == 3 && $driver->user_in_list('admin',$bot->get_user($cmd->from,$cmd->host)) ) 
+			if ( count($cmd->params) == 3 && $this->rw->check_auth($cmd->from,$cmd->host,$bot,$data) )
 			{
-				$match->team1->add_score($cmd->params[1]);
-				$match->team2->add_score($cmd->params[2]);
+				$match->players[0]->add_score($cmd->params[1]);
+				$match->players[1]->add_score($cmd->params[2]);
 				$bot->say($cmd->channel,"Updated match ".$cmd->params[0].":",1024);
 				$this->cup_manager->update_match($cup,$match);
 			}
@@ -615,6 +697,9 @@ class Executor_Cup_Score extends Executor_Cup
 	}
 }
 
+/**
+ * \brief Finalize a match
+ */
 class Executor_Cup_End extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
@@ -623,7 +708,7 @@ class Executor_Cup_End extends Executor_Cup
 			'End the given match and save score changes to challonge');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( count($cmd->params) != 1 )
 		{
@@ -653,6 +738,9 @@ class Executor_Cup_End extends Executor_Cup
 
 }
 
+/**
+ * \brief Begin setting up picking for a match
+ */
 class Executor_Cup_Pick_Setup extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
@@ -661,7 +749,7 @@ class Executor_Cup_Pick_Setup extends Executor_Cup
 			'Start a map picking session');
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd,$bot) )
 		{
@@ -677,8 +765,6 @@ class Executor_Cup_Pick_Setup extends Executor_Cup
 				return;
 			}
 			
-			$bot->say($cmd->channel,"Fetching match...",1025);
-			
 			$match = $this->cup_manager->match($cup->id,$cmd->params[0]);
 			if ( $match == null )
 			{
@@ -686,26 +772,62 @@ class Executor_Cup_Pick_Setup extends Executor_Cup
 				return;
 			}
 			
-			$map_pick = new MapPicker($match->team1(),$match->team2(),$cup->maps);
+			$map_pick = new MapPicker($match->players[0],$match->players[1],$cup->maps);
 			$this->cup_manager->map_picker = $map_pick;
 			$this->cup_manager->map_picking_status = 1;
-			$driver->lists['player'] = array();
+			$data->lists['player'] = array();
 			
 			$bot->say($cmd->channel, "Setting up picking for {$match->id}: ".
-									$map_pick->player[0]." vs ".$map_pick->player[1],1024);
+									$map_pick->players[0]->long_name()." vs ".
+									$map_pick->players[1]->long_name(),1024);
 			
 		}
 	}
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return count($cmd->params) == 1 && parent::check($cmd,$bot,$driver);
+		return count($cmd->params) == 1 && parent::check($cmd,$bot,$data);
 	}
 
 }
 
 
+/**
+ * \brief Change IRC nick to listen for map picking
+ */
+class Executor_Cup_Pick_Nick extends Executor_Cup
+{
+	function __construct(CachedCupManager $cup_manager)
+	{
+		parent::__construct($cup_manager,'nick','admin','nick [old new]',
+			'Change IRC nick to listen for map picking');
+		$this->on_picking = 1;
+	}
+	
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		if ( count($cmd->params) == 2 && $this->map_picker()->is_player($cmd->params[0]) )
+		{
+			foreach ( $this->map_picker()->players as &$p )
+				if ( $cmd->params[0] == $p->nick )
+				{
+					$p->nick = $cmd->params[1];
+					$bot->say($cmd->channel,"Listen to {$cmd->params[1]} as map picker for {$cmd->params[0]}",1024);
+					break;
+				}
+		}
+		else
+		{
+			$bot->say($cmd->channel,"Currently listening to ".
+										implode(' and ',$this->map_picker()->players),1024);
+		}
+	}
+}
 
+/**
+ * \brief Set number of maps to pick (ie: not drop)
+ */
 class Executor_Cup_Pick_Pick extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
@@ -715,7 +837,7 @@ class Executor_Cup_Pick_Pick extends Executor_Cup
 		$this->on_picking = 1;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( count($cmd->params) >= 1 )
 		{
@@ -730,7 +852,37 @@ class Executor_Cup_Pick_Pick extends Executor_Cup
 }
 
 
+/**
+ * \brief End picking set up and start actual picking
+ */
+class Executor_Cup_Pick_Begin extends Executor_Cup
+{
+	function __construct(CachedCupManager $cup_manager)
+	{
+		parent::__construct($cup_manager,'begin','admin','begin',
+			'Start the actual map picking (after setup)');
+		$this->on_picking = 1;
+	}
+	
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+        
+		$bot->say($cmd->channel,"Starting map picking ",1024);
+		$bot->say($cmd->channel,$this->map_picker()->players[0]->long_name()." vs ".
+								$this->map_picker()->players[1]->long_name(),1024);
+		$bot->say($cmd->channel,$this->map_picker()->pick_drops(),1024);
+		$data->lists['player'] = array();
+		foreach ( $this->map_picker()->players as $player )
+			$data->add_to_list('player',new IRC_User(null,$player->nick));
+		$this->map_pick_show_turn($cmd,$bot);
+		$this->cup_manager->map_picking_status = 2;
+	}
+}
 
+/**
+ * \brief Terminate picking before due time
+ */
 class Executor_Cup_Pick_Stop extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
@@ -745,73 +897,20 @@ class Executor_Cup_Pick_Stop extends Executor_Cup
 	}
 	
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		$bot->say($cmd->channel,"Map picking stopped",1024);
 		$totmaps = array_merge($this->map_picker()->picks,$this->map_picker()->maps);
 		$bot->say($cmd->channel,"Remaining maps: ".implode(', ',$totmaps),1024);
-		$driver->lists['player'] = array();
+		$data->lists['player'] = array();
 		$this->cup_manager->map_picker = null;
 		$this->cup_manager->map_picking_status = 0;
 	}
 }
 
-class Executor_Cup_Pick_Begin extends Executor_Cup
-{
-	function __construct(CachedCupManager $cup_manager)
-	{
-		parent::__construct($cup_manager,'begin','admin','begin',
-			'Start the actual map picking (after setup)');
-		$this->on_picking = 1;
-	}
-	
-	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
-	{
-        
-		$bot->say($cmd->channel,"Starting map picking ",1024);
-		$bot->say($cmd->channel,$this->map_picker()->player[0]." vs ".$this->map_picker()->player[1],1024);
-		$bot->say($cmd->channel,$this->map_picker()->pick_drops(),1024);
-		$driver->lists['player'] = array();
-		foreach ( $this->map_picker()->player as $nick )
-			$driver->add_to_list('player',new IRC_User(null,$nick));
-		$this->map_pick_show_turn($cmd,$bot);
-		$this->cup_manager->map_picking_status = 2;
-	}
-}
-
-class Executor_Cup_Pick_Nick extends Executor_Cup
-{
-	function __construct(CachedCupManager $cup_manager)
-	{
-		parent::__construct($cup_manager,'nick','admin','nick [old new]',
-			'Change IRC nick to listen for map picking');
-		$this->on_picking = 1;
-	}
-	
-	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
-	{
-		if ( count($cmd->params) == 2 && $this->map_picker()->is_player($cmd->params[0]) )
-		{
-			foreach ( $this->map_picker()->player as &$p )
-				if ( $cmd->params[0] == $p )
-				{
-					$driver->remove_from_list_nick($p);
-					$p = $cmd->params[1];
-					$driver->add_to_list('player',new IRC_User(null,$cmd->params[1]));
-					$bot->say($cmd->channel,"Listen to {$cmd->params[1]} as map picker for {$cmd->params[0]}",1024);
-					break;
-				}
-		}
-		else
-		{
-			$bot->say($cmd->channel,"Currently listening to ".
-										implode(' and ',$this->map_picker()->player),1024);
-		}
-	}
-}
-
+/**
+ * \brief Show map picking turn
+ */
 class Executor_Cup_Pick_Turn extends Executor_Cup
 {
 
@@ -822,13 +921,16 @@ class Executor_Cup_Pick_Turn extends Executor_Cup
 		$this->on_picking = 2;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		$this->map_pick_show_turn($cmd,$bot);
 	}
 }
 
 
+/**
+ * \brief Get a picking choice from the right player
+ */
 class Executor_Pick_Raw extends Executor_Cup
 {
 
@@ -840,18 +942,19 @@ class Executor_Pick_Raw extends Executor_Cup
 	}
 	
 	
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return  $this->check_auth($cmd->from,$cmd->host,$bot,$driver)
-				&& $this->map_picker() && $cmd->from == $this->map_picker()->current_player();
+		return  $this->check_auth($cmd->from,$cmd->host,$bot,$data) &&
+				$this->map_picker() && 
+				$cmd->from == $this->map_picker()->current_player()->nick;
 	}
 	
-	function install_on(BotCommandDispatcher $driver)
+	function install_on(BotCommandDispatcher $disp)
 	{
-		$driver->raw_executors []= $this;
+		$disp->raw_executors []= $this;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $cmd->cmd != null )
 			$map = $cmd->cmd;
@@ -872,7 +975,7 @@ class Executor_Pick_Raw extends Executor_Cup
 				$this->map_picker()->picks []= $this->map_picker()->maps[0];
 				$bot->say($cmd->channel,"Map picking ended",1024);
 				$bot->say($cmd->channel,"Result: ".implode(', ',$this->map_picker()->picks),1024);
-				$driver->lists['player'] = array();
+				$data->lists['player'] = array();
 				$this->cup_manager->map_picker = null;
 				$this->cup_manager->map_picking_status = 0;
 				return;
@@ -892,12 +995,12 @@ class Executor_Cup_AutoStartup extends Executor_Cup
 		parent::__construct($cup_manager, null,null,"","","JOIN");
 	}
 	
-	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function check(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		return $cmd->from == $bot->nick;
 	}
 	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		$this->cup_manager->update_tournaments();
 	}
