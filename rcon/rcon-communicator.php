@@ -69,6 +69,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	public $out_prefix = "";         ///< Prefix the rcon executors should use for IRC output
 	public $first_poll_time = 0;     ///< Delay the first polling by this many seconds
 	public $connection_messages=true;///< Whether to show connect/disconnect messages
+	public $suppress_output = false; ///< If true don't show Rcon command output
 	
 	/**
 	 * \brief Convert a gametype string identifier to a human-readable name
@@ -275,13 +276,14 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 				$cmd = new Rcon_Command($line, $packet->server,$this->channel);
 				if ( $this->rcon_filter($cmd) )
 				{
-					Logger::log("dp",">",Color::dp2ansi($line),0);
+					if ( !$this->suppress_output )
+						Logger::log("dp",">",Color::dp2ansi($line),0);
 				
 					foreach($this->rcon_executors as $executor)
 						if ( $executor->step($cmd, $bot, $this) )
 							break;
 				}
-				else if ( Logger::instance()->verbosity >= 5 )
+				else if ( !$this->suppress_output && Logger::instance()->verbosity >= 5 )
 				{
 					Logger::log("dp",">","\x1b[31m".Color::dp2none($line)."\x1b[0m",5);
 				}
