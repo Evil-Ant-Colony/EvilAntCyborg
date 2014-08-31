@@ -499,6 +499,8 @@ class CupManager
     
     /**
      * \brief Create a participant object from the array received from the API
+     * \todo misc is not being updated so far, maybe it's not needed 
+     * (nick is set after the cup has started so it may not be possible to update it)
      */
     protected function participant_from_json($json_array)
     {

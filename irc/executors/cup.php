@@ -593,7 +593,7 @@ class Executor_Cup_Time extends Executor_Multi_Cup
 				$bot->say($cmd->channel,"Cup is starting soon",1024);
 			else
 			{
-				$delta = $cup->start_at - time();
+				$delta = ceil( ($cup->start_at - time())/60 ) * 60;
 				$d_day = (int) ($delta / (60*60*24));
 				$d_hour = (int) ($delta % (60*60*24) / (60*60));
 				$d_min = round($delta % (60*60) / 60);
