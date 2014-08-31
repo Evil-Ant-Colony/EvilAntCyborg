@@ -183,7 +183,7 @@ class MapPicker
             $player = $player->nick;
             
         foreach ( $this->players as $p )
-            if ( $player == $p->nick )
+            if ( $player == $p->nick || $player == $p->name || $player == $p->id )
                 return true;
         return false;
     }

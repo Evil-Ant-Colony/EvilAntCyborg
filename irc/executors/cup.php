@@ -365,7 +365,7 @@ class Executor_Cup_Results extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
 	{
-		parent::__construct($cup_manager,'results',null,'results',
+		parent::__construct($cup_manager,'bracket',null,'bracket',
 			'Show a URL where you can view the cup details');
 	}
 	
@@ -1009,20 +1009,32 @@ class Executor_Cup_Pick_Nick extends Executor_Cup
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
-		if ( count($cmd->params) == 2 && $this->map_picker()->is_player($cmd->params[0]) )
+		if ( count($cmd->params) >= 2 )
 		{
+			$old = $cmd->param_string(false,0,count($cmd->params)-1);
+			$new = $cmd->params[count($cmd->params)-1];
 			foreach ( $this->map_picker()->players as &$p )
-				if ( $cmd->params[0] == $p->nick )
+				if ( $old == $p->nick || $old == $p->name || $old == $p->id )
 				{
-					$p->nick = $cmd->params[1];
-					$bot->say($cmd->channel,"Listen to {$cmd->params[1]} as map picker for {$cmd->params[0]}",1024);
-					break;
+					$p->nick = $new;
+					
+					if ( $player = $this->cup_manager->participant($this->cup()->id,$p->id) )
+						$player->nick = $new;
+					else
+						 $this->cup_manager->participants[$this->cup()->id][$p->id] = new CupParticipant($p->name,$p->id,$p->nick);
+						
+					
+					$bot->say($cmd->channel,"Listen to $new as map picker for {$p->name}",1024);
+					return;
 				}
+			$bot->say($cmd->channel,"$old is not a player of this match",1024);
 		}
 		else
 		{
-			$bot->say($cmd->channel,"Currently listening to ".
-										implode(' and ',$this->map_picker()->players),1024);
+			$players = array();
+			foreach($this->map_picker()->players as $p)
+				$players[] = $p->name == $p->nick ? $p->nick : "{$p->nick} (for {$p->name})";
+			$bot->say($cmd->channel,"Currently listening to ".implode(' and ',$players),1024);
 		}
 	}
 }
