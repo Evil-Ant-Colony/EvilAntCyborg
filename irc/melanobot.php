@@ -102,6 +102,7 @@ class MelanoBotServer
 
 /**
  * \brief Buffer messages to an IRC server preventing flooding
+ * \todo Data-based instead than line-base
  */
 class BotOutBuffer
 {
