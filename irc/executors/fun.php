@@ -42,6 +42,16 @@ class Raw_Question extends RawCommandExecutor
 					  $response["results"][0]["geometry"]["location"]["lng"];
 			$bot->say($cmd->channel, "$name: https://maps.google.com/?$ll&q=$param_string");
 		}
+		else if ( $cmd->cmd == 'when' )
+			$bot->say($cmd->channel, self::$fake_answers_when[rand(0,count(self::$fake_answers_when)-1)]);
+		else if ( $cmd->cmd == 'who' )
+		{
+			$users = $bot->all_users();
+			$nick = $users[rand(0,count($users)-1)]->nick;
+			if ( $nick == $bot->nick )
+				$nick = "not me";
+			$bot->say($cmd->channel,$nick);
+		}
 		else
 			$bot->say($cmd->channel, self::$fake_answers[rand(0,count(self::$fake_answers)-1)]);
 	}
@@ -76,6 +86,23 @@ class Raw_Question extends RawCommandExecutor
 		"No way!",
 		"No",
 
+	);
+	
+	static public $fake_answers_when = array(
+		"42 years ago",
+		"Yesterday",
+		"Some time in the past",
+		
+		"Right now",
+		
+		"Never",
+		"I don't know",
+		"When you stop asking stupid questions",
+		"The same day you'll decide to shut up",
+		
+		"Some time in the future",
+		"Tomorrow",
+		"42 years from now",
 	);
 }
 
