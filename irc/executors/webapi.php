@@ -498,7 +498,7 @@ class Executor_WolframAlpha  extends CommandExecutor
 			return;
 		}
 		
-		$result = $xml->xpath('/queryresult/pod[@title="Result"]/subpod[1]/plaintext');
+		$result = $xml->xpath('/queryresult/pod[2]/subpod[1]/plaintext');
 		if ( $result && is_array($result))
 			$bot->say($cmd->channel,(string)$result[0]);
 		else
