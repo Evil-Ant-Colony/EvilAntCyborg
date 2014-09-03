@@ -470,39 +470,3 @@ class Executor_Autotranslate  extends RawCommandExecutor
 	}
 	
 }
-
-class Executor_WolframAlpha  extends CommandExecutor
-{
-	public $app_id; ///< App ID
-	public $base_url = "http://api.wolframalpha.com/v2/query";
-	
-	function __construct($app_id,$trigger="evaluate",$auth='admin')
-	{
-		parent::__construct($trigger,$auth,"$trigger expression", 'Evaluate expression using Wolfram|Alpha');
-		$this->app_id = $app_id;
-	}
-	
-	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
-	{
-		if ( count($cmd->params) == 0 )
-			return;
-		
-		$url = "{$this->base_url}?appid={$this->app_id}&input=".urlencode($cmd->param_string(false));
-        Logger::log("std","<","\x1b[1mGET\x1b[0m $url",4);
-        
-		$xml = simplexml_load_file($url);
-		$attr = $xml->attributes();
-		if ( $attr['error'] == 'true' )
-		{
-			$bot->say($cmd->channel,"Error: ".$xml->error->msg);
-			return;
-		}
-		
-		$result = $xml->xpath('/queryresult/pod[2]/subpod[1]/plaintext');
-		if ( $result && is_array($result))
-			$bot->say($cmd->channel,(string)$result[0]);
-		else
-			$bot->say($cmd->channel,"Sorry, but I don't know");
-	}
-	
-}
