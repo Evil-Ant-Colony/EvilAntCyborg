@@ -377,6 +377,35 @@ class Executor_Cup_Results extends Executor_Cup
 }
 
 /**
+ * \brief Set channel topic from cup properties
+ */
+class Executor_Cup_Topic extends Executor_Cup
+{
+	public $topic;
+	public $topic_nocup;
+	
+	function __construct(CachedCupManager $cup_manager,
+			$topic = "%name% %bracket%",
+			$topic_nocup = "No cup is currently scheduled",
+			$trigger = "topic"
+		)
+	{
+		parent::__construct($cup_manager,$trigger,'admin',$trigger,
+			'Update the channel topic according to the current cup');
+		$this->topic = $topic;
+		$this->topic_nocup = $topic_nocup;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		$topic = $this->cup_manager->check_cup() ? 
+			$this->cup()->format_string($this->topic) :
+			$this->topic_nocup;
+		$bot->command("TOPIC","{$cmd->channel} :$topic",1024);
+	}
+}
+
+/**
  * \brief Show the current cup
  */
 class Executor_Cup_CupReadonly extends Executor_Cup
@@ -407,7 +436,8 @@ class Executor_Cup_CupSelect extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
 	{
-		parent::__construct($cup_manager,'cup','admin',"cup [cup_name|cup_id]",
+		parent::__construct($cup_manager,'cup','admin',
+			"cup [cup_name|cup_id|property (set name value)|name|(string format)]",
 			'Change the current cup');
 	}
 	
@@ -418,21 +448,48 @@ class Executor_Cup_CupSelect extends Executor_Cup
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
-		$next = trim($cmd->param_string());
-		$cup = null;
-		foreach($this->cup_manager->cups as $c)
+		if ( count($cmd->params) > 1 && $cmd->params[0] == "property" )
 		{
-			if ( $c->id == $next || $c->name == $next )
+			if ( $this->check_cup($cmd,$bot) )
 			{
-				$cup = $c;
-				$this->cup_manager->select_cup($c);
-				break;
+				if ( count($cmd->params) > 3 && $cmd->params[1] == "set" )
+				{
+					$this->cup()->properties[$cmd->params[2]] = $cmd->param_string(false,3);
+					$this->cup_manager->update_cup($this->cup());
+					$bot->say($cmd->channel,"Updated cup",1024);
+				}
+				else if ( count($cmd->params) > 2 && $cmd->params[1] == "string" )
+					$bot->say($cmd->channel,$this->cup()->format_string($cmd->param_string(false,2)),1024);
+				else if ( count($cmd->params) == 2 )
+				{
+					$name = $cmd->params[1];
+					if ( isset($this->cup()->properties[$name]) )
+						$bot->say($cmd->channel,"$name: ".$this->cup()->properties[$name],1024);
+					else
+						$bot->say($cmd->channel,"Property $name not found",1024);
+				}
+				else
+					$bot->say($cmd->channel,"Malformed arguments",1024);
 			}
 		}
-		if ( $cup )
-			$bot->say($cmd->channel,"Cup switched to: {$cup->name} - {$cup->id}",1024);
 		else
-			$bot->say($cmd->channel,"Cup \"$next\" not found",1024);
+		{
+			$next = trim($cmd->param_string());
+			$cup = null;
+			foreach($this->cup_manager->cups as $c)
+			{
+				if ( $c->id == $next || $c->name == $next )
+				{
+					$cup = $c;
+					$this->cup_manager->select_cup($c);
+					break;
+				}
+			}
+			if ( $cup )
+				$bot->say($cmd->channel,"Cup switched to: {$cup->name} - {$cup->id}",1024);
+			else
+				$bot->say($cmd->channel,"Cup \"$next\" not found",1024);
+		}
 	}
 	
 }

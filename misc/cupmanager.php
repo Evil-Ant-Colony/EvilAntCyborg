@@ -265,6 +265,7 @@ class Cup
     public $start_at;
     public $started_at;
     public $name;
+    public $properties = array();
     
     function __construct($manager,$id,$url,$name)
     {
@@ -310,6 +311,22 @@ class Cup
     function started()
     {
         return $this->started_at != null && $this->started_at < time();
+    }
+    
+    /**
+     * \brief Populate a string with the cup properties
+     */
+    function format_string($input)
+    {
+		$values = array(
+			'%name%'           => $this->name,
+			'%description%'    => $this->description,
+			'%bracket%'        => $this->result_url(),
+			'%maps%'           => implode(", ",$this->maps),
+		);
+		foreach($this->properties as $n => $v)
+			$values["%$n%"] = $v;
+		return str_replace(array_keys($values),array_values($values),$input);
     }
 }
 
@@ -435,20 +452,28 @@ class CupManager
                         $json_array['tournament']['id'],
                         $json_array['tournament']['url'],
                         $json_array['tournament']['name']);
-                        
-        $matches=array();
-        if ( preg_match("{".
-                "<p>([^\n]*)</p>".
-                "(\s*<p>Maps:\s*([-._a-zA-Z0-9]+(,\s*[-._a-zA-Z0-9]+)*)?</p>)?".
-                "}",
-                $json_array['tournament']['description'],
-                $matches
-            ) )
-        {
-            $cup->description = $matches[1];
-            if ( count($matches) > 3 )
-                $cup->maps = explode(', ',$matches[3]);
-        }
+		
+		$cup->description="";
+		if ( preg_match("{^\s*<p>(.*)</p>}",$json_array['tournament']['description'],$matches) )
+		{
+			if ( count($matches) > 1 )
+				$cup->description = $matches[1];
+		}
+
+		$cup->properties = array();
+		if ( preg_match_all("{<p>\s*([^:\n]+?)\s*:\s*(.*?)\s*</p>}",
+			$json_array['tournament']['description'], 
+			$matches,  PREG_SET_ORDER, strlen($cup->description)) )
+		{
+			foreach($matches as $match)
+				if ( count($match) == 3 )
+					$cup->properties[str_replace(' ','_',strtolower($match[1]))] = $match[2];
+		}
+		if ( isset($cup->properties["maps"]) )
+		{
+			$cup->maps = explode(', ',$cup->properties["maps"]);
+			unset($cup->properties["maps"]);
+		}
         
         if ( isset( $json_array['tournament']["start_at"] ) )
             $cup->start_at=strtotime($json_array['tournament']["start_at"]);
@@ -632,6 +657,8 @@ class CupManager
     {
         $desc = "<p>{$cup->description}</p>\n".
                 "<p>Maps: ".implode(", ",$cup->maps)."</p>";
+        foreach ( $cup->properties as $k => $v )
+            $desc .= "\n<p>".ucwords(str_replace('_',' ',$k)).": $v</p>";
                 
         $array = array();
         $array['tournament[description]']=$desc;

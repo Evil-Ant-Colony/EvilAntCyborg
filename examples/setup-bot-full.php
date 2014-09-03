@@ -150,6 +150,8 @@ $disp_cup->install(array(
 	new Executor_Cup_Pick_Begin($cup_manager),
 	new Executor_Cup_Pick_Nick($cup_manager),
 	new Executor_Cup_Pick_Pick($cup_manager),
+	new Executor_Cup_Topic($cup_manager,
+		"%name% %forum_post% | Servers: %servers% | Bracket: %bracket% | Bot Help: http://tinyurl.com/eacbot"),
 // cup commands (admin+anyone)
 	new Executor_Cup_Cup($cup_manager),
 	new Executor_Cup_Description($cup_manager),
