@@ -4,6 +4,7 @@ abstract class WolframAlpha extends CommandExecutor
 {
 	public $app_id; ///< App ID
 	public $base_url = "http://api.wolframalpha.com/v2/query";
+	public $units = "metric";
 
 	function __construct($app_id,$trigger,$auth,$synopsis,$help)
 	{
@@ -13,7 +14,7 @@ abstract class WolframAlpha extends CommandExecutor
 	
 	function get_xml($input)
 	{
-		$url = "{$this->base_url}?appid={$this->app_id}&input=".urlencode($input);
+		$url = "{$this->base_url}?appid={$this->app_id}&excludepodid=Input&units={$this->units}&input=".urlencode($input);
 		Logger::log("std","<","\x1b[1mGET\x1b[0m $url",4);
 		return simplexml_load_file($url);
 	}
@@ -43,7 +44,7 @@ class Executor_WolframAlpha_Text  extends WolframAlpha
 			return;
 		}
 		
-		$result = $xml->xpath('/queryresult/pod[2]/subpod[1]/plaintext');
+		$result = $xml->xpath('/queryresult/pod[1]/subpod[1]/plaintext');
 		if ( $result && is_array($result))
 			$bot->say($cmd->channel,(string)$result[0]);
 		else
@@ -76,7 +77,7 @@ class Executor_WolframAlpha_Plot  extends WolframAlpha
 			return;
 		}
 		
-		$result = $xml->xpath('/queryresult/pod[2]/subpod[1]/img/@src');
+		$result = $xml->xpath('/queryresult/pod[1]/subpod[1]/img/@src');
 		if ( $result && is_array($result))
 			$bot->say($cmd->channel,urldecode((string)$result[0]));
 		else
