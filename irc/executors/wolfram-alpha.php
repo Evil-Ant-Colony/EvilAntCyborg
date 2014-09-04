@@ -54,7 +54,7 @@ class Executor_WolframAlpha_Text  extends WolframAlpha
 
 class Executor_WolframAlpha_Plot  extends WolframAlpha
 {
-	public $empty_message = "http://www5a.wolframalpha.com/Calculate/MSP/MSP131gd07cd7c9eg18ca0000606cb06921i663ef?MSPStoreType=image/gif&s=23&cdf=Animation";
+	public $empty_message = "Cannot plot that";
 	
 	function __construct($app_id,$trigger="plot",$auth='admin')
 	{
