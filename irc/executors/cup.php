@@ -66,7 +66,7 @@ class CachedCupManager extends CupManager
 	/**
 	 * \brief Select the given cup and ensure all the info are loaded
 	 */
-	function select_cup(Cup $cup)
+	function select_cup($cup)
 	{
 	
 		$this->current_cup = $cup;
