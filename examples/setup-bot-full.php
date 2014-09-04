@@ -142,6 +142,7 @@ $disp_cup = new BotCommandDispatcher("#cup");
 
 $disp_cup->install(array(
 // cup commands (admin)
+	new Executor_Cup_Create($cup_manager),
 	new Executor_Cup_Cups($cup_manager),
 	new Executor_Cup_Start($cup_manager),
 	new Executor_Cup_End($cup_manager),
@@ -161,7 +162,7 @@ $disp_cup->install(array(
 	new Executor_Cup_Players($cup_manager),
 // cup commands (anyone)
 	new Executor_Cup_Next($cup_manager),
-	new Executor_Cup_Results($cup_manager),
+	new Executor_Cup_Bracket($cup_manager),
 // cup commands (selected players)
 	new Executor_Pick_Raw($cup_manager),
 // non-PRIVMSG

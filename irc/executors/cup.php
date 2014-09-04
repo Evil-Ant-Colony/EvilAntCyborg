@@ -164,6 +164,26 @@ class CachedCupManager extends CupManager
 	}
 	
 	
+	/**
+	 * \brief Creates a new cup
+	 * \param name    Cup name
+	 * \param type    Bracket type (single elimination, swiss, etc.)
+	 * \param game_id Game played in the cup
+	 * \return The newly created cup (or null in case of error)
+	 */
+	function create_cup($name,$type,$game_id=null)
+	{
+		$cup = parent::create_cup($name,$type,$game_id);
+		if ( $cup )
+		{
+			$this->cups []= $cup;
+			if ( !$this->current_cup )
+				$this->select_cup($cup);
+		}
+		return $cup;
+	}
+	
+	
 	
 }
 
@@ -358,10 +378,41 @@ class Executor_Cup_Cups extends Executor_Cup
 }
 
 /**
- * \brief Show the bracket URL
- * \todo Maybe rename to bracket
+ * \brief Create a cup
  */
-class Executor_Cup_Results extends Executor_Cup
+class Executor_Cup_Create extends Executor_Cup
+{
+	public $type;
+	public $game_id;
+	function __construct(CachedCupManager $cup_manager,
+		$trigger="create",
+		$type="double elimination",
+		$game_id=474 // Xonotic
+		)
+	{
+		parent::__construct($cup_manager,$trigger,'admin',"$trigger Name",
+			'Create a new cup');
+		$this->type = $type;
+		$this->game_id = $game_id;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		$name = $cmd->param_string();
+		if ( !$name )
+			$name = "Cup Created from IRC";
+		$cup = $this->cup_manager->create_cup($name,$this->type,$this->game_id);
+		if ( $cup )
+			$bot->say($cmd->channel,"Created cup {$cup->id}: ".$cup->bracket(),1024);
+		else
+			$bot->say($cmd->channel,"Could not create cup",1024);
+	}
+}
+
+/**
+ * \brief Show the bracket URL
+ */
+class Executor_Cup_Bracket extends Executor_Cup
 {
 	function __construct(CachedCupManager $cup_manager)
 	{
@@ -372,7 +423,7 @@ class Executor_Cup_Results extends Executor_Cup
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
 		if ( $this->check_cup($cmd,$bot) )
-			$bot->say($cmd->channel,$this->cup()->result_url(),1024);
+			$bot->say($cmd->channel,$this->cup()->bracket(),1024);
 	}
 }
 

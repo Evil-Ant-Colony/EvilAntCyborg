@@ -276,9 +276,9 @@ class Cup
         $this->maps = array();
     }
     
-    function result_url()
+    function bracket()
     {
-        return $this->manager->result_url.$this->url;
+        return $this->manager->bracket_base.$this->url;
     }
     
     function add_map($map)
@@ -321,7 +321,7 @@ class Cup
 		$values = array(
 			'%name%'           => $this->name,
 			'%description%'    => $this->description,
-			'%bracket%'        => $this->result_url(),
+			'%bracket%'        => $this->bracket(),
 			'%maps%'           => implode(", ",$this->maps),
 		);
 		foreach($this->properties as $n => $v)
@@ -336,7 +336,7 @@ class Cup
 class CupManager
 {
     private $api_key;                                   ///< API Key
-    public $result_url = "http://challonge.com/";       ///< Base URL for bracket display
+    public $bracket_base = "http://challonge.com/";       ///< Base URL for bracket display
     public $api_url = "https://api.challonge.com/v1/";  ///< API base URL
     public $organization;                               ///< Organization/prefix
     public $score_cache = array();                      ///< Internal scores (used because setting the score ends the relative match)
@@ -346,7 +346,7 @@ class CupManager
         $this->api_key = $api_key;
         $this->organization = $organization;
         if ( $organization != null )
-            $this->result_url = "http://$organization.challonge.com/";
+            $this->bracket_base = "http://$organization.challonge.com/";
     }
     
     /**
@@ -546,8 +546,8 @@ class CupManager
      */
     function tournaments($condition=array())
     {
-        if ( isset($this->organization) )
-            $condition['subdomain']='eac';
+        if ( !empty($this->organization) )
+            $condition['subdomain']=$this->organization;
         $cond1 = array_merge($condition,array('state'=>'in_progress'));
         $ts1 = $this->get('tournaments',$cond1);
         $cond2 = array_merge($condition,array('state'=>'pending'));
@@ -665,6 +665,44 @@ class CupManager
         if ( $cup->start_at != null )
         $array['tournament[start_at]'] = date("c",$cup->start_at);
         return $this->put("tournaments/{$cup->id}",$array);
+    }
+    
+    /**
+     * \brief Creates a new cup
+     * \param name    Cup name
+     * \param type    Bracket type (single elimination, swiss, etc.)
+     * \param game_id Game played in the cup
+     * \return The newly created cup (or null in case of error)
+     */
+    function create_cup($name,$type,$game_id=null)
+    {
+		$url_base = preg_replace("{[^a-zA-Z0-9_]}","",$name);
+		$url = $url_base;
+		$i = 0;
+		while(true)
+		{
+			$search_url = $url;
+			if ( !empty($this->organization) )
+				$search_url = "{$this->organization}-$search_url";
+			@ $t = $this->get("tournaments/$search_url");
+			if ( !isset($t["tournament"]) )
+				break;
+			$i++;
+			$url = $url_base."_$i";
+			if ( $i > 8 )
+				return null; // enough tries, give up...
+		}
+		
+		$params = array(
+			"tournament[name]" => $name,
+			"tournament[tournament_type]" => $type,
+			"tournament[url]" => $url,
+		);
+		if ( $game_id != null )
+			$params["tournament[game_id]"] = $game_id;
+		if ( !empty($this->organization) )
+			$params["tournament[subdomain]"]=$this->organization;
+		return $this->cup_from_json($this->post("tournaments",$params));
     }
     
     /**
