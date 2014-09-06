@@ -199,7 +199,7 @@ class Rcon2Irc_NotifyAdmin_Troll extends Rcon2Irc_Executor
         if ( $punish )
         {
             $slot = null;
-            foreach ( $this->data($data)->player->all() as $player )
+            foreach ( $rcon->data->player->all() as $player )
             {
                 if ( $player->name == $cmd->params[1] )
                 {
