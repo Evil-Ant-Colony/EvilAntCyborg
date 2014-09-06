@@ -174,7 +174,7 @@ class Rcon2Irc_NotifyAdmin_Troll extends Rcon2Irc_Executor
     public $blacklisted_words = array();
     
     function __construct($blacklisted_words, 
-            $punishment = 'r_trippy 1; v_psycho 1; defer 2 \"r_trippy 0\"; defer 10 \"v_psycho 0\"'
+            $punishment = 'r_trippy 1; v_psycho 1; defer 2 \"r_trippy 0\"; defer 10 \"v_psycho 0\"',
             $list='rcon-admin')
     {
         parent::__construct("{^\1(.*?)\^7:\s*!admin\s*(.*)}");
