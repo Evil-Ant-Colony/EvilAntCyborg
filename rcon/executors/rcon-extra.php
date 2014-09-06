@@ -140,8 +140,9 @@ class Irc2Rcon_UserNick extends Irc2Rcon_UserKicked
 	
 }
 
-
-
+/**
+ * \brief Notify the admin with a private message when someone chats !admin
+ */
 class Rcon2Irc_NotifyAdmin extends Rcon2Irc_Executor
 {
 	public $list;
@@ -161,6 +162,64 @@ class Rcon2Irc_NotifyAdmin extends Rcon2Irc_Executor
 			$bot->say($admin->nick,$admin_msg);
 		return true;
 	}
+}
+
+/**
+ * \brief Punish misbehaving players
+ */
+class Rcon2Irc_NotifyAdmin_Troll extends Rcon2Irc_Executor
+{
+    public $list;
+    public $punishment;
+    public $blacklisted_words = array();
+    
+    function __construct($blacklisted_words, 
+            $punishment = 'r_trippy 1; v_psycho 1; defer 2 \"r_trippy 0\"; defer 10 \"v_psycho 0\"'
+            $list='rcon-admin')
+    {
+        parent::__construct("{^\1(.*?)\^7:\s*!admin\s*(.*)}");
+        $this->list =$list;
+        $this->blacklisted_words = $blacklisted_words;
+        $this->punishment = $punishment;
+    }
+    
+    function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+    {
+        $nick = Color::dp2irc($cmd->params[1]);
+        $message = Color::dp2irc($cmd->params[2]);
+        $punish = false;
+        foreach($this->blacklisted_words as $word)
+        {
+            if ( strpos($message,$word) !== false )
+            {
+                $punish = true;
+                break;
+            }
+        }
+        if ( $punish )
+        {
+            $slot = null;
+            foreach ( $rcon_data->player->all() as $player )
+            {
+                if ( $player->name == $cmd->params[1] )
+                {
+                    if ( $slot == null )
+                        $slot = $player->slot;
+                    else if ( $slot != $player->slot )
+                        return true; // Can't find a unique player, so do nothing.
+                }
+            }
+            $this->rcon->send("stuffto #$slot \"$punishment\"");
+        }
+        else
+        {
+            $bot->say($cmd->channel,"{$rcon->out_prefix}<$nick\017> on \00304{$rcon->data->map}\017: \00304!admin\017 $message");
+            $admin_msg = "{$rcon->out_prefix}{$cmd->channel} (\00304{$rcon->data->map}\017) <$nick\017> $message";
+            foreach($rcon->bot_data->active_users_in_list($bot,$this->list) as $admin)
+                $bot->say($admin->nick,$admin_msg);
+        }
+        return true;
+    }
 }
 
 class Rcon2Irc_HostError extends Rcon2Irc_Executor

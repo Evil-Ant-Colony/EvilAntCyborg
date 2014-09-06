@@ -26,7 +26,7 @@ require_once("misc/logger.php");
 class RconPlayer
 {
 	public $name; ///< Name (dp encoded)
-	public $slot; ///< Player slot (used by kick at all)
+	public $slot; ///< Player slot number (used by kick et all)
 	public $ip;   ///< IP address/port
 	public $id;   ///< Player id (used by most rcon output regarding the payer)
 	public $ping; ///< Ping
