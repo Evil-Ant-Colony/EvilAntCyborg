@@ -209,7 +209,7 @@ class Rcon2Irc_NotifyAdmin_Troll extends Rcon2Irc_Executor
                         return true; // Can't find a unique player, so do nothing.
                 }
             }
-            $rcon->send("stuffto #$slot \"$punishment\"");
+            $rcon->send("stuffto #$slot \"{$this->punishment}\"");
         }
         else
         {
