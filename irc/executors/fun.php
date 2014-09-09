@@ -28,7 +28,16 @@ class Raw_Question extends RawCommandExecutor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
-		if ( $cmd->cmd == 'where' )
+		$question = $cmd->cmd;
+		if ( $question )
+		{
+			if ( substr($question,-1) == '?' )
+				$question = substr($question,0,-1);
+			if ( substr($question,-2) == "'s" )
+				$question = substr($question,0,-2);
+		}
+		
+		if ( $question == 'where' )
 		{
 			$param_string = urlencode("where ".$cmd->param_string());
 			$ll = "";
@@ -42,9 +51,9 @@ class Raw_Question extends RawCommandExecutor
 					  $response["results"][0]["geometry"]["location"]["lng"];
 			$bot->say($cmd->channel, "$name: https://maps.google.com/?$ll&q=$param_string");
 		}
-		else if ( $cmd->cmd == 'when' )
+		else if ( $question == 'when' )
 			$bot->say($cmd->channel, self::$fake_answers_when[rand(0,count(self::$fake_answers_when)-1)]);
-		else if ( $cmd->cmd == 'who' )
+		else if ( $question == 'who' ||  $question == 'whose' || $question == 'whom' )
 		{
 			$users = $bot->all_users();
 			$nick = $users[rand(0,count($users)-1)]->nick;
