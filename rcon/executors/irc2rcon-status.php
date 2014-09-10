@@ -30,7 +30,7 @@ class Irc2Rcon_Who extends Irc2Rcon_Executor
 	{
 		$player_manager = $this->data($data)->player;
 		$players = array();
-		foreach($player_manager->all_no_bots() as $player)
+		foreach($player_manager->all() as $player)
 		{
 			$players[]= Color::dp2irc($player->name);
 		}
@@ -88,26 +88,29 @@ class Irc2Rcon_Status extends Irc2Rcon_Executor
 				"ip address", "pl", "ping", "frags", "slot", "name" ), 16);
 			
 			$spects = 0;
+			$match = $cmd->param_string();
 			foreach($player_manager->all() as $player)
 			{
-				
-				$frags = $player->frags;
-				if ( $frags == "-666" )
+				if ( !$match || stripos(Color::dp2none($player->name),$match) !== false )
 				{
-					$frags = "spect";
-					if ( !$player->is_bot() )
-						$spects++;
+					$frags = $player->frags;
+					if ( $frags == "-666" )
+					{
+						$frags = "spect";
+						if ( !$player->is_bot() )
+							$spects++;
+					}
+					
+					$bot->say($channel,
+						sprintf("%-21s %2s %4s %5s  #%-2s %s",
+							$player->ip, 
+							$player->pl,
+							$player->ping,
+							$frags,
+							$player->slot,
+							Color::dp2irc($player->name)
+					), 16);
 				}
-				
-				$bot->say($channel,
-					sprintf("%-21s %2s %4s %5s  #%-2s %s",
-						$player->ip, 
-						$player->pl,
-						$player->ping,
-						$frags,
-						$player->slot,
-						Color::dp2irc($player->name)
-				), 16);
 			}
 			
 			

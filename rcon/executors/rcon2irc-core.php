@@ -396,7 +396,7 @@ class Rcon2Irc_Score_Inline extends Rcon2Irc_Score
 		{
 			$score_string = array();
 			foreach($this->player_scores as $p )
-				if ( $this->spectators )
+				if ( $p->team == 'spectator' )
 					$score_string[] = Color::dp2irc($p->name);
 			$bot->say($cmd->channel,implode(", ",$score_string),-1);
 		}

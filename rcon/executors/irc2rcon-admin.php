@@ -53,6 +53,33 @@ class Irc2Rcon_SingleCommand extends Irc2Rcon_Executor
 	}
 }
 
+/**
+ * \brief Execute the given command to a connected client
+ */
+class Irc2Rcon_Stuffto extends Irc2Rcon_Executor
+{
+	public $command;
+	
+	function __construct(Rcon $rcon, $trigger, $command, $auth='rcon-admin')
+	{
+		parent::__construct($rcon,$trigger,$auth,"$trigger #id","Execute $command on client #id");
+		$this->command = '"'.str_replace('"','\"',$command).'"';
+	}
+	
+	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
+	{
+		return count($cmd->params) >= 1 && parent::check($cmd,$bot,$data);
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		$id = $cmd->params[0];
+		if ( $id[0] != '#' )
+			$id = "#$id";
+		$this->rcon->send("stuffto $id {$this->command}");
+	}
+}
+
 
 /**
  * \brief Execute the given rcon command with arguments from irc, then follow with a list of fixed commands
