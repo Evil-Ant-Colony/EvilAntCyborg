@@ -62,7 +62,7 @@ class Irc2Rcon_Stuffto extends Irc2Rcon_Executor
 	
 	function __construct(Rcon $rcon, $trigger, $command, $auth='rcon-admin')
 	{
-		parent::__construct($rcon,$trigger,$auth,"$trigger #id","Execute $command on client #id");
+		parent::__construct($rcon,$trigger,$auth,"$trigger #slot","Execute $command on client #slot");
 		$this->command = '"'.str_replace('"','\"',$command).'"';
 	}
 	
