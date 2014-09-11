@@ -207,5 +207,19 @@ class BotData
 				$maybe[]= $user;
 		return $maybe;
 	}
+	
+	/**
+	 * \brief Get all users who have granted the rights of the given list
+	 */
+	function all_users_in_list($list)
+	{
+		$users = array();
+		if ( isset($this->lists[$list]) )
+			$users = $this->lists[$list];
+		if ( isset($this->grant_access[$list]) )
+			foreach($this->grant_access[$list] as $access )
+				$users = array_merge($users,$this->all_users_in_list($access));
+		return $users;
+	}
 
 }

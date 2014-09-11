@@ -335,11 +335,12 @@ class Executor_UserList extends CommandExecutor
 			else
 			{
 				$users = array();
-				foreach($driver->lists[$this->list] as $user)
+				foreach($driver->all_users_in_list($this->list) as $user)
 				{
-					$users []= $user->nick;
+					if ( $user->nick != ":STDIN:" )
+						$users []= $user->nick;
 				}
-				$bot->say($cmd->channel,implode(" ",$users));
+				$bot->say($cmd->channel,implode(" ",array_unique($users)));
 			}
 		}
 	}
