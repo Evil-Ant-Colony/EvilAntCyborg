@@ -312,7 +312,7 @@ class MelanoBot extends DataSource
 	private $users = array();  ///< Internal structure handling users seen by the bot (see below for access to this data)
 	public $join_list =array();///< List of channels scheduled to be joined
 	public $strip_colors=false;///< Whether IRC colors should be removed before command interpretation
-	public $auto_restart=false;///< Whether the bot always restarts on network quit. \todo only used elsewhere, maybe worth moving to data
+	public $auto_restart=false;///< Whether the bot always restarts on network quit.
 	private $channels =array();///< Channels the bot is currently connected to
 	public $buffer; ///< Buffer message to the server
 	public $connection_password = null; ///< PASS password
@@ -699,6 +699,7 @@ class MelanoBot extends DataSource
 			if ( strripos($data,'throttled') !== FALSE )
 			{
 				$this->reconnect("Throttled");
+				$this->auto_restart = false;
 				return null;
 			}
 			Logger::log("irc","!","\x1b[31m$data\x1b[0m",1);
