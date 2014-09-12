@@ -24,7 +24,6 @@ abstract class Executor_Whois_base extends CommandExecutor
 	{
 		if ( !isset($data->whois_queue) ) $data->whois_queue = array();
 		
-		
 		if ( $nick != $bot->nick && $nick != "Q" && ! in_array($nick, $data->whois_queue) )
 		{
 			$user = $bot->find_user_by_nick($nick);

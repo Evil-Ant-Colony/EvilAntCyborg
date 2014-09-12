@@ -635,7 +635,6 @@ class MelanoBot extends DataSource
 		if ( !is_array($channels) )
 			$channels = array($channels);
 		
-			
 		//$this->channels = array_unique(array_merge($this->channels,$channels));
 		foreach($channels as $channel)
 		{
@@ -767,7 +766,7 @@ class MelanoBot extends DataSource
 				case 'PART':
 					if ( $from == $this->nick )
 						$this->remove_channel($chan);
-					else if ( $user = $this->find_user_by_nick($from,$from_host) )
+					else if ( $user = $this->find_user_by_nick($from) )
 						$this->remove_user_from_channel($chan,$user);
 					$message = trim(substr($data,strpos($data,':',1)+1));
 					return new MelanoBotCommand($irc_cmd, array($message), $from, $from_host, $chan, $data, $irc_cmd);
@@ -784,7 +783,7 @@ class MelanoBot extends DataSource
 					return new MelanoBotCommand($irc_cmd, array($nick), $from, $from_host, $chans, $data, $irc_cmd);
 					break;
 				case 'QUIT':
-					$user = $this->find_user_by_nick($from,$from_host);
+					$user = $this->find_user_by_nick($from);
 					$chans = array();
 					if ( $user )
 					{

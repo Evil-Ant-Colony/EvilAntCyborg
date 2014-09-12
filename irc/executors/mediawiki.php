@@ -198,8 +198,6 @@ class Executor_Wiki_Opensearch extends CommandExecutor
 			$bot->say($cmd->channel, elide_string($reply->Section->Item->Description,400));
 		else
 		{
-			//echo "$url\n";
-			//print_r($reply);
 			$bot->say($cmd->channel, "I don't know anything about ".$cmd->param_string());
 		}
 	}

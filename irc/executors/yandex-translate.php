@@ -51,7 +51,6 @@ class Executor_YandexTranslate extends CommandExecutor
     
     function translate($lang,$text)
     {
-        echo "Translating $lang: $text\n";
         $transl = $this->call_api('translate',array('lang'=>$lang,'text'=>$text));
         if ( $transl["code"] != 200 )
             return null;
