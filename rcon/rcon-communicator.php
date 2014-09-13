@@ -258,6 +258,8 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 							$player->name) = array_splice($matches,1);
 						$players[]=$player;
 					}
+					else
+						Logger::log("dp","!","Unmatched player line: ".Color::dp2ansi($lines[$i]),0);
 				}
 				$this->data->player->set_players($players);
 			}
