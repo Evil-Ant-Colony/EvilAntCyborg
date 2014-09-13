@@ -44,6 +44,37 @@ class Rcon2Irc_Say extends Rcon2Irc_Executor
 }
 
 /**
+ * \brief Ban by nick
+ */
+class Rcon2Irc_BanNick extends Rcon2Irc_Executor
+{
+	public $banned = array();
+	public $case_sensitive = false;
+	
+	function __construct($banned)
+	{
+		parent::__construct("{^:join:(\d+):(\d+):((?:[0-9]+(?:\.[0-9]+){3})|(?:[[:xdigit:]](?::[[:xdigit:]]){7})):(.*)}");
+		$this->banned = $banned;
+	}
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		$player = new RconPlayer();
+		list ($id, $slot, $ip, $name) = array_splice($cmd->params,1);
+		
+		$name_plain = Color::dp2none($name);
+		foreach( $this->banned as $ban )
+			if ( stripos($name_plain,$ban) !== false )
+			{
+				$bot->say($cmd->channel,$rcon->out_prefix.Color::dp2irc($name)." ($ip) has been auto-banned",16);
+				$rcon->send("kickban #$slot");
+				break;
+			}
+		return false;
+	}
+}
+
+/**
  *
  * Format variables:
  *   - %name%     player name (colored)
@@ -101,7 +132,6 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
  */
 class Rcon2Irc_Join extends Rcon2Irc_JoinPart_Base
 {
-	
 	function __construct($format="\00309+ join\xf: %name% \00304%map%\xf [\00304%players%\xf/\00304%max%\xf]")
 	{
 		parent::__construct("{^:join:(\d+):(\d+):((?:[0-9]+(?:\.[0-9]+){3})|(?:[[:xdigit:]](?::[[:xdigit:]]){7})):(.*)}", $format);
