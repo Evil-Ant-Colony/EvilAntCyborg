@@ -59,7 +59,6 @@ class Rcon2Irc_BanNick extends Rcon2Irc_Executor
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
-		$player = new RconPlayer();
 		list ($id, $slot, $ip, $name) = array_splice($cmd->params,1);
 		
 		$name_plain = Color::dp2none($name);
