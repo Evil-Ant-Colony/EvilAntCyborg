@@ -41,7 +41,7 @@ class RconPlayer
 	 */
 	function geoip_record()
 	{
-		if ( self::$geoip != null && $this->ip )
+		if ( self::$geoip != null && $this->ip && function_exists("geoip_record_by_addr") )
 		{
 			// get IP address without port
 			$p = strpos($this->ip,':');
