@@ -102,7 +102,7 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 		$this->format = $format;
 	}
 	
-	protected string_replace($string,RconPlayer $player,Rcon_Communicator $rcon)
+	protected function string_replace($string,RconPlayer $player,Rcon_Communicator $rcon)
 	{
 		$gametype = isset($rcon->data->gametype) ? $rcon->data->gametype : "";
 		$geoip = $player->geoip_record();
