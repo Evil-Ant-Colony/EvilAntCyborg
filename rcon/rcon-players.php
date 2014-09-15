@@ -47,12 +47,7 @@ class RconPlayer
 			$p = strpos($this->ip,':');
 			$ip = $p ? substr($this->ip,0,$p) : $this->ip;
 			
-			@$record = geoip_record_by_addr(self::$geoip,$ip);
-			if ( $record && isset($GEOIP_REGION_NAME[$record->country_code][$record->region]) )
-			{
-				$record->region_name = $GEOIP_REGION_NAME[$record->country_code][$record->region];
-			}
-			return $record;
+			return @geoip_record_by_addr(self::$geoip,$ip);
 		}
 		return null;
 	}
