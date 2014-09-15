@@ -81,6 +81,7 @@ class Rcon2Irc_BanNick extends Rcon2Irc_Executor
  *   - %ip%       player IP address
  *   - %slot%     player slot
  *   - %country%  player country
+ *   - %region%   player region
  *   - %city%     player city
  *   - %players%  number of connected players (not bots)
  *   - %bots%     number of bots
@@ -117,6 +118,7 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 			'%free%'    => ($rcon->data->player->max-$rcon->data->player->count_players()),
 			'%map%'     => $rcon->data->map,
 			'%country%' => $geoip ? $geoip->country_name : $player->country(),
+			'%region%'  => $geoip ? $geoip->region : "",
 			'%city%'    => $geoip ? $geoip->city : "",
 			'%gametype%'=> $rcon->gametype_name($gametype),
 			'%gt%'      => $gametype,
