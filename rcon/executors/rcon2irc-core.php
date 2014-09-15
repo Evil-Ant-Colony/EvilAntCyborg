@@ -81,6 +81,7 @@ class Rcon2Irc_BanNick extends Rcon2Irc_Executor
  *   - %ip%       player IP address
  *   - %slot%     player slot
  *   - %country%  player country
+ *   - %city%     player city
  *   - %players%  number of connected players (not bots)
  *   - %bots%     number of bots
  *   - %total%    number of clients (players+bots)
@@ -101,11 +102,10 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 		$this->format = $format;
 	}
 	
-	protected function send_message(MelanoBot $bot,$channel,$player,Rcon_Communicator $rcon)
+	protected string_replace($string,RconPlayer $player,Rcon_Communicator $rcon)
 	{
-		if ( !$player || $player->is_bot() )
-			return;
 		$gametype = isset($rcon->data->gametype) ? $rcon->data->gametype : "";
+		$geoip = $player->geoip_record();
 		$values = array(
 			'%name%'    => Color::dp2irc($player->name),
 			'%ip%'      => $player->ip,
@@ -116,14 +116,21 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 			'%max%'     => $rcon->data->player->max,
 			'%free%'    => ($rcon->data->player->max-$rcon->data->player->count_players()),
 			'%map%'     => $rcon->data->map,
-			'%country%' => $player->country(),
+			'%country%' => $geoip ? $geoip->country_name : $player->country(),
+			'%city%'    => $geoip ? $geoip->city : "",
 			'%gametype%'=> $rcon->gametype_name($gametype),
 			'%gt%'      => $gametype,
 			'%sv_host%' => $rcon->data->hostname,
 			'%sv_ip%'   => $rcon->write_server,
 		);
-		$bot->say($channel,$rcon->out_prefix.
-			str_replace(array_keys($values),array_values($values),$this->format),1);
+		return str_replace(array_keys($values),array_values($values),$string);
+	}
+	
+	protected function send_message(MelanoBot $bot,$channel,$player,Rcon_Communicator $rcon)
+	{
+		if ( !$player || $player->is_bot() )
+			return;
+		$bot->say($channel,$rcon->out_prefix.$this->string_replace($this->format,$player,$rcon),1);
 	}
 }
 

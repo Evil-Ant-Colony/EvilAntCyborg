@@ -33,19 +33,34 @@ class RconPlayer
 	public $pl;   ///< Packet loss
 	public $frags;///< Score
 	public $time; ///< Time since they connected to the server
-	static $geoip;///< Whether GeoIP is installed
+	static $geoip;///< Result of geoip_open (or null if GeoIP is disabled)
+	
+	/**
+	 * \brief Get GeoIP record
+	 * \note Works only for IPv4 for now
+	 */
+	function geoip_record()
+	{
+		if ( self::$geoip != null && $this->ip )
+		{
+			// get IP address without port
+			$p = strpos($this->ip,':');
+			$ip = $p ? substr($this->ip,0,$p) : $this->ip;
+			
+			return @geoip_record_by_addr(self::$geoip,$ip);
+		}
+		return null;
+	}
 	
 	/**
 	 * \brief Extract country name from the player's IP address
 	 */
 	function country()
 	{
-		if ( self::$geoip && $this->ip )
+		if ( self::$geoip != null && $this->ip )
 		{
 			$p = strpos($this->ip,':');
 			$ip = $p ? substr($this->ip,0,$p) : $this->ip;
-			if ( self::$geoip === true )
-				return @geoip_country_name_by_name($ip);
 			return @geoip_country_name_by_addr(self::$geoip,$ip);
 		}
 		return "";
