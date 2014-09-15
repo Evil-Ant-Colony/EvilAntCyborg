@@ -43,11 +43,20 @@ class RconPlayer
 	{
 		if ( self::$geoip != null && $this->ip && function_exists("geoip_record_by_addr") )
 		{
+			global $GEOIP_REGION_NAME;
 			// get IP address without port
 			$p = strpos($this->ip,':');
 			$ip = $p ? substr($this->ip,0,$p) : $this->ip;
 			
-			return @geoip_record_by_addr(self::$geoip,$ip);
+			@$record = geoip_record_by_addr(self::$geoip,$ip);
+			if ( $record )
+			{
+				if ( isset($GEOIP_REGION_NAME[$record->country_code][$record->region]) )
+					$record->region_name = $GEOIP_REGION_NAME[$record->country_code][$record->region];
+				else
+					$record->region_name = "";
+			}
+			return $record;
 		}
 		return null;
 	}

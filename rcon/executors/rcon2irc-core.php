@@ -118,7 +118,7 @@ abstract class Rcon2Irc_JoinPart_Base extends Rcon2Irc_Executor
 			'%free%'    => ($rcon->data->player->max-$rcon->data->player->count_players()),
 			'%map%'     => $rcon->data->map,
 			'%country%' => $geoip ? $geoip->country_name : $player->country(),
-			'%region%'  => $geoip && isset($GEOIP_REGION_NAME[$geoip->country_code][$geoip->region]) ? $GEOIP_REGION_NAME[$geoip->country_code][$geoip->region] : "",
+			'%region%'  => $geoip ? $geoip->region_name : "",
 			'%city%'    => $geoip ? $geoip->city : "",
 			'%gametype%'=> $rcon->gametype_name($gametype),
 			'%gt%'      => $gametype,
