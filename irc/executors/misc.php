@@ -342,3 +342,44 @@ class Executor_Cointoss extends CommandExecutor
 		$bot->say($cmd->channel,$values[rand(0,count($values)-1)]);
 	}
 }
+
+
+/**
+ * \brief Geolocate (IPv4) up to city precision
+ */
+class Executor_GeoCity extends CommandExecutor
+{
+	public $geoip;
+	function __construct($geoip, $trigger="geolocate",$auth="admin")
+	{
+		parent::__construct($trigger,$auth,"$trigger IPv4address|hostname",
+			"Get geolocation info on the given address");
+		$this->geoip = $geoip;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	{
+		if ( count($cmd->params) == 0 )
+		{
+			$bot->say($cmd->channel,"No address...",16);
+			return;
+		}
+		foreach ( $cmd->params as $param )
+		{
+			if ( preg_match("{([0-9]+(:?\.[0-9]+){3})(?::[0-9]+)?}",$param,$matches) )
+				$ip = $matches[1];
+			else
+				$ip = gethostbyname($param);
+			
+			$record = geoip_record_by_addr($this->geoip, $ip);
+			if ( $record )
+				$bot->say($cmd->channel,"Address: $ip, ".
+					"Country: {$record->country_name} ({$record->country_code}), ".
+					"Region: {$record->region} (".$GEOIP_REGION_NAME[$record->country_code][$record->region]."), ".
+					"City: {$record->city}"
+					,16);
+			else
+				$bot->say($cmd->channel,"No info for address $param ($ip)",16);
+		}
+	}
+}
