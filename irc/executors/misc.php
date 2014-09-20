@@ -359,6 +359,7 @@ class Executor_GeoCity extends CommandExecutor
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
+		global $GEOIP_REGION_NAME;
 		if ( count($cmd->params) == 0 )
 		{
 			$bot->say($cmd->channel,"No address...",16);
