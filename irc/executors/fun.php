@@ -524,12 +524,6 @@ class Executor_ChuckNorris extends CommandExecutor
 
 class Raw_What extends RawCommandExecutor
 {
-	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
-	{
-		return $cmd->cmd != null;
-	}
-	
-	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
 		$bot->say($cmd->channel, "What?",-1 );

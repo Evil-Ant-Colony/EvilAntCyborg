@@ -111,7 +111,7 @@ abstract class RawCommandExecutor extends ExecutorBase
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $data)
 	{
-		return $cmd->cmd == null;
+		return $cmd->cmd == null && $this->check_auth($cmd->from,$cmd->host,$bot,$data);
 	}
 	
 	/// Show help about this command
@@ -161,6 +161,5 @@ abstract class Filter extends ExecutorBase
 /// Runs at the very beginning or at the very end
 abstract class StaticExecutor
 {
-	
 	abstract function execute( MelanoBot $bot, BotData $data);
 }

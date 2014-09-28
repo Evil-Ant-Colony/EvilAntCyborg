@@ -390,3 +390,36 @@ class Irc2Rcon_Autotranslate  extends Irc2Rcon_RawExecutor
 	}
 	
 }
+
+
+class Irc2Rcon_RawSay_Rainbow extends Irc2Rcon_RawExecutor
+{
+	public $say_command;
+	public $action_command;
+	
+	function __construct(Rcon $rcon, $auth="rainbow", $say_command='_ircmessage %s ^7: %s',$action_command='_ircmessage "^4*^3 %s" ^7 %s')
+	{
+		parent::__construct($rcon,$auth);
+		$this->say_command=$say_command;
+		$this->action_command = $action_command;
+	}
+	
+	function convert($text)
+	{
+		$text = Color::irc2none($text);
+		$out = "";
+		for ( $i = 0; $i < strlen($text); $i++ )
+			$out .= Color_12bit::from_hsv($i/strlen($text),0.75,1)->encode().$text[$i];
+		return $out;
+	}
+	
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
+	{
+		$text = str_replace(array('\\','"'),array('\\\\','\"'),$cmd->param_string());
+		if ( preg_match("{^\1ACTION ([^\1]*)\1$}", $text, $match) )
+			$this->rcon->send(sprintf($this->action_command,$cmd->from,$this->convert($match[1])));
+		else
+			$this->rcon->send(sprintf($this->say_command,$cmd->from,$this->convert($text)));
+	}
+}

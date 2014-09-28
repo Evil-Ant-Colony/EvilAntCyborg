@@ -511,7 +511,7 @@ class MelanoBot extends DataSource
 			$u->host = $host;
 		}
 		$u->add_channel($chan);
-		Logger::log("irc","!","\x1b[36m$nick \x1b[32mjoined\x1b[0m $chan");
+		Logger::log("irc","!","\x1b[36m$nick \x1b[32mjoined\x1b[0m $chan",0);
 	}
 	
 	/**
@@ -523,7 +523,7 @@ class MelanoBot extends DataSource
 			if ( $this->users[$i]->check_trust($user) )
 			{
 				array_splice($this->users,$i,1);
-				Logger::log("irc","!","\x1b[36m{$user->nick}\x1b[0m has been \x1b[31mremoved\x1b[0m");
+				Logger::log("irc","!","\x1b[36m{$user->nick}\x1b[0m has been \x1b[31mremoved\x1b[0m",0);
 				return;
 			}
 	}
@@ -540,7 +540,7 @@ class MelanoBot extends DataSource
 	private function remove_user_from_channel($chan,IRC_User $user)
 	{
 		$user->remove_channel($chan);
-		Logger::log("irc","!","\x1b[36m{$user->nick} \x1b[31mparted\x1b[0m $chan");
+		Logger::log("irc","!","\x1b[36m{$user->nick} \x1b[31mparted\x1b[0m $chan",0);
 		if ( empty($user->channels) )
 			$this->remove_user($user);
 			
@@ -555,7 +555,7 @@ class MelanoBot extends DataSource
 		if ( $u )
 		{
 			$u->nick = $new;
-			Logger::log("irc","!","Updated nick ($old->$new)");
+			Logger::log("irc","!","Updated nick ($old->$new)",0);
 			return $u;
 		}
 		return null;

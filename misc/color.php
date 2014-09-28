@@ -19,7 +19,7 @@
  */
 
 /**
- * \brief Store a color code and convert colored strings
+ * \brief Store a color code and convert colored strings (4 bit color depth)
  */
 class Color
 {
@@ -400,4 +400,122 @@ class Color
 function irc_action($msg)
 {
 	return "\1ACTION $msg\1";
+}
+
+
+
+/**
+ * \brief Simple, 12 bit rgb color
+ */
+class Color_12bit
+{
+	public $r, $g, $b;
+	
+	function __construct ($r=0, $g=0, $b=0)
+	{
+		$this->r = $r;
+		$this->g = $g;
+		$this->b = $b;
+	}
+	
+	/**
+	 * \brief Get the 12bit integer
+	 */
+	function bitmask()
+	{
+		return ($this->r<<8)|($this->g<<4)|$this->b;
+	}
+	
+	/**
+	 * \brief Encode to darkplaces
+	 */
+	function encode()
+	{
+		switch ( $this->bitmask() )
+		{
+			case 0x000: return "^0";
+			case 0xf00: return "^1";
+			case 0x0f0: return "^2";
+			case 0xff0: return "^3";
+			case 0x00f: return "^4";
+			case 0xf0f: return "^6";
+			case 0x0ff: return "^5";
+			case 0xfff: return "^7";
+		}
+			
+		return "^x".dechex($this->r).dechex($this->g).dechex($this->b);
+	}
+	
+	/**
+	 * \brief Decode darkplaces color
+	 */
+	static function decode($dpcolor)
+	{
+		$dpcolor = ltrim($dpcolor,"^x");
+		
+		if ( strlen($dpcolor) == 3 )
+			return new Color_12bit(hexdec($dpcolor[0]),hexdec($dpcolor[1]),hexdec($dpcolor[2]));
+		else if ( strlen($dpcolor) == 1 )
+			switch ( $dpcolor[0])
+			{
+				case 0: return new Color_12bit(0,0,0);
+				case 1: return new Color_12bit(0xf,0,0);
+				case 2: return new Color_12bit(0,0xf,0);
+				case 3: return new Color_12bit(0xf,0xf,0);
+				case 4: return new Color_12bit(0,0,0xf);
+				case 5: return new Color_12bit(0,0xf,0xf);
+				case 6: return new Color_12bit(0xf,0,0xf);
+				case 7: return new Color_12bit(0xf,0xf,0xf);
+				case 8:
+				case 9: return new Color_12bit(0x8,0x8,0x8);
+			}
+		return new Color_12bit();
+	}
+	
+	/**
+	 * \brief Blend two colors together
+	 * \param $c1 First color
+	 * \param $c2 Second color
+	 * \param $factor Blend factor 0 => \c $c1, 1 => \c $c2
+	 */
+	static function blend(Color_12bit $c1, Color_12bit $c2, $factor)
+	{
+		return new Color_12bit(round($c1->r*(1-$factor) + $c2->r*$factor),
+		                       round($c1->g*(1-$factor) + $c2->g*$factor),
+		                       round($c1->b*(1-$factor) + $c2->b*$factor));
+	}
+	
+	/**
+	 * \brief Get a color from HSV components in [0,1]
+	 */
+	static function from_hsv($h,$s,$v)
+	{
+		
+		$h *= 6;
+		$c = $v*$s;
+		$m = $v-$c;
+		
+		$h1 = floor($h);
+		$f = $h - $h1;
+		
+		$n = $v - $c * $f;
+		$k = $v - $c * (1 - $f);
+		
+		$v = round($v*0xf);
+		$m = round($m*0xf);
+		$n = round($n*0xf);
+		$k = round($k*0xf);
+		
+		switch ($h1) 
+		{
+			case 0: return new Color_12bit($v,$k,$m);
+			case 1: return new Color_12bit($n,$v,$m);
+			case 2: return new Color_12bit($m,$v,$k);
+			case 3: return new Color_12bit($m,$n,$v);
+			case 4: return new Color_12bit($k,$m,$v);
+			case 6:
+			case 5: return new Color_12bit($v,$m,$n);
+		}
+		return new Color_12bit();
+	}
 }
