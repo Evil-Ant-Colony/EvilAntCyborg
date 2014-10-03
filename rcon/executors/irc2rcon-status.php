@@ -201,7 +201,7 @@ class Irc2Rcon_Server extends Irc2Rcon_Executor
 {
 	function __construct(Rcon $rcon, $trigger="server", $auth=null)
 	{
-		parent::__construct($rcon,$trigger,$auth,"$trigger [ip|stats|game]","Show server information");
+		parent::__construct($rcon,$trigger,$auth,"$trigger [ip|stats|game|status]","Show server information");
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
@@ -227,7 +227,9 @@ class Irc2Rcon_Server extends Irc2Rcon_Executor
 					$gametype = Rcon_Communicator::gametype_name($rcon_data->gametype);
 				$bot->say($cmd->channel,$this->out_prefix()."Playing \00310$gametype\017 on \00304{$rcon_data->map}\017");
 				break;
-				
+			case 'status':
+				$bot->say($cmd->channel,$this->out_prefix().($this->comm->is_connected()?"\00303Server is running\xf":"\00304Server is not connected\xf"),16);
+				break;
 				
 		}
 	}
