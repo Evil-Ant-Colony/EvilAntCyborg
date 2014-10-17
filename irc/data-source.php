@@ -26,6 +26,7 @@ require_once("irc/irc-user.php");
  */
 class MelanoBotCommand
 {
+	public $bot,    ///< Bot instance that generated this command
 	public $cmd;    ///< Explicit command for input like (Botnick: command options), null for "raw" messages
 	public $params; ///< Array containing all the arguments (ie: input string broken into words)
 	public $from;   ///< Nick of the user who generated this command

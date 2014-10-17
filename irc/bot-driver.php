@@ -144,6 +144,7 @@ class BotDriver
 		{
 			$cmd = $src->get_command();
 				
+			$cmd->bot = $this->bot;
 			if ( $cmd != null && $this->filter($cmd) )
 			{
 				Logger::instance()->plain_log(print_r($cmd,true),4);

@@ -614,6 +614,23 @@ class MelanoBot extends DataSource
 	}
 	
 	/**
+	 * \brief Send a message to the given channel (or user)
+	 * \see command() for generic IRC commands
+	 * \todo Handle when \c $channel is an array?
+	 */
+	function say($channel,$msg,$priority=0)
+	{
+		if ( strlen($msg) == 0 )
+			return;
+		if ( $channel != $this->nick )
+		{
+			$this->command("PRIVMSG","$channel :$msg",$priority);
+		}
+		else
+			Logger::log("irc","!","ERROR: trying to send a message to myself",1);
+	}
+	
+	/**
 	 * \brief Execute a command right away
 	 */
 	private function internal_command($command,$data)
@@ -856,22 +873,6 @@ class MelanoBot extends DataSource
 		return null;
 		
 		
-	}
-	
-	/**
-	 * \brief Send a message to the given channel (or user)
-	 * \see command() for generic IRC commands
-	 */
-	function say($channel,$msg,$priority=0)
-	{
-		if ( strlen($msg) == 0 )
-			return;
-		if ( $channel != $this->nick )
-		{
-			$this->command("PRIVMSG","$channel :$msg",$priority);
-		}
-		else
-			Logger::log("irc","!","ERROR: trying to send a message to myself",1);
 	}
 	
 	/**

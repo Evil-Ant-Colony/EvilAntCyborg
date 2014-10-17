@@ -24,7 +24,8 @@ require_once("misc/logger.php");
  */
 abstract class ExecutorBase
 {
-	public $auth;
+	public $auth;    ///< Authorized user group name
+	public $priority = 0;///< Message priority
 	
 	/// Check that the user can run the executor
 	function check_auth($nick,$host,MelanoBot $bot, BotData $data)
@@ -52,6 +53,30 @@ abstract class ExecutorBase
 	
 	/// whether the command may be executed again
 	function keep_running() { return false; }
+	
+	/**
+	 * \brief Execute an IRC command
+	 * \param $cmd     Originating bot command
+	 * \param $command IRC command name
+	 * \param $data    IRC command arguments
+	 * \param $priority_delta How much the priority needs to be changed
+	 */
+	function bot_command(MelanoBotCommand $cmd, $command, $data, $priority_delta = 0)
+	{
+		$cmd->bot->command($command,$data,$this->priority+$priority_delta);
+	}
+	
+	/**
+	 * \brief Send an IRC message
+	 * \param $cmd     Originatign bot command
+	 * \param $string  Mesage
+	 * \param $priority_delta How much the priority needs to be changed
+	 * \note The message will be sent to the channel(s) \c $cmd comes from
+	 */
+	function bot_command(MelanoBotCommand $cmd, $string, $priority_delta = 0)
+	{
+		$cmd->bot->say($cmd->channel,$data,$this->priority+$priority_delta);
+	}
 }
 
 /**
