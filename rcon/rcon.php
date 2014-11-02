@@ -144,7 +144,7 @@ class Rcon
 			if ( !$cpacket->valid )
 				return null;
 			$challenge = $cpacket->payload;
-			Logger::log("dp",">","Challenge $challenge",5);
+			//Logger::log("dp",">","Challenge $challenge",5);
 			$key = hash_hmac("md4","$challenge $command", $this->password, true );
 			$payload = "srcon HMAC-MD4 CHALLENGE $key $challenge $command";
 		}
@@ -156,7 +156,6 @@ class Rcon
 		}
 		else
 			$payload = "rcon {$this->password} $command";
-		Logger::log("dp","<",Color::dp2ansi($command),0);
 		$packet = new Rcon_Packet($payload,$this->write);
 		$packet->send($this->socket);
 		return $packet;

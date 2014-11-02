@@ -105,6 +105,8 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	function send($command)
 	{
 		$this->rcon->send($command);
+		if ( !$this->suppress_output )
+			Logger::log("dp","<",Color::dp2ansi($command),0);
 	}
 	
 	function __construct($channel,Rcon $rcon,$prefix=null,$first_poll_time=0)
