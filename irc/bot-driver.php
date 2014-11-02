@@ -143,15 +143,17 @@ class BotDriver
 		foreach ( $this->data_sources as $src )
 		{
 			$cmd = $src->get_command();
-				
-			$cmd->bot = $this->bot;
-			if ( $cmd != null && $this->filter($cmd) )
+			if ( $cmd != null )
 			{
-				Logger::instance()->plain_log(print_r($cmd,true),4);
-				foreach($this->dispatchers as $disp)
+				$cmd->bot = $this->bot;
+				if (  $this->filter($cmd) )
 				{
-					if ( $disp->loop_step($cmd,$this->bot,$this->data) )
-						break;
+					Logger::instance()->plain_log(print_r($cmd,true),4);
+					foreach($this->dispatchers as $disp)
+					{
+						if ( $disp->loop_step($cmd,$this->bot,$this->data) )
+							break;
+					}
 				}
 			}
 		}

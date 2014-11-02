@@ -73,7 +73,7 @@ abstract class ExecutorBase
 	 * \param $priority_delta How much the priority needs to be changed
 	 * \note The message will be sent to the channel(s) \c $cmd comes from
 	 */
-	function bot_command(MelanoBotCommand $cmd, $string, $priority_delta = 0)
+	function bot_say(MelanoBotCommand $cmd, $string, $priority_delta = 0)
 	{
 		$cmd->bot->say($cmd->channel,$data,$this->priority+$priority_delta);
 	}
