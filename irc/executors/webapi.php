@@ -126,15 +126,10 @@ class Raw_Youtube extends RawCommandExecutor
 			if ( isset($response["entry"]['media$group']['yt$duration']['seconds']) )
 			{
 				$seconds = (int) $response["entry"]['media$group']['yt$duration']['seconds'];
-				$minutes = floor($seconds / 60);
-				$seconds %= 60;
-				$duration = "$minutes:$seconds";
-				if ( $minutes >= 60 )
-				{
-					$hours = floor($minutes / 60);
-					$minutes %= 60;
-					$duration = "$hours:$minutes:$seconds";
-				}
+				if ( $seconds >= 60*60 )
+					$duration = date("H:i:s",$seconds);
+				else
+					$duration = date("i:s",$seconds);
 				$duration = " (\002$duration\xf)";
 			}
 				
