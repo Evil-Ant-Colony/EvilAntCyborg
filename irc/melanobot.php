@@ -316,6 +316,7 @@ class MelanoBot extends DataSource
 	private $channels =array();///< Channels the bot is currently connected to
 	public $buffer; ///< Buffer message to the server
 	public $connection_password = null; ///< PASS password
+	public $server_features = array(); /// 005 RPL_ISUPPORT values
 	
 	/**
 	 * \brief Create a bot
@@ -350,6 +351,7 @@ class MelanoBot extends DataSource
 			$this->servers[$i]->connect();
 			if ( $this->servers[$i]->connected() )
 			{
+				$this->server_features = array();
 				$this->connection_status = self::SERVER_CONNECTED;
 				$this->server_index = $i;
 				$this->buffer->server = $this->servers[$i];
@@ -727,9 +729,20 @@ class MelanoBot extends DataSource
 			$this->auth();
 			
 		}
-		
-		
-		if ( $insize > 5 && $inarr[1] == 353 )
+		else if ( $inarr[1] == 005 )
+		{
+			for ( $i = 3; $i < $insize; $i++ )
+			{
+				$feature = $inarr[$i];
+				if ( !$feature || $feature[0] == ":" )
+					break;
+				$feature = explode("=",$feature);
+				if ( count($feature) == 1 )
+					$feature[1] = true;
+				$this->server_features[$feature[0]] = $feature[1];
+			}
+		}
+		else if ( $insize > 5 && $inarr[1] == 353 )
 		{
 			$chan = $inarr[4];
 			foreach ( $this->users as $u )
