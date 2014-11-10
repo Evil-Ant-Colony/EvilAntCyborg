@@ -333,6 +333,7 @@ class Rcon_Communicator extends BotCommandDispatcher implements ExternalCommunic
 	/**
 	 * \brief Restore old sv_adminnick
 	 * \sa set_sv_adminnick()
+	 * \todo maybe it can be used a s a non-static function?
 	 */
 	static function restore_sv_adminnick($rcon_data)
 	{
