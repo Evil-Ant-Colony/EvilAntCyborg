@@ -102,7 +102,7 @@ class Executor_Q_GetWhois extends Executor_Whois_base
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $data)
 	{
-		static $nickre = "[-_A-Za-z0-9{}^<>\[\]\\\\]+";
+		static $nickre = "[-_A-Za-z0-9{}^<>\[\]\\\\`]+";
 		// whois
 		if ( preg_match("{-Information for user ([^ ]+) \(using account ([^ )]+)\):}",$cmd->params[0],$matches) )
 		{
