@@ -148,6 +148,8 @@ function create_communicator($driver, $channel, Rcon $rcon,$prefix)
 	new Rcon2Irc_HostError(),
 	
 // RCON -> IRC chat
+	// display the irc channel when players say "!irc"
+	new Rcon2Irc_ShowIRC(), 
 	// plain chat
 	new Rcon2Irc_Say(),
 	

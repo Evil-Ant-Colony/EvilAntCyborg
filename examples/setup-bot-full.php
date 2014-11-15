@@ -243,6 +243,8 @@ function rcon_comm($driver, Rcon $rcon,$channel,$prefix)
 	new Rcon2Irc_HostError(),
 	
 // RCON -> IRC chat
+	// display the irc channel when players say "!irc"
+	new Rcon2Irc_ShowIRC(), 
 	// plain chat
 	new Rcon2Irc_Say(),
 	// handle /me chats in the ESK mod pack
