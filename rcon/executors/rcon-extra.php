@@ -438,8 +438,13 @@ class Rcon2Irc_ShowIRC extends Rcon2Irc_Executor
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
 		Rcon_Communicator::set_sv_adminnick($rcon->data,$bot->nick);
-		/// \todo some way to show the network name?
-		$rcon->send("say \"^2{$rcon->channel}^3 (^5".$bot->current_server()."^3)\"");
+		
+		if ( !empty($bot->server_features["NETWORK"]) )
+			$server = $bot->server_features["NETWORK"];
+		else
+			$server = (string) $bot->current_server();
+			
+		$rcon->send("say \"^2{$rcon->channel}^3 (^5$server^3)\"");
 		Rcon_Communicator::restore_sv_adminnick($rcon->data);
 		return true;
 	}
