@@ -101,30 +101,30 @@ class Executor_RespondKick extends CommandExecutor
 
 class Raw_Echo extends RawCommandExecutor
 {
-	public $phrase, $phrase_norm, $trim, $auth;
+	public $response, $phrase, $trim, $auth;
 	
 	function normalize($string)
 	{
 		return strtolower(trim(trim($string),$this->trim));
 	}
 	
-	function __construct($phrase, $trim, $auth)
+	function __construct($phrase, $trim, $auth, $response = null)
 	{
-		$this->phrase = $phrase;
+		$this->response = empty($response) ? $phrase : $response;
 		$this->trim = $trim;
 		$this->auth = $auth;
-		$this->phrase_norm = $this->normalize($phrase);
+		$this->phrase = $this->normalize($phrase);
 	}
 	
 	function check(MelanoBotCommand $cmd,MelanoBot $bot,BotData $driver)
 	{
-		return $cmd->cmd == null && $this->normalize($cmd->param_string(true)) == $this->phrase_norm && 
+		return $cmd->cmd == null && $this->normalize($cmd->param_string(true)) == $this->phrase && 
 			$this->check_auth($cmd->from,$cmd->host,$bot,$driver);
 	}
 	
 	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
 	{
-		$bot->say($cmd->channel,$this->phrase);
+		$bot->say($cmd->channel,$this->response);
 	}
 }
 
