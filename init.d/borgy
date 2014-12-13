@@ -1,0 +1,44 @@
+#!/bin/bash
+
+DIR=~/src/Melanobot
+TMUX_SESSION=evil
+
+function borgy_start()
+{
+        echo 'Starting Borgy...'
+        if ! tmux has -t $TMUX_SESSION 2>/dev/null
+        then
+                tmux new -d -s $TMUX_SESSION
+        fi
+        tmux send-keys -t $TMUX_SESSION Enter "cd $DIR; " Enter "./run-bot.sh " Enter
+}
+
+function borgy_stop()
+{
+        if tmux has -t $TMUX_SESSION 2>/dev/null
+        then
+                echo 'Quitting Borgy...'
+                tmux send-keys -t $TMUX_SESSION Enter quit Enter
+        else
+                echo "Borgy wasn't running"
+        fi
+}
+
+case "$1" in
+        start)
+                borgy_start
+                ;;
+        stop)
+                borgy_stop
+                ;;
+        restart)
+                borgy_stop
+                sleep 1
+                borgy_start
+                ;;
+	help)
+		echo "$0 start|stop|restart - Start/stop IRC bot"
+		;;
+esac
+
+
