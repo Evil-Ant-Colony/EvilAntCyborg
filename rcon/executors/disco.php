@@ -87,3 +87,45 @@ class Rcon2Irc_AutoDisco_NoVotes extends Rcon2Irc_Executor
 		return false;
 	}
 }
+
+class Rcon2Irc_KickDisco_Join extends Rcon2Irc_Executor
+{	
+	function __construct()
+	{
+		parent::__construct("{^:join:(\d+):(\d+):((?:[0-9]+(?:\.[0-9]+){3})|(?:[[:xdigit:]](?::[[:xdigit:]]){7})):(.*)}");
+	}
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		$player = new RconPlayer();
+		list ($player->id, $player->slot, $player->ip, $player->name) = array_splice($cmd->params,1);
+		
+		if ( is_disco($player) )
+		{
+			$bot->say($cmd->channel,$rcon->out_prefix.Color::dp2irc($player->name)." #{$player->slot} ({$player->ip}) has been kicked (Disco)",1024);
+			$rcon->send("kick # {$player->slot}");
+		}
+		return false;
+	}
+}
+
+class Rcon2Irc_KickDisco_MatchStart extends Rcon2Irc_Executor
+{
+	function __construct()
+	{
+		parent::__construct("{(^:gamestart:([a-z]+)_(.*):[0-9.]*)|(^:startdelay_ended)}");
+	}
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		foreach ( $rcon->data->player->all() as $player )
+		{
+			if ( is_disco($player) )
+			{
+				$bot->say($cmd->channel,$rcon->out_prefix.Color::dp2irc($player->name)." #{$player->slot} ({$player->ip}) has been kicked (Disco)",16);
+				$rcon->send("kick # {$player->slot}");
+			}
+		}
+		return false;
+	}
+}
