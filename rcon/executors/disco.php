@@ -104,6 +104,7 @@ class Rcon2Irc_KickDisco_Join extends Rcon2Irc_Executor
 		{
 			$bot->say($cmd->channel,$rcon->out_prefix.Color::dp2irc($player->name)." #{$player->slot} ({$player->ip}) has been kicked (Disco)",1024);
 			$rcon->send("kickban #{$player->slot}");
+			unset($player->is_disco);
 		}
 		return false;
 	}
@@ -123,7 +124,8 @@ class Rcon2Irc_KickDisco_MatchStart extends Rcon2Irc_Executor
 			if ( is_disco($player) )
 			{
 				$bot->say($cmd->channel,$rcon->out_prefix.Color::dp2irc($player->name)." #{$player->slot} ({$player->ip}) has been kicked (Disco)",16);
-				$rcon->send("kick # {$player->slot}");
+				$rcon->send("kickban # {$player->slot}");
+				unset($player->is_disco);
 			}
 		}
 		return false;
