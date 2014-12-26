@@ -522,7 +522,7 @@ class MelanoBot extends DataSource
 	private function remove_user(IRC_User $user)
 	{
 		for ( $i = 0; $i < count($this->users); $i++ )
-			if ( $this->users[$i]->check_trust($user) )
+			if ( $this->users[$i]->nick == $user->nick )
 			{
 				array_splice($this->users,$i,1);
 				Logger::log("irc","!","\x1b[36m{$user->nick}\x1b[0m has been \x1b[31mremoved\x1b[0m",0);
