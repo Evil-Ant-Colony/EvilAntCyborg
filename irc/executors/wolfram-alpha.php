@@ -37,6 +37,9 @@ class Executor_WolframAlpha_Text  extends WolframAlpha
         
 		$xml = $this->get_xml($cmd->param_string(false));
 		
+		if ( !$xml )
+			return;
+		
 		$attr = $xml->attributes();
 		if ( $attr['error'] == 'true' )
 		{
