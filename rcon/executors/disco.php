@@ -88,7 +88,25 @@ class Rcon2Irc_AutoDisco_NoVotes extends Rcon2Irc_Executor
 	}
 }
 
-class Rcon2Irc_KickDisco_Join extends Rcon2Irc_Executor
+abstract class Rcon2Irc_KickDisco_Base extends Rcon2Irc_Executor
+{
+	function __construct($regex) 
+	{
+		parent::__construct($regex);
+	}
+	
+	function maybe_kick(RconPlayer $player, Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon) 
+	{
+		if ( is_disco($player) )
+		{
+			$bot->say($cmd->channel,$rcon->out_prefix.Color::dp2irc($player->name)." #{$player->slot} ({$player->ip}) has been kicked (Disco)",1024);
+			$rcon->send("kickban #{$player->slot}");
+			unset($player->is_disco);
+		}
+	}
+}
+
+class Rcon2Irc_KickDisco_Join extends Rcon2Irc_KickDisco_Base
 {	
 	function __construct()
 	{
@@ -99,18 +117,28 @@ class Rcon2Irc_KickDisco_Join extends Rcon2Irc_Executor
 	{
 		$player = new RconPlayer();
 		list ($player->id, $player->slot, $player->ip, $player->name) = array_splice($cmd->params,1);
-		
-		if ( is_disco($player) )
-		{
-			$bot->say($cmd->channel,$rcon->out_prefix.Color::dp2irc($player->name)." #{$player->slot} ({$player->ip}) has been kicked (Disco)",1024);
-			$rcon->send("kickban #{$player->slot}");
-			unset($player->is_disco);
-		}
+		$this->maybe_kick($player,$cmd,$bot,$rcon);
 		return false;
 	}
 }
 
-class Rcon2Irc_KickDisco_MatchStart extends Rcon2Irc_Executor
+class Rcon2Irc_KickDisco_Bancheck extends Rcon2Irc_KickDisco_Base
+{	
+	function __construct()
+	{
+		parent::__construct("{^:bancheck:(\d+):(\d+):\[([^]]+)\]:\d:(.*)}");
+	}
+	
+	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
+	{
+		$player = new RconPlayer();
+		list ($player->id, $player->slot, $player->ip, $player->name) = array_splice($cmd->params,1);
+		$this->maybe_kick($player,$cmd,$bot,$rcon);
+		return false;
+	}
+}
+
+class Rcon2Irc_KickDisco_MatchStart extends Rcon2Irc_KickDisco_Base
 {
 	function __construct()
 	{
@@ -121,12 +149,7 @@ class Rcon2Irc_KickDisco_MatchStart extends Rcon2Irc_Executor
 	{
 		foreach ( $rcon->data->player->all() as $player )
 		{
-			if ( is_disco($player) )
-			{
-				$bot->say($cmd->channel,$rcon->out_prefix.Color::dp2irc($player->name)." #{$player->slot} ({$player->ip}) has been kicked (Disco)",16);
-				$rcon->send("kickban # {$player->slot}");
-				unset($player->is_disco);
-			}
+			$this->maybe_kick($player,$cmd,$bot,$rcon);
 		}
 		return false;
 	}
