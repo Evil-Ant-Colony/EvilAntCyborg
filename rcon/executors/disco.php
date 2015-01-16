@@ -110,45 +110,13 @@ class Rcon2Irc_KickDisco_Join extends Rcon2Irc_KickDisco_Base
 {	
 	function __construct()
 	{
-		parent::__construct("{^:join:(\d+):(\d+):((?:[0-9]+(?:\.[0-9]+){3})|(?:[[:xdigit:]](?::[[:xdigit:]]){7})):(.*)}");
+		parent::__construct("{^:(?:join|connect):(\d+):(\d+):((?:[0-9]+(?:\.[0-9]+){3})|(?:[[:xdigit:]](?::[[:xdigit:]]){7})):(.*)}");
 	}
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
 	{
 		$player = new RconPlayer();
 		list ($player->id, $player->slot, $player->ip, $player->name) = array_splice($cmd->params,1);
-		$this->maybe_kick($player,$cmd,$bot,$rcon);
-		return false;
-	}
-}
-
-class Rcon2Irc_KickDisco_Bancheck extends Rcon2Irc_KickDisco_Base
-{	
-	function __construct()
-	{
-		parent::__construct("{^:bancheck:(\d+):(\d+):\[([^]]+)\]:\d:(.*)}");
-	}
-	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
-	{
-		$player = new RconPlayer();
-		list ($player->id, $player->slot, $player->ip, $player->name) = array_splice($cmd->params,1);
-		$this->maybe_kick($player,$cmd,$bot,$rcon);
-		return false;
-	}
-}
-
-class Rcon2Irc_KickDisco_DpConnect extends Rcon2Irc_KickDisco_Base
-{	
-	function __construct()
-	{
-		parent::__construct("{^:connect:(\d+):\[([^]]+)\]:\d:(.*)}");
-	}
-	
-	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
-	{
-		$player = new RconPlayer();
-		list ($player->slot, $player->ip, $player->name) = array_splice($cmd->params,1);
 		$this->maybe_kick($player,$cmd,$bot,$rcon);
 		return false;
 	}
