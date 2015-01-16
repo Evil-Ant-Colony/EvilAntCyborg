@@ -376,6 +376,7 @@ class Executor_RenderPony extends CommandExecutor
 	static public $ponies = array(
 		'applejack' => 'applejack-nohat',
 		'big' => 'big-mac',
+		'cadance' => 'cadance',
 		'celestia' => 'celestia',
 		'derpy' => 'derpy',
 		'fluttershy' => 'fluttershy',
