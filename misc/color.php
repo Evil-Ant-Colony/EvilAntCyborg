@@ -368,9 +368,10 @@ class Color
 			}
 			else 
 			{
+				// Start of multibyte character
+				// NOTE: the only one not starting with 0 or 10
 				if ( count($bytes) == 0 )
 				{
-					// Start of multibyte character
 					$unicode_char = "";
 					$length = 0;
 					// extract number of leading 1s
@@ -393,6 +394,7 @@ class Color
 				$unicode_char .= $c;
 				
 				// Reached the end
+				// NOTE: checking for $length ensures that invalid utf-8 codes are discarded
 				if ( count( $bytes ) == $length )
 				{
 					$unicode = 0;
@@ -400,7 +402,7 @@ class Color
 					{
 						// Add up all the bytes 
 						// Besides the first, they all start with 01... 
-						// So they give 6 bytes and need to be &-ed with 63
+						// So they give 6 bits and need to be &-ed with 63
 						$unicode <<= 6;
 						$unicode |= $byte & 63;
 					}
