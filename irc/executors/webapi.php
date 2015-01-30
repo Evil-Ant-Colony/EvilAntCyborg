@@ -465,3 +465,30 @@ class Executor_Autotranslate  extends RawCommandExecutor
 	}
 	
 }
+
+class Executor_Searx extends CommandExecutor
+{
+	public $base_url;
+	function __construct($base_url, $trigger="search")
+	{
+		parent::__construct($trigger,null,"$trigger Term...",
+		"Search Term (Using $base_url)");
+		$this->base_url = $base_url;
+	}
+	
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	{
+        $url="{$this->base_url}?format=json&q=".urlencode($cmd->param_string());
+        $response = json_decode(file_get_contents($url),true);
+        if ( isset($response["results"][0]) )
+        {
+            $bot->say($cmd->channel, $response["results"][0]["title"].": ".$response["results"][0]["url"]);
+            $bot->say($cmd->channel, elide_string(str_replace(array("\n","\r")," ",$response["results"][0]["content"]),400) );
+        }
+        else
+        {
+			$bot->say($cmd->channel, "Didn't find anything about ".$cmd->param_string());
+            //print_r($response);
+		}
+	}
+}

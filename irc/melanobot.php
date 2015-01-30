@@ -729,7 +729,7 @@ class MelanoBot extends DataSource
 			$this->auth();
 			
 		}
-		else if ( $inarr[1] == 005 )
+		else if ( $insize > 1 && $inarr[1] == 005 )
 		{
 			for ( $i = 3; $i < $insize; $i++ )
 			{
