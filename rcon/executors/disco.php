@@ -110,7 +110,7 @@ class Rcon2Irc_KickDisco_Join extends Rcon2Irc_KickDisco_Base
 {	
 	function __construct()
 	{
-		parent::__construct("{^:(?:join|connect):(\d+):(\d+):((?:[0-9]+(?:\.[0-9]+){3})|(?:[[:xdigit:]](?::[[:xdigit:]]){7})):(.*)}");
+		parent::__construct("{^:(?:join|connect):(\d+):(\d+):((?:[0-9]+(?:\.[0-9]+){3})|(?:[[:xdigit:]](?::[[:xdigit:]]){7}))(?::(.*))}");
 	}
 	
 	function execute(Rcon_Command $cmd, MelanoBot $bot, Rcon_Communicator $rcon)
