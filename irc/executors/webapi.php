@@ -492,3 +492,59 @@ class Executor_Searx extends CommandExecutor
 		}
 	}
 }
+
+class Executor_WeatherUnderground extends CommandExecutor
+{
+	public $base_url = "http://api.wunderground.com/auto/wui/geo/WXCurrentObXML/index.xml?query=";
+	
+	function __construct($trigger="weather")
+	{
+		parent::__construct($trigger,null,"$trigger Location",
+		"Get weather info (Using Weather Underground)");
+	}
+	
+	private function get_parameter(DOMXpath $dom_xpath, $query, &$output, $suffix)
+	{
+		$nodes = $dom_xpath->query($query);
+		if ( $nodes )
+		{
+			foreach ($nodes as $node) 
+			{
+				if ( $node->textContent )
+				{
+					$output []= $node->textContent.$suffix;
+					return;
+				}
+			}
+		}
+	}
+
+	function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+	{
+		$url=$this->base_url.urlencode($cmd->param_string());
+		
+		$doc = new DOMDocument();
+		$doc->strictErrorChecking = false;
+		$doc->recover = true;
+		if ( !$doc->load($url) )
+		{
+			Logger::log("sys","!","Error loading $url");
+			return;
+		}
+		
+		
+		$dom_xpath = new DOMXpath($doc);
+		
+		$weather = array();
+		
+		$this->get_parameter($dom_xpath,"//weather",$weather,"");
+		$this->get_parameter($dom_xpath,"//temp_c", $weather,"°C");
+		$this->get_parameter($dom_xpath,"//relative_humidity",$weather," humidity");
+		$this->get_parameter($dom_xpath,"//pressure_mb",$weather," mb");
+			
+		if ( $weather )
+			$bot->say($cmd->channel, implode(", ",$weather));
+		else
+			$bot->say($cmd->channel, "Look out of the window to see the weather");
+	}
+}
