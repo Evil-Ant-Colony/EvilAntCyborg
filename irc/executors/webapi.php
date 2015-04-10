@@ -548,3 +548,40 @@ class Executor_WeatherUnderground extends CommandExecutor
 			$bot->say($cmd->channel, "Look out of the window to see the weather");
 	}
 }
+
+
+
+class Executor_PonyCountDown extends CommandExecutor
+{
+
+    function __construct($trigger="nextpony")
+    {
+        parent::__construct($trigger,null,"$trigger",
+        'Get the time until the next pony episode');
+    }
+
+    function execute(MelanoBotCommand $cmd, MelanoBot $bot, BotData $driver)
+    {
+        $url="http://api.ponycountdown.com/next";
+        $response = json_decode(file_get_contents($url),true);
+        if ( isset($response["time"]) )
+        {
+            $time = strtotime($response["time"]);
+            $delta = ceil( ($time - time())/60 ) * 60;
+            $d_day = (int) ($delta / (60*60*24));
+            $d_hour = (int) ($delta % (60*60*24) / (60*60));
+            $d_min = round($delta % (60*60) / 60);
+            $d_string = "";
+            if ( $d_day > 0 )
+                    $d_string .= "$d_day days, ";
+            if ( $d_hour > 0 || $d_day > 0 )
+                    $d_string .= "$d_hour hours, ";
+            $d_string .= "$d_min minutes";
+            $bot->say($cmd->channel,"$d_string until \2{$response['name']}\xf (S{$response['season']}E{$response['episode']})",1024);
+        }
+        else
+        {
+            $bot->say($cmd->channel, "Next episode: not soon enough D:");
+        }
+    }
+}
