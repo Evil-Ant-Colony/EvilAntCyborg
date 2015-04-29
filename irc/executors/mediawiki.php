@@ -136,7 +136,7 @@ function parse_wikitext_skip_template(&$wikiarr,$n=1,$open='{',$close='}')
 function mediawiki_describe($title,$api_url)
 {
     $title= urlencode($title);
-    $url="$api_url?format=json&action=query&titles=$title&redirects&prop=revisions&rvprop=content&rvsection=0";
+    $url="$api_url?format=json&utf8&action=query&titles=$title&redirects&prop=revisions&rvprop=content&rvsection=0";
     $reply=json_decode(file_get_contents($url),true);
 
     //print_r($reply);
