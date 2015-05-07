@@ -43,7 +43,7 @@ class Irc2Rcon_RawSay extends Irc2Rcon_RawExecutor
 	public $say_command;
 	public $action_command;
 	
-	function __construct(Rcon $rcon, $say_command='sv_cmd ircmsg [IRC] %s ^7: %s',$action_command='sv_cmd ircmsg [IRC] ^4*^3 %s ^7 %s')
+	function __construct(Rcon $rcon, $say_command='sv_cmd ircmsg [IRC] %s^7: %s',$action_command='sv_cmd ircmsg [IRC] ^4*^3 %s^7 %s')
 	{
 		parent::__construct($rcon);
 		$this->say_command=$say_command;
@@ -71,7 +71,7 @@ class Irc2Rcon_RawSay_EncodeText extends Irc2Rcon_RawSay
 	public $target_encoding;
 	
 	function __construct(Rcon $rcon, $target_encoding='ASCII//TRANSLIT', 
-		$say_command='sv_cmd ircmsg [IRC] %s ^7: %s',$action_command='sv_cmd ircmsg [IRC] ^4*^3 %s ^7 %s')
+		$say_command='sv_cmd ircmsg [IRC] %s^7: %s',$action_command='sv_cmd ircmsg [IRC] ^4*^3 %s^7 %s')
 	{
 		parent::__construct($rcon,$say_command,$action_command);
 		$this->target_encoding = $target_encoding;
@@ -89,7 +89,7 @@ class Irc2Rcon_UserEvent extends Irc2Rcon_Executor
 	public $command, $include_bot;
 	
 	function __construct(Rcon $rcon, $event, $message, $include_bot = true,
-		$command="sv_cmd ircmsg [IRC] ^4*^3 %s ^7 %s" )
+		$command="sv_cmd ircmsg [IRC] ^4*^3 %s^7 %s" )
 	{
 		parent::__construct($rcon,null,null);
 		$this->message = $message;
@@ -116,7 +116,7 @@ class Irc2Rcon_UserKicked extends Irc2Rcon_Executor
 {
 	public $message;
 	
-	function __construct(Rcon $rcon, $message='sv_cmd ircmsg [IRC] ^4*^3 %s ^7 has kicked ^3%s^7 (%s)')
+	function __construct(Rcon $rcon, $message='sv_cmd ircmsg [IRC] ^4*^3 %s^7 has kicked ^3%s^7 (%s)')
 	{
 		parent::__construct($rcon,null,null);
 		$this->message=$message;
@@ -132,7 +132,7 @@ class Irc2Rcon_UserKicked extends Irc2Rcon_Executor
 
 class Irc2Rcon_UserNick extends Irc2Rcon_UserKicked
 {
-	function __construct(Rcon $rcon, $message='sv_cmd ircmsg [IRC] ^4*^3 %s ^7 is now known as ^3%s')
+	function __construct(Rcon $rcon, $message='sv_cmd ircmsg [IRC] ^4*^3 %s^7 is now known as ^3%s')
 	{
 		parent::__construct($rcon,$message);
 		$this->irc_cmd = "NICK";
@@ -397,7 +397,7 @@ class Irc2Rcon_RawSay_Rainbow extends Irc2Rcon_RawExecutor
 	public $say_command;
 	public $action_command;
 	
-	function __construct(Rcon $rcon, $auth="rainbow", $say_command='sv_cmd ircmsg [IRC] %s ^7: %s',$action_command='sv_cmd ircmsg [IRC] ^4*^3 %s ^7 %s')
+	function __construct(Rcon $rcon, $auth="rainbow", $say_command='sv_cmd ircmsg [IRC] %s^7: %s',$action_command='sv_cmd ircmsg [IRC] ^4*^3 %s^7 %s')
 	{
 		parent::__construct($rcon,$auth);
 		$this->say_command=$say_command;
